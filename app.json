@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Abyss Protocol",
+    "slug": "abyss-protocol",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#07090F",
+    "primaryColor": "#29B6FF",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.abyssprotocol.mobile"
+    },
+    "android": {
+      "package": "app.abyssprotocol.mobile",
+      "predictiveBackGestureEnabled": true,
+      "edgeToEdgeEnabled": true
+    }
+  }
+}
