@@ -1,0 +1,75 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { generateWorkout } from '../src/domain/generator.ts';
+import { createProfile } from '../src/domain/profile.ts';
+import { applyCompletedWorkout, calculateStatGains, completeRankTrial, levelFromXp, rankTrialEligibility, totalXpForLevel } from '../src/domain/progression.ts';
+import { calculateRecovery } from '../src/domain/recovery.ts';
+import { EQUIPMENT, GOALS, MUSCLE_GROUPS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
+
+const base = createProfile({
+  goal: GOALS.GENERAL,
+  experienceLevel: 'beginner',
+  workoutDuration: 15,
+  workoutsPerWeek: 3,
+  availableEquipment: [EQUIPMENT.NONE],
+});
+
+function completedEntry(overrides: Partial<WorkoutHistoryEntry> = {}): WorkoutHistoryEntry {
+  const plan = generateWorkout(base, [], '2026-09-01');
+  return {
+    id: 'workout-1',
+    date: '2026-09-01T10:00:00.000Z',
+    dateKey: '2026-09-01',
+    planId: plan.id,
+    title: plan.title,
+    completed: true,
+    durationSeconds: 800,
+    difficulty: plan.difficulty,
+    perceivedDifficulty: 'perfect',
+    results: plan.exercises.map((item) => ({
+      exerciseId: item.exercise.id,
+      completedSets: item.sets,
+      targetPerSet: item.target,
+      completedVolume: item.sets * item.target,
+    })),
+    xpEarned: plan.rewardXp,
+    statGains: calculateStatGains(plan),
+    ...overrides,
+  };
+}
+
+test('XP produces deterministic level progression', () => {
+  assert.equal(levelFromXp(0), 1);
+  assert.equal(levelFromXp(totalXpForLevel(5)), 5);
+  assert.equal(levelFromXp(totalXpForLevel(5) - 1), 4);
+});
+
+test('completed exercises generate only evidence-based stat gains', () => {
+  const entry = completedEntry();
+  const total = Object.values(entry.statGains).reduce((sum, gain) => sum + gain, 0);
+  assert.ok(total > 0);
+  assert.ok(Object.values(entry.statGains).every((gain) => gain >= 0 && gain <= 3));
+});
+
+test('planned recovery gap does not destroy streak', () => {
+  const profile: UserProfile = { ...base, streak: 4, longestStreak: 4, lastWorkoutDateKey: '2026-09-01' };
+  const updated = applyCompletedWorkout(profile, completedEntry({ dateKey: '2026-09-03', date: '2026-09-03T10:00:00.000Z' }));
+  assert.equal(updated.streak, 5);
+});
+
+test('recovery decreases after load and returns after 72 hours', () => {
+  const entry = completedEntry();
+  const soon = calculateRecovery([entry], new Date('2026-09-01T12:00:00.000Z'));
+  assert.ok(MUSCLE_GROUPS.some((group) => soon[group] < 100));
+  const recovered = calculateRecovery([entry], new Date('2026-09-05T12:00:00.000Z'));
+  assert.ok(MUSCLE_GROUPS.every((group) => recovered[group] === 100));
+});
+
+test('rank requires readiness and a completed trial', () => {
+  const ready: UserProfile = { ...base, level: 4, totalWorkouts: 8, streak: 3 };
+  assert.equal(rankTrialEligibility(ready).eligible, true);
+  const promoted = completeRankTrial(ready);
+  assert.equal(promoted.rank, 'D');
+  assert.deepEqual(promoted.rankTrialCompleted, ['D']);
+});
