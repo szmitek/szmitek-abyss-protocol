@@ -46,7 +46,7 @@ test('progressive overload requires repeated successful exposures', () => {
   const user = profile({ goal: GOALS.STRENGTH });
   const first = generateWorkout(user, [], '2026-09-01');
   const push = first.exercises.find(({ exercise }) => exercise.progressionGroup === 'pushup');
-  assert.ok(push);
+  if (!push) throw new Error('Expected a push-up progression in the strength plan.');
 
   const makeHistory = (dateKey: string): WorkoutHistoryEntry => ({
     id: `history-${dateKey}`,
@@ -76,6 +76,6 @@ test('progressive overload requires repeated successful exposures', () => {
   const history = [makeHistory('2026-09-01'), makeHistory('2026-09-04'), varietyEntry];
   const next = generateWorkout({ ...user, totalWorkouts: 2 }, history, '2026-09-08');
   const progressed = next.exercises.find(({ exercise }) => exercise.progressionGroup === 'pushup');
-  assert.ok(progressed);
+  if (!progressed) throw new Error('Expected the push-up progression to return after rotation.');
   assert.ok(progressed.exercise.progressionLevel > push.exercise.progressionLevel || progressed.target > push.target);
 });
