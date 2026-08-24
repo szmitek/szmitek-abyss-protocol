@@ -113,7 +113,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const now = new Date(`${dateKey}T12:00:00`);
   const recovery = calculateRecovery(history, now);
   const priorityIndex = new Map(goalPriorities(profile).map((group, index) => [group, index]));
-  const focusGroups = MUSCLE_GROUPS
+  const focusGroups: MuscleGroup[] = MUSCLE_GROUPS
     .filter((group) => group !== 'arms' && group !== 'calves')
     .sort((a, b) => (recovery[b] - recovery[a]) || ((priorityIndex.get(a) ?? 99) - (priorityIndex.get(b) ?? 99)))
     .slice(0, 4);
