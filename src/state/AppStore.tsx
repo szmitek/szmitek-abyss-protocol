@@ -15,6 +15,7 @@ interface AppStoreValue {
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
   completeCurrentSet: () => void;
+  abandonWorkout: () => void;
   finishWorkout: (difficulty: PerceivedDifficulty) => void;
 }
 
@@ -115,6 +116,17 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     });
   }, [commit]);
 
+  const abandonWorkout = useCallback(() => {
+    commit((current) => {
+      const active = current.activeWorkout;
+      if (!active) return current;
+      const dailyQuest = current.dailyQuest?.id === active.questId
+        ? { ...current.dailyQuest, status: 'available' as const }
+        : current.dailyQuest;
+      return { ...current, dailyQuest, activeWorkout: null };
+    });
+  }, [commit]);
+
   const finishWorkout = useCallback((difficulty: PerceivedDifficulty) => {
     commit((current) => {
       const active = current.activeWorkout;
@@ -155,8 +167,9 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     beginDailyQuest,
     beginRankTrial,
     completeCurrentSet,
+    abandonWorkout,
     finishWorkout,
-  }), [snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, finishWorkout]);
+  }), [snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

@@ -95,14 +95,14 @@ export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps
 
       <View style={styles.streakCard}>
         <Text style={styles.flame}>✦</Text>
-        <View style={styles.streakCopy}><Text style={styles.streak}>{profile.streak} WORKOUT STREAK</Text><Text style={styles.streakNote}>Planned recovery preserves your chain.</Text></View>
+        <View style={styles.streakCopy}><Text style={styles.streak}>{profile.streak > 0 ? `${profile.streak} WORKOUT STREAK` : 'BEGIN YOUR STREAK'}</Text><Text style={styles.streakNote}>Planned recovery preserves your chain.</Text></View>
       </View>
     </Screen>
   );
 }
 
 function Meta({ label, value }: { label: string; value: string }) {
-  return <View style={styles.meta}><Text style={styles.metaLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaValue}>{value}</Text></View>;
+  return <View style={styles.meta}><Text style={styles.metaLabel}>{label}</Text><Text numberOfLines={label === 'FOCUS' ? 2 : 1} style={styles.metaValue}>{value}</Text></View>;
 }
 
 const styles = StyleSheet.create({
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   questMeta: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   meta: { flex: 1 },
   metaLabel: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 1.2 },
-  metaValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 4 },
+  metaValue: { color: colors.text, fontSize: 11, lineHeight: 15, fontWeight: '800', marginTop: 4 },
   exercisePreview: { borderTopWidth: 1, borderTopColor: 'rgba(147,164,195,0.12)', paddingTop: spacing.sm, marginBottom: spacing.lg },
   exerciseLine: { minHeight: 37, flexDirection: 'row', alignItems: 'center' },
   exerciseIndex: { color: colors.primary, fontSize: 10, fontWeight: '900', width: 30 },
