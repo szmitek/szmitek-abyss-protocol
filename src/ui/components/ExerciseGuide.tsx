@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Image, type ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
 
 import type { Exercise } from '../../domain/types.ts';
+import { POSES } from '../../domain/rig/poses.ts';
 import { colors, radius } from '../theme.ts';
+import { ExerciseMotion } from './ExerciseMotion.tsx';
 
 // Metro requires statically analyzable image literals for assets bundled in the native app.
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -65,6 +67,7 @@ const GUIDE_ASSETS: Partial<Record<string, GuideAsset>> = {
 };
 
 export function ExerciseGuide({ exercise, paused = false }: { exercise: Exercise; paused?: boolean }) {
+  const pose = POSES[exercise.id];
   const guide = GUIDE_ASSETS[exercise.id];
   const [cursor, setCursor] = useState(0);
 
@@ -80,6 +83,7 @@ export function ExerciseGuide({ exercise, paused = false }: { exercise: Exercise
     return () => clearInterval(timer);
   }, [guide, paused]);
 
+  if (pose) return <ExerciseMotion pose={pose} paused={paused} />;
   if (!guide) return <GuideUnavailable exercise={exercise} />;
 
   const frame = guide.sequence[cursor % guide.sequence.length] ?? 0;
