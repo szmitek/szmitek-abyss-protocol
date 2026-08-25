@@ -84,6 +84,8 @@ function UprightFigure({ kind, phase }: { kind: Exclude<MotionKind, 'floor' | 'c
     inputRange: [0, 1],
     outputRange: [0, kind === 'squat' ? 18 : kind === 'lunge' ? 12 : kind === 'march' ? -3 : 0],
   });
+  const leftLegLift = phase.interpolate({ inputRange: [0, 1], outputRange: [0, kind === 'march' ? -12 : 0] });
+  const rightLegLift = phase.interpolate({ inputRange: [0, 1], outputRange: [kind === 'march' ? -12 : 0, 0] });
   const armSweep = kind === 'jack' ? 62 : kind === 'march' ? 28 : kind === 'mobility' ? 38 : 8;
   const legSweep = kind === 'jack' ? 24 : kind === 'march' ? 18 : kind === 'lunge' ? 34 : kind === 'squat' ? 12 : 4;
 
@@ -93,8 +95,8 @@ function UprightFigure({ kind, phase }: { kind: Exclude<MotionKind, 'floor' | 'c
       <View style={styles.torso} />
       <Animated.View style={[styles.limb, styles.leftArm, { transform: [{ rotate: phase.interpolate({ inputRange: [0, 1], outputRange: ['12deg', `${-armSweep}deg`] }) }] }]} />
       <Animated.View style={[styles.limb, styles.rightArm, { transform: [{ rotate: phase.interpolate({ inputRange: [0, 1], outputRange: ['-12deg', `${armSweep}deg`] }) }] }]} />
-      <Animated.View style={[styles.leg, styles.leftLeg, { transform: [{ rotate: phase.interpolate({ inputRange: [0, 1], outputRange: ['5deg', `${-legSweep}deg`] }) }, { translateY: kind === 'march' ? -10 : 0 }] }]} />
-      <Animated.View style={[styles.leg, styles.rightLeg, { transform: [{ rotate: phase.interpolate({ inputRange: [0, 1], outputRange: ['-5deg', `${legSweep}deg`] }) }, { translateY: kind === 'lunge' ? 9 : 0 }] }]} />
+      <Animated.View style={[styles.leg, styles.leftLeg, { transform: [{ rotate: phase.interpolate({ inputRange: [0, 1], outputRange: ['5deg', `${-legSweep}deg`] }) }, { translateY: leftLegLift }] }]} />
+      <Animated.View style={[styles.leg, styles.rightLeg, { transform: [{ rotate: phase.interpolate({ inputRange: [0, 1], outputRange: ['-5deg', `${legSweep}deg`] }) }, { translateY: kind === 'lunge' ? 9 : rightLegLift }] }]} />
       <View style={styles.coreNode} />
     </Animated.View>
   );

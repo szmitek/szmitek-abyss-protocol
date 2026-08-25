@@ -206,7 +206,7 @@ export function WorkoutScreen({ active, onCompleteSet, onExit, onFinish }: Worko
         <View style={styles.targetPanel}>
           <View style={styles.targetBlock}><Text style={styles.targetLabel}>SET</Text><Text style={styles.targetValue}>{completedForCurrent + 1}<Text style={styles.targetMuted}> / {prescription.sets}</Text></Text></View>
           <View style={styles.divider} />
-          <View style={styles.targetBlock}><Text style={styles.targetLabel}>{isTimed ? 'DURATION' : 'TARGET'}</Text><Text style={styles.targetValue}>{isTimed ? timerRemaining || prescription.target : prescription.target}<Text style={styles.targetMuted}>{isTimed ? ' SEC' : ' REPS'}</Text></Text></View>
+          <View style={styles.targetBlock}><Text style={styles.targetLabel}>{isTimed ? 'DURATION' : 'TARGET'}</Text><Text style={styles.targetValue}>{isTimed ? (timerPhase === 'idle' ? prescription.target : timerRemaining) : prescription.target}<Text style={styles.targetMuted}>{isTimed ? ' SEC' : ' REPS'}</Text></Text></View>
         </View>
 
         <View style={styles.cue}><Text style={styles.cueMark}>SYSTEM TIP</Text><Text style={styles.cueText}>{prescription.exercise.description}</Text></View>
