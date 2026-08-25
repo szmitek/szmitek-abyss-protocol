@@ -4,6 +4,8 @@ import { Animated, Image, type ImageSourcePropType, StyleSheet, Text, View } fro
 import type { Exercise } from '../../domain/types.ts';
 import { colors, radius } from '../theme.ts';
 
+// Metro requires statically analyzable image literals for assets bundled in the native app.
+/* eslint-disable @typescript-eslint/no-require-imports */
 interface GuideAsset {
   source: ImageSourcePropType;
   phases: readonly [string, string];
