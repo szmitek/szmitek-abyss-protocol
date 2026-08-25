@@ -3,8 +3,7 @@ name: Android Preview APK
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*-preview.*"
+    branches: [main]
 
 permissions:
   contents: write
@@ -36,9 +35,12 @@ jobs:
           path: Abyss-Protocol-preview.apk
           retention-days: 14
       - name: Publish preview release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v0.1.0-preview.1
+          target_commitish: ${{ github.sha }}
+          name: Abyss Protocol 0.1.0 Preview 1
           prerelease: true
           generate_release_notes: true
           files: Abyss-Protocol-preview.apk
