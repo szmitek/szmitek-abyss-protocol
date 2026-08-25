@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { generateWorkout } from '../src/domain/generator.ts';
-import { createProfile } from '../src/domain/profile.ts';
+import { createProfile, updateProfileSettings } from '../src/domain/profile.ts';
 import { applyCompletedWorkout, calculateStatGains, completeRankTrial, levelFromXp, rankTrialEligibility, totalXpForLevel } from '../src/domain/progression.ts';
 import { calculateRecovery } from '../src/domain/recovery.ts';
 import { EQUIPMENT, GOALS, MUSCLE_GROUPS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
@@ -72,4 +72,39 @@ test('rank requires readiness and a completed trial', () => {
   const promoted = completeRankTrial(ready);
   assert.equal(promoted.rank, 'D');
   assert.deepEqual(promoted.rankTrialCompleted, ['D']);
+});
+
+test('profile calibration preserves progression and normalizes equipment safely', () => {
+  const progressed: UserProfile = {
+    ...base,
+    xp: 740,
+    level: 4,
+    rank: 'D',
+    strength: 8,
+    totalWorkouts: 9,
+  };
+  const updated = updateProfileSettings(progressed, {
+    goal: GOALS.STRENGTH,
+    experienceLevel: 'intermediate',
+    workoutDuration: 30,
+    workoutsPerWeek: 5,
+    availableEquipment: [EQUIPMENT.DUMBBELLS],
+  });
+
+  assert.equal(updated.id, progressed.id);
+  assert.equal(updated.xp, 740);
+  assert.equal(updated.level, 4);
+  assert.equal(updated.rank, 'D');
+  assert.equal(updated.strength, 8);
+  assert.equal(updated.totalWorkouts, 9);
+  assert.deepEqual(updated.availableEquipment, [EQUIPMENT.NONE, EQUIPMENT.DUMBBELLS]);
+
+  const bodyweightOnly = updateProfileSettings(updated, {
+    goal: updated.goal,
+    experienceLevel: updated.experienceLevel,
+    workoutDuration: updated.workoutDuration,
+    workoutsPerWeek: updated.workoutsPerWeek,
+    availableEquipment: [EQUIPMENT.NONE, EQUIPMENT.DUMBBELLS],
+  });
+  assert.deepEqual(bodyweightOnly.availableEquipment, [EQUIPMENT.NONE]);
 });

@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { levelProgress } from '../../domain/progression.ts';
 import type { StatKey, UserProfile } from '../../domain/types.ts';
+import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
@@ -15,7 +16,7 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile }: { profile: UserProfile }) {
+export function StatusScreen({ profile, onEditProfile }: { profile: UserProfile; onEditProfile: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
   return (
@@ -48,6 +49,11 @@ export function StatusScreen({ profile }: { profile: UserProfile }) {
         <Metric value={profile.longestStreak} label="LONGEST STREAK" />
         <Metric value={profile.rankTrialCompleted.length} label="TRIALS SURVIVED" />
       </View>
+
+      <SystemPanel eyebrow="PROTOCOL SETTINGS" title="System calibration">
+        <Text style={styles.settingsCopy}>Update your objective, training level, mission duration, weekly rhythm, or registered equipment without resetting progress.</Text>
+        <GlowButton label="EDIT PROTOCOL" variant="secondary" onPress={onEditProfile} style={styles.settingsButton} />
+      </SystemPanel>
     </Screen>
   );
 }
@@ -81,4 +87,6 @@ const styles = StyleSheet.create({
   metric: { width: '47%', minHeight: 104, padding: spacing.lg, justifyContent: 'center', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(147,164,195,0.14)', backgroundColor: 'rgba(14,19,32,0.72)' },
   metricValue: { color: colors.text, fontSize: 27, fontWeight: '900' },
   metricLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginTop: spacing.sm },
+  settingsCopy: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },
+  settingsButton: { marginTop: spacing.lg },
 });

@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateRankTrial, generateWorkout } from '../domain/generator.ts';
-import { createProfile, INITIAL_SNAPSHOT } from '../domain/profile.ts';
+import { createProfile, INITIAL_SNAPSHOT, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateStatGains, completeRankTrial, rankTrialEligibility } from '../domain/progression.ts';
 import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, WorkoutHistoryEntry } from '../domain/types.ts';
 
@@ -12,6 +12,7 @@ interface AppStoreValue {
   snapshot: AppSnapshot;
   hydrated: boolean;
   completeOnboarding: (answers: OnboardingAnswers) => void;
+  updateProfile: (answers: OnboardingAnswers) => void;
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
   completeCurrentSet: () => void;
@@ -63,6 +64,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     const profile = createProfile(answers);
     const base: AppSnapshot = { ...INITIAL_SNAPSHOT, onboardingComplete: true, profile };
     commit(() => freshQuest(base));
+  }, [commit]);
+
+  const updateProfile = useCallback((answers: OnboardingAnswers) => {
+    commit((current) => {
+      if (!current.profile || current.activeWorkout) return current;
+      const profile = updateProfileSettings(current.profile, answers);
+      if (current.dailyQuest?.status === 'complete') return { ...current, profile };
+      return freshQuest({ ...current, profile, dailyQuest: null });
+    });
   }, [commit]);
 
   const beginDailyQuest = useCallback(() => {
@@ -164,12 +174,13 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     snapshot,
     hydrated,
     completeOnboarding,
+    updateProfile,
     beginDailyQuest,
     beginRankTrial,
     completeCurrentSet,
     abandonWorkout,
     finishWorkout,
-  }), [snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
