@@ -1,5 +1,6 @@
 import { EXERCISES } from '../data/exercises.ts';
 import { calculateRecovery } from './recovery.ts';
+import { isScheduledTrainingDay } from './schedule.ts';
 import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type MuscleGroup, type Rank, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 
 export function isEquipmentCompatible(exercise: Exercise, availableEquipment: readonly string[]): boolean {
@@ -201,6 +202,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const focus = focusGroups.slice(0, 2).map((group) => group.replace('-', ' ')).join(' + ');
   return {
     id: `daily-${dateKey}`,
+    kind: 'training',
     dateKey,
     title: profile.goal === GOALS.MOBILITY ? 'AURA RESTORATION' : 'DAILY PROTOCOL',
     focus: focus.toUpperCase(),
@@ -211,11 +213,32 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   };
 }
 
+export function generateRecoveryProtocol(dateKey: string): WorkoutPlan {
+  return {
+    id: `recovery-${dateKey}`,
+    kind: 'recovery',
+    dateKey,
+    title: 'RECOVERY PROTOCOL',
+    focus: 'SYSTEM REST DAY',
+    estimatedMinutes: 0,
+    difficulty: 1,
+    exercises: [],
+    rewardXp: 0,
+  };
+}
+
+export function generateDailyProtocol(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
+  return isScheduledTrainingDay(profile, dateKey)
+    ? generateWorkout(profile, history, dateKey)
+    : generateRecoveryProtocol(dateKey);
+}
+
 export function generateRankTrial(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string, targetRank: Rank): WorkoutPlan {
   const base = generateWorkout({ ...profile, workoutDuration: Math.max(20, profile.workoutDuration) as UserProfile['workoutDuration'] }, history, dateKey);
   return {
     ...base,
     id: `rank-trial-${targetRank}-${dateKey}`,
+    kind: 'rank-trial',
     title: `RANK ${targetRank} TRIAL`,
     focus: 'ASCENSION PROTOCOL',
     exercises: base.exercises.map((item) => ({
