@@ -1,4 +1,4 @@
-import { EQUIPMENT, type AppSnapshot, type OnboardingAnswers, type UserProfile } from './types.ts';
+import { EQUIPMENT, type AppSnapshot, type Equipment, type OnboardingAnswers, type UserProfile } from './types.ts';
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
   schemaVersion: 1,
@@ -9,11 +9,14 @@ export const INITIAL_SNAPSHOT: AppSnapshot = {
   history: [],
 };
 
-export function createProfile(answers: OnboardingAnswers): UserProfile {
-  const equipment = answers.availableEquipment.includes(EQUIPMENT.NONE)
+export function normalizeEquipment(availableEquipment: readonly Equipment[]): Equipment[] {
+  const equipment = availableEquipment.includes(EQUIPMENT.NONE)
     ? [EQUIPMENT.NONE]
-    : [EQUIPMENT.NONE, ...answers.availableEquipment];
+    : [EQUIPMENT.NONE, ...availableEquipment];
+  return [...new Set(equipment)];
+}
 
+export function createProfile(answers: OnboardingAnswers): UserProfile {
   return {
     id: `local-${Date.now()}`,
     level: 1,
@@ -24,7 +27,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     agility: 1,
     vitality: 1,
     mobility: 1,
-    availableEquipment: [...new Set(equipment)],
+    availableEquipment: normalizeEquipment(answers.availableEquipment),
     excludedExercises: [],
     goal: answers.goal,
     experienceLevel: answers.experienceLevel,
@@ -35,5 +38,16 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     totalWorkouts: 0,
     lastWorkoutDateKey: null,
     rankTrialCompleted: [],
+  };
+}
+
+export function updateProfileSettings(profile: UserProfile, answers: OnboardingAnswers): UserProfile {
+  return {
+    ...profile,
+    goal: answers.goal,
+    experienceLevel: answers.experienceLevel,
+    workoutDuration: answers.workoutDuration,
+    workoutsPerWeek: answers.workoutsPerWeek,
+    availableEquipment: normalizeEquipment(answers.availableEquipment),
   };
 }

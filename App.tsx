@@ -27,9 +27,10 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, updateProfile, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
+  const [profileEditing, setProfileEditing] = useState(false);
 
   if (!hydrated) {
     return <View style={styles.loading}><ActivityIndicator color={colors.primary} size="large" /><Text style={styles.loadingText}>INITIALIZING SYSTEM</Text></View>;
@@ -43,6 +44,19 @@ function SystemRoot() {
     return <WorkoutScreen active={snapshot.activeWorkout} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
   }
 
+  if (profileEditing) {
+    return (
+      <OnboardingScreen
+        initialAnswers={snapshot.profile}
+        onCancel={() => setProfileEditing(false)}
+        onComplete={(answers) => {
+          updateProfile(answers);
+          setProfileEditing(false);
+        }}
+      />
+    );
+  }
+
   const acceptDailyQuest = () => {
     setDailyBriefingOpen(false);
     beginDailyQuest();
@@ -52,7 +66,7 @@ function SystemRoot() {
     <SystemBackground>
       {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} /> : null}
       {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} /> : null}
-      {tab === 'status' ? <StatusScreen profile={snapshot.profile} /> : null}
+      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} /> : null}
       {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
       <QuestBriefing

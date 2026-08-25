@@ -9,6 +9,8 @@ import { colors, radius, spacing } from '../theme.ts';
 
 interface OnboardingScreenProps {
   onComplete: (answers: OnboardingAnswers) => void;
+  initialAnswers?: OnboardingAnswers;
+  onCancel?: () => void;
 }
 
 const GOAL_OPTIONS: { value: Goal; label: string; detail: string }[] = [
@@ -46,14 +48,18 @@ const STEP_META = [
   { code: 'FINAL DIRECTIVE', title: 'Register equipment', subtitle: 'This is a hard safety constraint. The System cannot use unregistered gear.' },
 ] as const;
 
-export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export function OnboardingScreen({ onComplete, initialAnswers, onCancel }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
+  const isCalibration = initialAnswers !== undefined;
+  const initialEquipment = initialAnswers?.availableEquipment.some((item) => item !== EQUIPMENT.NONE)
+    ? initialAnswers.availableEquipment.filter((item) => item !== EQUIPMENT.NONE)
+    : [EQUIPMENT.NONE];
   const [step, setStep] = useState(0);
-  const [goal, setGoal] = useState<Goal>(GOALS.GENERAL);
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('beginner');
-  const [workoutDuration, setWorkoutDuration] = useState<UserProfile['workoutDuration']>(20);
-  const [workoutsPerWeek, setWorkoutsPerWeek] = useState<UserProfile['workoutsPerWeek']>(4);
-  const [equipment, setEquipment] = useState<Equipment[]>([EQUIPMENT.NONE]);
+  const [goal, setGoal] = useState<Goal>(initialAnswers?.goal ?? GOALS.GENERAL);
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(initialAnswers?.experienceLevel ?? 'beginner');
+  const [workoutDuration, setWorkoutDuration] = useState<UserProfile['workoutDuration']>(initialAnswers?.workoutDuration ?? 20);
+  const [workoutsPerWeek, setWorkoutsPerWeek] = useState<UserProfile['workoutsPerWeek']>(initialAnswers?.workoutsPerWeek ?? 4);
+  const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
 
   const toggleEquipment = (value: Equipment) => {
     if (value === EQUIPMENT.NONE) {
@@ -75,7 +81,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <View style={styles.aura} />
       <View style={styles.top}>
-        <Text style={styles.system}>ABYSS PROTOCOL</Text>
+        <Text style={styles.system}>{isCalibration ? 'SYSTEM CALIBRATION' : 'ABYSS PROTOCOL'}</Text>
         <Text style={styles.step}>{step + 1} / 5</Text>
       </View>
       <ProgressBar progress={(step + 1) / 5} />
@@ -95,7 +101,8 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </ScrollView>
       <View style={[styles.footer, { bottom: Math.max(insets.bottom, spacing.sm) + spacing.sm }]}>
         {step > 0 ? <GlowButton label="BACK" variant="secondary" onPress={() => setStep((current) => current - 1)} style={styles.back} /> : null}
-        <GlowButton label={step === 4 ? 'AWAKEN SYSTEM' : 'CONTINUE'} onPress={advance} style={styles.next} />
+        {step === 0 && onCancel ? <GlowButton label="CANCEL" variant="secondary" onPress={onCancel} style={styles.back} /> : null}
+        <GlowButton label={step === 4 ? (isCalibration ? 'UPDATE SYSTEM' : 'AWAKEN SYSTEM') : 'CONTINUE'} onPress={advance} style={styles.next} />
       </View>
     </SafeAreaView>
   );
