@@ -5,6 +5,7 @@ import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-c
 
 import { AppStoreProvider, useAppStore } from './src/state/AppStore.tsx';
 import { BottomNav, type AppTab } from './src/ui/components/BottomNav.tsx';
+import { QuestBriefing } from './src/ui/components/QuestBriefing.tsx';
 import { SystemBackground } from './src/ui/components/SystemBackground.tsx';
 import { DashboardScreen } from './src/ui/screens/DashboardScreen.tsx';
 import { OnboardingScreen } from './src/ui/screens/OnboardingScreen.tsx';
@@ -28,6 +29,7 @@ export default function App() {
 function SystemRoot() {
   const { snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
+  const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
 
   if (!hydrated) {
     return <View style={styles.loading}><ActivityIndicator color={colors.primary} size="large" /><Text style={styles.loadingText}>INITIALIZING SYSTEM</Text></View>;
@@ -41,13 +43,24 @@ function SystemRoot() {
     return <WorkoutScreen active={snapshot.activeWorkout} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
   }
 
+  const acceptDailyQuest = () => {
+    setDailyBriefingOpen(false);
+    beginDailyQuest();
+  };
+
   return (
     <SystemBackground>
-      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={beginDailyQuest} /> : null}
-      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={beginDailyQuest} onBeginRankTrial={beginRankTrial} /> : null}
+      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} /> : null}
+      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} /> : null}
       {tab === 'status' ? <StatusScreen profile={snapshot.profile} /> : null}
       {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
+      <QuestBriefing
+        onAccept={acceptDailyQuest}
+        onClose={() => setDailyBriefingOpen(false)}
+        plan={snapshot.dailyQuest?.plan ?? null}
+        visible={dailyBriefingOpen}
+      />
     </SystemBackground>
   );
 }

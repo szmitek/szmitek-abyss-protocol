@@ -5,7 +5,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActiveWorkout, PerceivedDifficulty } from '../../domain/types.ts';
-import { ExerciseMotion } from '../components/ExerciseMotion.tsx';
+import { ExerciseGuide } from '../components/ExerciseGuide.tsx';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
 import { colors, radius, spacing } from '../theme.ts';
@@ -194,7 +194,7 @@ export function WorkoutScreen({ active, onCompleteSet, onExit, onFinish }: Worko
         </View>
 
         <View style={styles.visualStage}>
-          <ExerciseMotion exercise={prescription.exercise} paused={timerPhase === 'paused'} />
+          <ExerciseGuide exercise={prescription.exercise} paused={timerPhase === 'paused'} />
           {timerPhase === 'countdown' ? (
             <View style={styles.countdownOverlay}>
               <Animated.Text style={styles.countdownValue}>{prepRemaining}</Animated.Text>
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   sequence: { color: colors.purple, fontSize: 9, fontWeight: '900', letterSpacing: 2 },
   exerciseName: { color: colors.text, fontSize: 29, fontWeight: '900', textAlign: 'center', marginTop: spacing.sm, letterSpacing: -0.5 },
   muscle: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.4, marginTop: spacing.sm },
-  visualStage: { minHeight: 220, justifyContent: 'center' },
+  visualStage: { minHeight: 248, justifyContent: 'center', marginTop: spacing.sm },
   countdownOverlay: { position: 'absolute', alignSelf: 'center', width: 150, height: 150, borderRadius: 75, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(7,9,15,0.94)', borderWidth: 1, borderColor: colors.lineStrong, shadowColor: colors.primary, shadowOpacity: 0.7, shadowRadius: 25 },
   countdownValue: { color: colors.text, fontSize: 62, fontWeight: '900', lineHeight: 68, textShadowColor: colors.primary, textShadowRadius: 18 },
   countdownLabel: { color: colors.primary, fontSize: 8, fontWeight: '900', letterSpacing: 2 },
