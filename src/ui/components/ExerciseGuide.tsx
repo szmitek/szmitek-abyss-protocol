@@ -64,14 +64,8 @@ export function ExerciseGuide({ exercise, paused = false }: { exercise: Exercise
 
   if (!guide) return <GuideUnavailable exercise={exercise} />;
 
-  const firstOpacity = signal.interpolate({
-    inputRange: [0, 0.42, 0.58, 1],
-    outputRange: [1, 1, 0, 0],
-  });
-  const secondOpacity = signal.interpolate({
-    inputRange: [0, 0.42, 0.58, 1],
-    outputRange: [0, 0, 1, 1],
-  });
+  const firstOpacity = signal.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+  const secondOpacity = signal.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
   const firstScale = signal.interpolate({ inputRange: [0, 1], outputRange: [1, 0.965] });
   const secondScale = signal.interpolate({ inputRange: [0, 1], outputRange: [0.965, 1] });
   const firstShift = signal.interpolate({ inputRange: [0, 1], outputRange: [0, -5] });
