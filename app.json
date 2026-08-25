@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "app.abyssprotocol.mobile",
-      "versionCode": 3,
+      "versionCode": 4,
       "predictiveBackGestureEnabled": true,
       "edgeToEdgeEnabled": true
     }
