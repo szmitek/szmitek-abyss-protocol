@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
-import { generateRankTrial, generateWorkout, replaceExerciseInPlan } from '../domain/generator.ts';
+import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
 import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateStatGains, completeRankTrial, rankTrialEligibility } from '../domain/progression.ts';
 import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, WorkoutHistoryEntry } from '../domain/types.ts';
@@ -27,8 +27,8 @@ const AppStoreContext = createContext<AppStoreValue | null>(null);
 function freshQuest(snapshot: AppSnapshot, dateKey = toDateKey(new Date())): AppSnapshot {
   if (!snapshot.profile || snapshot.activeWorkout) return snapshot;
   if (snapshot.dailyQuest?.dateKey === dateKey) return snapshot;
-  const plan = generateWorkout(snapshot.profile, snapshot.history, dateKey);
-  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: 'available', plan } };
+  const plan = generateDailyProtocol(snapshot.profile, snapshot.history, dateKey);
+  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' ? 'complete' : 'available', plan } };
 }
 
 export function AppStoreProvider({ children }: PropsWithChildren) {
@@ -72,7 +72,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = updateProfileSettings(current.profile, answers);
-      if (current.dailyQuest?.status === 'complete') return { ...current, profile };
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile };
       return freshQuest({ ...current, profile, dailyQuest: null });
     });
   }, [commit]);
@@ -81,7 +81,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout || current.profile.excludedExercises.length === 0) return current;
       const profile = restoreExcludedExercises(current.profile);
-      if (current.dailyQuest?.status === 'complete') return { ...current, profile };
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile };
       return freshQuest({ ...current, profile, dailyQuest: null });
     });
   }, [commit]);

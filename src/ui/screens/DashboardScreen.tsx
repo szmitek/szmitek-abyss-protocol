@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { calculateRecovery } from '../../domain/recovery.ts';
 import { levelProgress } from '../../domain/progression.ts';
+import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
 import type { AppSnapshot, StatKey } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -27,13 +28,15 @@ export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
   const recovery = calculateRecovery(snapshot.history);
+  const recoveryDay = quest?.plan.kind === 'recovery';
+  const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   const recoveryHighlights = Object.entries(recovery).filter(([group]) => ['chest', 'core', 'quads'].includes(group));
 
   return (
     <Screen
       eyebrow="SYSTEM ONLINE"
       title="Welcome, Hunter"
-      subtitle="Your parameters are stable. One protocol awaits."
+      subtitle={recoveryDay ? 'Scheduled recovery protects long-term progression.' : 'Your parameters are stable. One protocol awaits.'}
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >
       <SystemPanel>
@@ -51,11 +54,19 @@ export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps
       </View>
 
       <SystemPanel
-        eyebrow={quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
+        eyebrow={recoveryDay ? 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
         title={quest?.plan.title ?? 'SCANNING...'}
-        trailing={<Text style={[styles.questStatus, quest?.status === 'complete' && styles.complete]}>● {quest?.status.toUpperCase()}</Text>}
+        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete]}>● {recoveryDay ? 'RECOVERY' : quest?.status.toUpperCase()}</Text>}
       >
-        {quest ? (
+        {recoveryDay ? (
+          <View style={styles.recoveryDirective}>
+            <Text style={styles.recoveryDirectiveMark}>◇</Text>
+            <View style={styles.recoveryDirectiveCopy}>
+              <Text style={styles.recoveryDirectiveTitle}>NO TRAINING REQUIRED</Text>
+              <Text style={styles.recoveryDirectiveText}>Your streak is protected. Next training: {nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }).toUpperCase() : 'SCHEDULED'}</Text>
+            </View>
+          </View>
+        ) : quest ? (
           <>
             <View style={styles.questMeta}>
               <Meta label="FOCUS" value={quest.plan.focus} />
@@ -121,6 +132,11 @@ const styles = StyleSheet.create({
   statValue: { color: colors.text, fontSize: 18, fontWeight: '900', marginTop: 4 },
   questStatus: { color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   complete: { color: colors.success },
+  recoveryDirective: { minHeight: 92, flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(85,230,177,0.2)', backgroundColor: 'rgba(85,230,177,0.05)' },
+  recoveryDirectiveMark: { color: colors.success, fontSize: 34, marginRight: spacing.md },
+  recoveryDirectiveCopy: { flex: 1 },
+  recoveryDirectiveTitle: { color: colors.text, fontSize: 12, fontWeight: '900', letterSpacing: 0.8 },
+  recoveryDirectiveText: { color: colors.textMuted, fontSize: 10, lineHeight: 16, marginTop: 5 },
   questMeta: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   meta: { flex: 1 },
   metaLabel: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 1.2 },

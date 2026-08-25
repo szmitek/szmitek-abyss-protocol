@@ -72,6 +72,7 @@ export interface ExercisePrescription {
 
 export interface WorkoutPlan {
   id: string;
+  kind?: 'training' | 'recovery' | 'rank-trial';
   dateKey: string;
   title: string;
   focus: string;

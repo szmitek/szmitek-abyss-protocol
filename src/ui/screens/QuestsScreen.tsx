@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { rankTrialEligibility } from '../../domain/progression.ts';
+import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
 import type { AppSnapshot } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
@@ -17,10 +18,17 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const trial = rankTrialEligibility(profile);
+  const recoveryDay = quest?.plan.kind === 'recovery';
+  const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   return (
     <Screen eyebrow="MISSION REGISTRY" title="Quests" subtitle="Clear today's protocol or prepare for ascension.">
-      <SystemPanel eyebrow="DAILY QUEST" title={quest?.plan.title ?? 'Scanning'} trailing={<Text style={styles.reward}>+{quest?.plan.rewardXp ?? 0} XP</Text>}>
-        {quest?.plan.exercises.map((item, index) => (
+      <SystemPanel eyebrow={recoveryDay ? 'RECOVERY DAY' : 'DAILY QUEST'} title={quest?.plan.title ?? 'Scanning'} trailing={<Text style={styles.reward}>{recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
+        {recoveryDay ? (
+          <View style={styles.recoveryMessage}>
+            <Text style={styles.recoveryMark}>◇</Text>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>RECOVERY DIRECTIVE ACTIVE</Text><Text style={styles.recoveryText}>No workout is required today. Your next training protocol is scheduled for {nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }) : 'the next training day'}.</Text></View>
+          </View>
+        ) : quest?.plan.exercises.map((item, index) => (
           <View key={item.exercise.id} style={styles.sequence}>
             <Text style={styles.sequenceIndex}>{`${index + 1}`.padStart(2, '0')}</Text>
             <View style={styles.sequenceCopy}><Text style={styles.sequenceName}>{item.exercise.name}</Text><Text style={styles.sequenceType}>{item.exercise.primaryMuscle.toUpperCase()}</Text></View>
@@ -28,7 +36,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
           </View>
         ))}
         <GlowButton
-          label={quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
+          label={recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
           disabled={quest?.status === 'complete'}
           onPress={onBeginDaily}
           style={styles.button}
@@ -64,6 +72,11 @@ const styles = StyleSheet.create({
   sequenceType: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 1.2, marginTop: 3 },
   sequenceTarget: { color: colors.textMuted, fontSize: 10, fontWeight: '800' },
   button: { marginTop: spacing.lg },
+  recoveryMessage: { flexDirection: 'row', alignItems: 'center', minHeight: 84, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(85,230,177,0.2)', backgroundColor: 'rgba(85,230,177,0.05)' },
+  recoveryMark: { color: colors.success, fontSize: 30, marginRight: spacing.md },
+  recoveryCopy: { flex: 1 },
+  recoveryTitle: { color: colors.text, fontSize: 11, fontWeight: '900', letterSpacing: 0.7 },
+  recoveryText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 4 },
   trialHero: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
   trialRune: { color: colors.danger, fontSize: 44, marginRight: spacing.lg, textShadowColor: colors.danger, textShadowRadius: 14 },
   trialCopy: { flex: 1 },
