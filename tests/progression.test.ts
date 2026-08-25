@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { generateWorkout } from '../src/domain/generator.ts';
-import { createProfile, updateProfileSettings } from '../src/domain/profile.ts';
+import { createProfile, restoreExcludedExercises, updateProfileSettings } from '../src/domain/profile.ts';
 import { applyCompletedWorkout, calculateStatGains, completeRankTrial, levelFromXp, rankTrialEligibility, totalXpForLevel } from '../src/domain/progression.ts';
 import { calculateRecovery } from '../src/domain/recovery.ts';
 import { EQUIPMENT, GOALS, MUSCLE_GROUPS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
@@ -107,4 +107,13 @@ test('profile calibration preserves progression and normalizes equipment safely'
     availableEquipment: [EQUIPMENT.NONE, EQUIPMENT.DUMBBELLS],
   });
   assert.deepEqual(bodyweightOnly.availableEquipment, [EQUIPMENT.NONE]);
+});
+
+test('restoring excluded exercises changes no progression values', () => {
+  const progressed: UserProfile = { ...base, xp: 420, level: 3, totalWorkouts: 5, excludedExercises: ['burpee', 'pushup'] };
+  const restored = restoreExcludedExercises(progressed);
+  assert.deepEqual(restored.excludedExercises, []);
+  assert.equal(restored.xp, progressed.xp);
+  assert.equal(restored.level, progressed.level);
+  assert.equal(restored.totalWorkouts, progressed.totalWorkouts);
 });

@@ -3,8 +3,8 @@ import { AppState } from 'react-native';
 
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
-import { generateRankTrial, generateWorkout } from '../domain/generator.ts';
-import { createProfile, INITIAL_SNAPSHOT, updateProfileSettings } from '../domain/profile.ts';
+import { generateRankTrial, generateWorkout, replaceExerciseInPlan } from '../domain/generator.ts';
+import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateStatGains, completeRankTrial, rankTrialEligibility } from '../domain/progression.ts';
 import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, WorkoutHistoryEntry } from '../domain/types.ts';
 
@@ -13,8 +13,10 @@ interface AppStoreValue {
   hydrated: boolean;
   completeOnboarding: (answers: OnboardingAnswers) => void;
   updateProfile: (answers: OnboardingAnswers) => void;
+  restoreExercises: () => void;
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
+  replaceCurrentExercise: (permanentlyExclude: boolean) => void;
   completeCurrentSet: () => void;
   abandonWorkout: () => void;
   finishWorkout: (difficulty: PerceivedDifficulty) => void;
@@ -75,6 +77,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     });
   }, [commit]);
 
+  const restoreExercises = useCallback(() => {
+    commit((current) => {
+      if (!current.profile || current.activeWorkout || current.profile.excludedExercises.length === 0) return current;
+      const profile = restoreExcludedExercises(current.profile);
+      if (current.dailyQuest?.status === 'complete') return { ...current, profile };
+      return freshQuest({ ...current, profile, dailyQuest: null });
+    });
+  }, [commit]);
+
   const beginDailyQuest = useCallback(() => {
     commit((current) => {
       const quest = current.dailyQuest;
@@ -109,6 +120,26 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
           startedAt: new Date().toISOString(),
         },
       };
+    });
+  }, [commit]);
+
+  const replaceCurrentExercise = useCallback((permanentlyExclude: boolean) => {
+    commit((current) => {
+      const active = current.activeWorkout;
+      const profile = current.profile;
+      if (!active || !profile || (active.completedSets[active.exerciseIndex] ?? 0) > 0) return current;
+      const currentExercise = active.plan.exercises[active.exerciseIndex]?.exercise;
+      if (!currentExercise) return current;
+
+      const nextProfile = permanentlyExclude && !profile.excludedExercises.includes(currentExercise.id)
+        ? { ...profile, excludedExercises: [...profile.excludedExercises, currentExercise.id] }
+        : profile;
+      const plan = replaceExerciseInPlan(active.plan, active.exerciseIndex, nextProfile);
+      if (!plan) return current;
+      const dailyQuest = current.dailyQuest?.id === active.questId
+        ? { ...current.dailyQuest, plan }
+        : current.dailyQuest;
+      return { ...current, profile: nextProfile, dailyQuest, activeWorkout: { ...active, plan } };
     });
   }, [commit]);
 
@@ -175,12 +206,14 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     hydrated,
     completeOnboarding,
     updateProfile,
+    restoreExercises,
     beginDailyQuest,
     beginRankTrial,
+    replaceCurrentExercise,
     completeCurrentSet,
     abandonWorkout,
     finishWorkout,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

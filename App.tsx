@@ -27,7 +27,7 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, updateProfile, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
@@ -41,7 +41,7 @@ function SystemRoot() {
   }
 
   if (snapshot.activeWorkout) {
-    return <WorkoutScreen active={snapshot.activeWorkout} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
+    return <WorkoutScreen active={snapshot.activeWorkout} onReplaceExercise={replaceCurrentExercise} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
   }
 
   if (profileEditing) {
@@ -66,7 +66,7 @@ function SystemRoot() {
     <SystemBackground>
       {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} /> : null}
       {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} /> : null}
-      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} /> : null}
+      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onRestoreExercises={restoreExercises} /> : null}
       {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
       <QuestBriefing

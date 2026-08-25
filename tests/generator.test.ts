@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { EXERCISES } from '../src/data/exercises.ts';
-import { generateWorkout, isEquipmentCompatible } from '../src/domain/generator.ts';
+import { generateWorkout, isEquipmentCompatible, replaceExerciseInPlan } from '../src/domain/generator.ts';
 import { createProfile } from '../src/domain/profile.ts';
 import { EQUIPMENT, GOALS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
 
@@ -40,6 +40,23 @@ test('CRITICAL: NONE profile never receives equipment exercises', () => {
 test('beginner plan does not contain difficulty 3 exercises', () => {
   const plan = generateWorkout(profile(), [], '2026-09-01');
   assert.ok(plan.exercises.every(({ exercise }) => exercise.difficulty === 1));
+});
+
+test('exercise replacement remains unique, level-safe, and equipment-compatible', () => {
+  const user = profile();
+  const plan = generateWorkout(user, [], '2026-09-10');
+  for (let index = 0; index < plan.exercises.length; index += 1) {
+    const original = plan.exercises[index]!;
+    const replaced = replaceExerciseInPlan(plan, index, user);
+    assert.ok(replaced, `Expected a replacement for ${original.exercise.id}`);
+    const replacement = replaced.exercises[index]!;
+    assert.notEqual(replacement.exercise.id, original.exercise.id);
+    assert.equal(isEquipmentCompatible(replacement.exercise, user.availableEquipment), true);
+    assert.ok(replacement.exercise.difficulty <= original.exercise.difficulty);
+    assert.equal(replacement.exercise.exerciseType, original.exercise.exerciseType);
+    assert.equal(replacement.exercise.repType, original.exercise.repType);
+    assert.equal(new Set(replaced.exercises.map((item) => item.exercise.id)).size, replaced.exercises.length);
+  }
 });
 
 test('progressive overload requires repeated successful exposures', () => {

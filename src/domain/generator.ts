@@ -100,6 +100,46 @@ function desiredExerciseCount(minutes: UserProfile['workoutDuration']): number {
   return 10;
 }
 
+function replacementScore(candidate: Exercise, current: Exercise): number {
+  const sharedMuscles = candidate.muscleGroups.filter((group) => current.muscleGroups.includes(group)).length;
+  return (candidate.primaryMuscle === current.primaryMuscle ? 100 : 0)
+    + sharedMuscles * 15
+    + (candidate.difficulty === current.difficulty ? 25 : 0)
+    + (candidate.progressionGroup === current.progressionGroup ? -30 : 0)
+    - Math.abs(candidate.progressionLevel - current.progressionLevel);
+}
+
+export function replaceExerciseInPlan(plan: WorkoutPlan, exerciseIndex: number, profile: UserProfile): WorkoutPlan | null {
+  const current = plan.exercises[exerciseIndex];
+  if (!current) return null;
+
+  const planExerciseIds = new Set(plan.exercises.map((item) => item.exercise.id));
+  const candidates = EXERCISES.filter((exercise) =>
+    exercise.id !== current.exercise.id
+    && !planExerciseIds.has(exercise.id)
+    && !profile.excludedExercises.includes(exercise.id)
+    && isEquipmentCompatible(exercise, profile.availableEquipment)
+    && exercise.exerciseType === current.exercise.exerciseType
+    && exercise.repType === current.exercise.repType
+    && exercise.difficulty <= current.exercise.difficulty,
+  ).sort((a, b) => replacementScore(b, current.exercise) - replacementScore(a, current.exercise) || a.id.localeCompare(b.id));
+
+  const replacement = candidates[0];
+  if (!replacement) return null;
+  const exercises = [...plan.exercises];
+  exercises[exerciseIndex] = {
+    ...current,
+    exercise: replacement,
+    target: Math.max(replacement.minReps, Math.min(replacement.maxReps, current.target)),
+    restSeconds: replacement.defaultRest,
+  };
+
+  if (!isEquipmentCompatible(replacement, profile.availableEquipment)) {
+    throw new Error('Equipment constraint invariant violated during exercise replacement.');
+  }
+  return { ...plan, exercises };
+}
+
 export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
   const random = randomFactory(`${profile.id}:${dateKey}:${profile.totalWorkouts}`);
   const cap = difficultyCap(profile);

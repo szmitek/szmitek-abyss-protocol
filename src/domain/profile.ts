@@ -51,3 +51,7 @@ export function updateProfileSettings(profile: UserProfile, answers: OnboardingA
     availableEquipment: normalizeEquipment(answers.availableEquipment),
   };
 }
+
+export function restoreExcludedExercises(profile: UserProfile): UserProfile {
+  return profile.excludedExercises.length === 0 ? profile : { ...profile, excludedExercises: [] };
+}

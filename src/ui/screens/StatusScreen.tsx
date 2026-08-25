@@ -16,7 +16,7 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile, onEditProfile }: { profile: UserProfile; onEditProfile: () => void }) {
+export function StatusScreen({ profile, onEditProfile, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onRestoreExercises: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
   return (
@@ -53,6 +53,9 @@ export function StatusScreen({ profile, onEditProfile }: { profile: UserProfile;
       <SystemPanel eyebrow="PROTOCOL SETTINGS" title="System calibration">
         <Text style={styles.settingsCopy}>Update your objective, training level, mission duration, weekly rhythm, or registered equipment without resetting progress.</Text>
         <GlowButton label="EDIT PROTOCOL" variant="secondary" onPress={onEditProfile} style={styles.settingsButton} />
+        {profile.excludedExercises.length > 0 ? (
+          <GlowButton label={`RESTORE ${profile.excludedExercises.length} EXCLUDED`} variant="secondary" onPress={onRestoreExercises} style={styles.restoreButton} />
+        ) : null}
       </SystemPanel>
     </Screen>
   );
@@ -89,4 +92,5 @@ const styles = StyleSheet.create({
   metricLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginTop: spacing.sm },
   settingsCopy: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },
   settingsButton: { marginTop: spacing.lg },
+  restoreButton: { marginTop: spacing.sm },
 });
