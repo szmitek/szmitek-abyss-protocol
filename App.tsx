@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppStoreProvider, useAppStore } from './src/state/AppStore.tsx';
 import { BottomNav, type AppTab } from './src/ui/components/BottomNav.tsx';
@@ -15,15 +16,17 @@ import { colors } from './src/ui/theme.ts';
 
 export default function App() {
   return (
-    <AppStoreProvider>
-      <StatusBar style="light" />
-      <SystemRoot />
-    </AppStoreProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <AppStoreProvider>
+        <StatusBar style="light" />
+        <SystemRoot />
+      </AppStoreProvider>
+    </SafeAreaProvider>
   );
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, finishWorkout } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, beginDailyQuest, beginRankTrial, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
 
   if (!hydrated) {
@@ -35,7 +38,7 @@ function SystemRoot() {
   }
 
   if (snapshot.activeWorkout) {
-    return <WorkoutScreen active={snapshot.activeWorkout} onCompleteSet={completeCurrentSet} onFinish={finishWorkout} />;
+    return <WorkoutScreen active={snapshot.activeWorkout} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
   }
 
   return (

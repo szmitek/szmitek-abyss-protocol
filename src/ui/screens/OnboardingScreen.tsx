@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EQUIPMENT, GOALS, type Equipment, type ExperienceLevel, type Goal, type OnboardingAnswers, type UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
@@ -46,6 +47,7 @@ const STEP_META = [
 ] as const;
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState<Goal>(GOALS.GENERAL);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('beginner');
@@ -70,14 +72,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   };
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <View style={styles.aura} />
       <View style={styles.top}>
         <Text style={styles.system}>ABYSS PROTOCOL</Text>
         <Text style={styles.step}>{step + 1} / 5</Text>
       </View>
       <ProgressBar progress={(step + 1) / 5} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 112 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={styles.sigil}><Text style={styles.sigilText}>◇</Text></View>
         <Text style={styles.code}>{STEP_META[step]?.code}</Text>
         <Text style={styles.title}>{STEP_META[step]?.title}</Text>
@@ -91,11 +93,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           {step === 4 && EQUIPMENT_OPTIONS.map((option) => <Choice key={option.value} label={option.label} detail={option.value === EQUIPMENT.NONE ? 'Pure bodyweight protocol' : 'Add to available loadout'} selected={equipment.includes(option.value)} onPress={() => toggleEquipment(option.value)} />)}
         </View>
       </ScrollView>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: Math.max(insets.bottom, spacing.sm) + spacing.sm }]}>
         {step > 0 ? <GlowButton label="BACK" variant="secondary" onPress={() => setStep((current) => current - 1)} style={styles.back} /> : null}
         <GlowButton label={step === 4 ? 'AWAKEN SYSTEM' : 'CONTINUE'} onPress={advance} style={styles.next} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -117,7 +119,7 @@ function CompactChoice({ label, selected, onPress }: { label: string; selected: 
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.lg, paddingTop: 56 },
+  root: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   aura: { position: 'absolute', width: 420, height: 420, borderRadius: 210, top: -260, alignSelf: 'center', backgroundColor: colors.blue, opacity: 0.13 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   system: { color: colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 2.5 },
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
   markSelected: { color: colors.primary },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   compact: { width: '47%', minHeight: 72, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(147, 164, 195, 0.18)', backgroundColor: colors.panel },
-  footer: { position: 'absolute', bottom: 28, left: spacing.lg, right: spacing.lg, flexDirection: 'row', gap: spacing.md },
+  footer: { position: 'absolute', left: spacing.lg, right: spacing.lg, flexDirection: 'row', gap: spacing.md },
   back: { flex: 0.38 },
   next: { flex: 1 },
 });

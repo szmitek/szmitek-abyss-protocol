@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../theme.ts';
 
@@ -12,8 +13,9 @@ const TABS: { id: AppTab; icon: string; label: string }[] = [
 ];
 
 export function BottomNav({ active, onChange }: { active: AppTab; onChange: (tab: AppTab) => void }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.shell}>
+    <View style={[styles.shell, { bottom: Math.max(insets.bottom, spacing.sm) }]}>
       {TABS.map((tab) => {
         const selected = tab.id === active;
         return (
@@ -29,7 +31,7 @@ export function BottomNav({ active, onChange }: { active: AppTab; onChange: (tab
 }
 
 const styles = StyleSheet.create({
-  shell: { position: 'absolute', bottom: 18, left: spacing.lg, right: spacing.lg, height: 72, flexDirection: 'row', borderRadius: 22, borderWidth: 1, borderColor: colors.line, backgroundColor: 'rgba(10,14,24,0.96)', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
+  shell: { position: 'absolute', left: spacing.lg, right: spacing.lg, height: 72, flexDirection: 'row', borderRadius: 22, borderWidth: 1, borderColor: colors.line, backgroundColor: 'rgba(10,14,24,0.98)', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.65 },
   icon: { color: colors.textDim, fontSize: 19, lineHeight: 22 },
