@@ -12,6 +12,7 @@ import { colors, radius, spacing } from '../theme.ts';
 
 interface WorkoutScreenProps {
   active: ActiveWorkout;
+  onReplaceExercise: (permanentlyExclude: boolean) => void;
   onCompleteSet: () => void;
   onExit: () => void;
   onFinish: (difficulty: PerceivedDifficulty) => void;
@@ -21,7 +22,7 @@ type TimerPhase = 'idle' | 'countdown' | 'running' | 'paused' | 'complete';
 
 const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}`.padStart(2, '0') + ':' + `${seconds % 60}`.padStart(2, '0');
 
-export function WorkoutScreen({ active, onCompleteSet, onExit, onFinish }: WorkoutScreenProps) {
+export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit, onFinish }: WorkoutScreenProps) {
   useKeepAwake('active-workout');
   const insets = useSafeAreaInsets();
   const prescription = active.plan.exercises[active.exerciseIndex];
@@ -162,6 +163,18 @@ export function WorkoutScreen({ active, onCompleteSet, onExit, onFinish }: Worko
     );
   };
 
+  const confirmReplacement = () => {
+    Alert.alert(
+      'Replace this exercise?',
+      'The System will select a compatible movement using only your registered equipment.',
+      [
+        { text: 'CANCEL', style: 'cancel' },
+        { text: 'REPLACE ONCE', onPress: () => onReplaceExercise(false) },
+        { text: 'EXCLUDE', style: 'destructive', onPress: () => onReplaceExercise(true) },
+      ],
+    );
+  };
+
   const primaryLabel = restActive
     ? `RECOVERY ${formatClock(restRemaining)}`
     : timerPhase === 'countdown'
@@ -210,6 +223,11 @@ export function WorkoutScreen({ active, onCompleteSet, onExit, onFinish }: Worko
         </View>
 
         <View style={styles.cue}><Text style={styles.cueMark}>SYSTEM TIP</Text><Text style={styles.cueText}>{prescription.exercise.description}</Text></View>
+        {completedForCurrent === 0 && timerPhase === 'idle' && !restActive ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Replace current exercise" onPress={confirmReplacement} style={styles.replaceButton}>
+            <Text style={styles.replaceText}>REPLACE EXERCISE</Text>
+          </Pressable>
+        ) : null}
 
         <View style={styles.nextPanel}><Text style={styles.nextLabel}>NEXT SEQUENCE</Text><Text style={styles.nextName}>{next?.exercise.name ?? 'QUEST COMPLETE'}</Text><Text style={styles.nextTarget}>{next ? `${isLastSetOfExercise ? 1 : completedForCurrent + 2} / ${next.sets} · ${next.target}${next.exercise.repType === 'seconds' ? ' sec' : ' reps'}` : `+${active.plan.rewardXp} XP`}</Text></View>
 
@@ -284,6 +302,8 @@ const styles = StyleSheet.create({
   cue: { marginTop: spacing.md, paddingHorizontal: spacing.md, minHeight: 55, justifyContent: 'center' },
   cueMark: { color: colors.primary, fontSize: 7, fontWeight: '900', letterSpacing: 1.5 },
   cueText: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 4 },
+  replaceButton: { minHeight: 36, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', paddingHorizontal: spacing.lg },
+  replaceText: { color: colors.primary, fontSize: 8, fontWeight: '900', letterSpacing: 1.3 },
   nextPanel: { marginTop: 'auto', marginBottom: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: 'rgba(147,164,195,0.05)', borderWidth: 1, borderColor: 'rgba(147,164,195,0.1)' },
   nextLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 1.5 },
   nextName: { color: colors.text, fontSize: 12, fontWeight: '800', marginTop: 4, paddingRight: 115 },
