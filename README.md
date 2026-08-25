@@ -36,6 +36,16 @@ npm run lint
 npm test
 ```
 
+## Install on Android without a development environment
+
+Preview tags matching `v*-preview.*` trigger the `Android Preview APK` workflow.
+The resulting `Abyss-Protocol-preview.apk` is attached directly to the matching
+GitHub prerelease and can be installed on a phone without Node.js, Git or Expo Go.
+
+Android may ask for permission to install an application from the browser or file
+manager used to open the APK. Preview builds use Android's development signature
+and are intended only for testing outside Google Play.
+
 ## Non-negotiable equipment invariant
 
 Every generated exercise must satisfy:
