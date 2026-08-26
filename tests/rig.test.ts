@@ -6,12 +6,16 @@ import {
   computeFitTransform,
   interpolateAngles,
   SKELETON,
+  solveBackArm,
+  solveBackLeg,
   solveFK,
 } from '../src/domain/rig/kinematics.ts';
 import { POSES } from '../src/domain/rig/poses.ts';
 
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
+
+const LEN = Object.fromEntries(SKELETON.map((b) => [b.id, b.len]));
 
 test('FK preserves every bone length regardless of root', () => {
   const angles = POSES['bodyweight-squat']!.keyframes[1]!.angles;
@@ -62,5 +66,19 @@ test('every pose is well-formed', () => {
     assert.equal(pose.phases.length, 2, `${id} needs 2 phase labels`);
     assert.ok(pose.primaryMuscles.length >= 1, `${id} needs a primary muscle`);
     assert.ok(pose.periodMs > 0, `${id} needs a period`);
+    if (pose.backLeg) assert.equal(pose.backLeg.length, pose.keyframes.length, `${id} backLeg must match keyframes`);
+    if (pose.backArm) assert.equal(pose.backArm.length, pose.keyframes.length, `${id} backArm must match keyframes`);
   }
+});
+
+test('back-limb solvers preserve segment lengths', () => {
+  const hip = { x: 10, y: 20 };
+  const b = solveBackLeg(hip, { thigh: 150, shank: 200, foot: 230 });
+  assert.ok(Math.abs(dist(hip, b.kneeB) - LEN.thigh!) < 1e-6);
+  assert.ok(Math.abs(dist(b.kneeB, b.ankleB) - LEN.shank!) < 1e-6);
+  assert.ok(Math.abs(dist(b.ankleB, b.toeB) - LEN.foot!) < 1e-6);
+  const sho = { x: -5, y: 8 };
+  const a = solveBackArm(sho, { upperArm: 210, foreArm: 230 });
+  assert.ok(Math.abs(dist(sho, a.elbowB) - LEN.upperArm!) < 1e-6);
+  assert.ok(Math.abs(dist(a.elbowB, a.wristB) - LEN.foreArm!) < 1e-6);
 });

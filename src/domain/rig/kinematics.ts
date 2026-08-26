@@ -1,4 +1,14 @@
-import type { Angles, Bone, Keyframe, NodeId, Skeleton, Vec } from './types.ts';
+import type {
+  Angles,
+  BackArmAngles,
+  BackLegAngles,
+  Bone,
+  BoneId,
+  Keyframe,
+  NodeId,
+  Skeleton,
+  Vec,
+} from './types.ts';
 
 // Canonical body. Lengths are relative; the whole figure is scaled to fit
 // the viewport at render time, so absolute units don't matter.
@@ -66,6 +76,73 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
+const LEN: Record<BoneId, number> = Object.fromEntries(
+  SKELETON.map((b) => [b.id, b.len]),
+) as Record<BoneId, number>;
+
+function dirVec(deg: number, len: number): Vec {
+  const r = (deg * Math.PI) / 180;
+  return { x: Math.sin(r) * len, y: -Math.cos(r) * len };
+}
+
+export interface BackLegPoints {
+  kneeB: Vec;
+  ankleB: Vec;
+  toeB: Vec;
+}
+
+export interface BackArmPoints {
+  elbowB: Vec;
+  wristB: Vec;
+}
+
+/** Independent back leg, built downward from the hip with direct angles. */
+export function solveBackLeg(hip: Vec, a: BackLegAngles): BackLegPoints {
+  const t = dirVec(a.thigh, LEN.thigh);
+  const kneeB = { x: hip.x + t.x, y: hip.y + t.y };
+  const s = dirVec(a.shank, LEN.shank);
+  const ankleB = { x: kneeB.x + s.x, y: kneeB.y + s.y };
+  const f = dirVec(a.foot, LEN.foot);
+  const toeB = { x: ankleB.x + f.x, y: ankleB.y + f.y };
+  return { kneeB, ankleB, toeB };
+}
+
+/** Independent back arm, built out from the shoulder with direct angles. */
+export function solveBackArm(shoulder: Vec, a: BackArmAngles): BackArmPoints {
+  const u = dirVec(a.upperArm, LEN.upperArm);
+  const elbowB = { x: shoulder.x + u.x, y: shoulder.y + u.y };
+  const fo = dirVec(a.foreArm, LEN.foreArm);
+  const wristB = { x: elbowB.x + fo.x, y: elbowB.y + fo.y };
+  return { elbowB, wristB };
+}
+
+export function lerpBackLeg(a: BackLegAngles, b: BackLegAngles, t: number): BackLegAngles {
+  return { thigh: lerp(a.thigh, b.thigh, t), shank: lerp(a.shank, b.shank, t), foot: lerp(a.foot, b.foot, t) };
+}
+
+export function lerpBackArm(a: BackArmAngles, b: BackArmAngles, t: number): BackArmAngles {
+  return { upperArm: lerp(a.upperArm, b.upperArm, t), foreArm: lerp(a.foreArm, b.foreArm, t) };
+}
+
+function cursor(count: number, u: number): { i: number; f: number } {
+  const c = Math.min(1, Math.max(0, u));
+  const span = c * (count - 1);
+  const i = Math.min(Math.floor(span), count - 2);
+  return { i, f: span - i };
+}
+
+export function interpolateBackLeg(frames: BackLegAngles[], u: number): BackLegAngles {
+  if (frames.length === 1) return frames[0]!;
+  const { i, f } = cursor(frames.length, u);
+  return lerpBackLeg(frames[i]!, frames[i + 1]!, f);
+}
+
+export function interpolateBackArm(frames: BackArmAngles[], u: number): BackArmAngles {
+  if (frames.length === 1) return frames[0]!;
+  const { i, f } = cursor(frames.length, u);
+  return lerpBackArm(frames[i]!, frames[i + 1]!, f);
+}
+
 /** Interpolate angle sets across an ordered keyframe list at u in [0,1]. */
 export function interpolateAngles(keyframes: Keyframe[], u: number): Angles {
   if (keyframes.length === 1) return keyframes[0]!.angles;
@@ -98,18 +175,20 @@ export function computeFitTransform(
   rootNode: NodeId,
   box: { x: number; y: number; w: number; h: number },
   pad = 0.12,
+  extra?: (index: number, nodes: Record<NodeId, Vec>) => Vec[],
 ): FitTransform {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const kf of keyframes) {
+  const eat = (p: Vec) => {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  };
+  keyframes.forEach((kf, i) => {
     const pts = solveFK(kf.angles, rootNode);
-    for (const id in pts) {
-      const p = pts[id as NodeId];
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
-    }
-  }
+    for (const id in pts) eat(pts[id as NodeId]);
+    if (extra) for (const p of extra(i, pts)) eat(p);
+  });
   const bw = maxX - minX || 1;
   const bh = maxY - minY || 1;
   const padX = box.w * pad;

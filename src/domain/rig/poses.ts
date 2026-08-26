@@ -225,4 +225,63 @@ export const POSES: Partial<Record<string, Pose>> = {
       { angles: { foot: 58, shank: 66, thigh: 60, torso: 120, neckhead: 170, upperArm: 150, foreArm: 212 } },
     ],
   },
+
+  // --- lunges (independent back leg, v1.1) --------------------------------
+  'reverse-lunge': {
+    rootNode: 'ankle',
+    phases: ['STAND', 'LUNGE'],
+    primaryMuscles: ['thigh'],
+    secondaryMuscles: ['torso'],
+    periodMs: 2600,
+    keyframes: [
+      { angles: { foot: -85, shank: 4, thigh: 2, torso: 6, neckhead: 2, upperArm: 178, foreArm: 178 } },
+      { angles: { foot: -85, shank: 14, thigh: -16, torso: 10, neckhead: 6, upperArm: 150, foreArm: 120 } },
+    ],
+    backLeg: [
+      { thigh: 178, shank: 180, foot: 200 },
+      { thigh: 150, shank: 200, foot: 230 },
+    ],
+    backArm: [
+      { upperArm: 178, foreArm: 178 },
+      { upperArm: 210, foreArm: 230 },
+    ],
+  },
+  'forward-lunge': {
+    rootNode: 'ankle',
+    phases: ['STAND', 'LUNGE'],
+    primaryMuscles: ['thigh'],
+    secondaryMuscles: ['torso'],
+    periodMs: 2600,
+    keyframes: [
+      { angles: { foot: -85, shank: 4, thigh: 2, torso: 6, neckhead: 2, upperArm: 178, foreArm: 178 } },
+      { angles: { foot: -85, shank: 20, thigh: -24, torso: 8, neckhead: 4, upperArm: 150, foreArm: 120 } },
+    ],
+    backLeg: [
+      { thigh: 178, shank: 180, foot: 200 },
+      { thigh: 150, shank: 205, foot: 235 },
+    ],
+    backArm: [
+      { upperArm: 178, foreArm: 178 },
+      { upperArm: 150, foreArm: 120 },
+    ],
+  },
+  'split-squat': {
+    rootNode: 'ankle',
+    phases: ['TOP', 'BOTTOM'],
+    primaryMuscles: ['thigh'],
+    secondaryMuscles: ['torso'],
+    periodMs: 2800,
+    keyframes: [
+      { angles: { foot: -85, shank: 8, thigh: -8, torso: 6, neckhead: 2, upperArm: 150, foreArm: 120 } },
+      { angles: { foot: -85, shank: 18, thigh: -24, torso: 8, neckhead: 4, upperArm: 150, foreArm: 120 } },
+    ],
+    backLeg: [
+      { thigh: 158, shank: 200, foot: 228 },
+      { thigh: 150, shank: 210, foot: 236 },
+    ],
+    backArm: [
+      { upperArm: 210, foreArm: 230 },
+      { upperArm: 210, foreArm: 230 },
+    ],
+  },
 };

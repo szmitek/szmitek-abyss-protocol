@@ -40,4 +40,21 @@ export interface Pose {
   primaryMuscles: BoneId[];
   secondaryMuscles?: BoneId[];
   periodMs: number;
+  // Optional independent back limbs for split stances / lunges.
+  // Angles are DIRECT chain directions (hip->knee->ankle->toe and
+  // shoulder->elbow->wrist): 0 points up the screen, 180 straight down,
+  // +tilts forward (+x). One entry per keyframe, parallel to `keyframes`.
+  backLeg?: BackLegAngles[];
+  backArm?: BackArmAngles[];
+}
+
+export interface BackLegAngles {
+  thigh: number;
+  shank: number;
+  foot: number;
+}
+
+export interface BackArmAngles {
+  upperArm: number;
+  foreArm: number;
 }

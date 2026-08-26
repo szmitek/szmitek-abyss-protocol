@@ -6,7 +6,11 @@ import {
   applyTransform,
   computeFitTransform,
   interpolateAngles,
+  interpolateBackArm,
+  interpolateBackLeg,
   pingPongEase,
+  solveBackArm,
+  solveBackLeg,
   solveFK,
 } from '../../domain/rig/kinematics.ts';
 import type { BoneId, Pose, Vec } from '../../domain/rig/types.ts';
@@ -17,6 +21,7 @@ const BOX = { x: 0, y: 0, w: VIEW.w, h: VIEW.h };
 
 const MUSCLE = '#2AA8FF';
 const BASE = '#b7c2cd';
+const FAR = '#6b7784';
 const LIGHT = '#dae4ec';
 const RIM = '#e8f2fa';
 const LINE = 'rgba(58,70,86,0.5)';
@@ -63,7 +68,21 @@ function offX(p: Vec, dx: number): Vec {
 
 export function ExerciseMotion({ pose, paused = false }: { pose: Pose; paused?: boolean }) {
   const transform = useMemo(
-    () => computeFitTransform(pose.keyframes, pose.rootNode, BOX, 0.14),
+    () =>
+      computeFitTransform(pose.keyframes, pose.rootNode, BOX, 0.14, (i, pts) => {
+        const ex: Vec[] = [];
+        const bl = pose.backLeg?.[i];
+        if (bl) {
+          const b = solveBackLeg(pts.hip, bl);
+          ex.push(b.kneeB, b.ankleB, b.toeB);
+        }
+        const ba = pose.backArm?.[i];
+        if (ba) {
+          const a = solveBackArm(pts.shoulder, ba);
+          ex.push(a.elbowB, a.wristB);
+        }
+        return ex;
+      }),
     [pose],
   );
   const [u, setU] = useState(0);
@@ -95,6 +114,25 @@ export function ExerciseMotion({ pose, paused = false }: { pose: Pose; paused?: 
     return out;
   }, [pose, u, transform]);
 
+  const back = useMemo(() => {
+    if (!pose.backLeg && !pose.backArm) return null;
+    const angles = interpolateAngles(pose.keyframes, u);
+    const raw = solveFK(angles, pose.rootNode);
+    const res: { kneeB?: Vec; ankleB?: Vec; toeB?: Vec; elbowB?: Vec; wristB?: Vec } = {};
+    if (pose.backLeg) {
+      const b = solveBackLeg(raw.hip, interpolateBackLeg(pose.backLeg, u));
+      res.kneeB = applyTransform(b.kneeB, transform);
+      res.ankleB = applyTransform(b.ankleB, transform);
+      res.toeB = applyTransform(b.toeB, transform);
+    }
+    if (pose.backArm) {
+      const a = solveBackArm(raw.shoulder, interpolateBackArm(pose.backArm, u));
+      res.elbowB = applyTransform(a.elbowB, transform);
+      res.wristB = applyTransform(a.wristB, transform);
+    }
+    return res;
+  }, [pose, u, transform]);
+
   const primarySet = new Set(pose.primaryMuscles);
   const secondarySet = new Set(pose.secondaryMuscles ?? []);
   const primOpacity = 0.2 + 0.55 * u;
@@ -123,12 +161,30 @@ export function ExerciseMotion({ pose, paused = false }: { pose: Pose; paused?: 
       </View>
 
       <Svg width="100%" height={VIEW.h} viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}>
-        {/* far side, dimmed, for depth */}
-        <Path d={capsule(offX(ankle, dx), offX(knee, dx), 6, 9, 3, 1)} fill="#5a6672" opacity={0.4} />
-        <Path d={capsule(offX(knee, dx), offX(hip, dx), 9, 13, 5, 2)} fill="#5a6672" opacity={0.4} />
-        <Path d={capsule(offX(shoulder, dx), offX(elbow, dx), 8, 6, 2, 2)} fill="#5a6672" opacity={0.4} />
-        <Path d={capsule(offX(elbow, dx), offX(wrist, dx), 6, 4, 2, 1)} fill="#5a6672" opacity={0.4} />
-
+        {/* back limbs — real chain when the pose defines them, else a dimmed offset copy for depth */}
+        {back?.kneeB && back.ankleB && back.toeB ? (
+          <>
+            <Path d={capsule(hip, back.kneeB, 8, 11, 4, 2)} fill={FAR} opacity={0.6} />
+            <Path d={capsule(back.kneeB, back.ankleB, 6, 8, 3, 1)} fill={FAR} opacity={0.6} />
+            <Path d={capsule(back.ankleB, back.toeB, 4, 5, 1, 2)} fill={FAR} opacity={0.6} />
+          </>
+        ) : (
+          <>
+            <Path d={capsule(offX(ankle, dx), offX(knee, dx), 6, 9, 3, 1)} fill={FAR} opacity={0.4} />
+            <Path d={capsule(offX(knee, dx), offX(hip, dx), 9, 13, 5, 2)} fill={FAR} opacity={0.4} />
+          </>
+        )}
+        {back?.elbowB && back.wristB ? (
+          <>
+            <Path d={capsule(shoulder, back.elbowB, 8, 6, 2, 2)} fill={FAR} opacity={0.6} />
+            <Path d={capsule(back.elbowB, back.wristB, 6, 4, 2, 1)} fill={FAR} opacity={0.6} />
+          </>
+        ) : (
+          <>
+            <Path d={capsule(offX(shoulder, dx), offX(elbow, dx), 8, 6, 2, 2)} fill={FAR} opacity={0.4} />
+            <Path d={capsule(offX(elbow, dx), offX(wrist, dx), 6, 4, 2, 1)} fill={FAR} opacity={0.4} />
+          </>
+        )}
         {/* foot */}
         <Path
           d={capsule(toe, ankle, 4, 5, 1, 1)}
