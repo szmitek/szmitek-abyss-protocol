@@ -5,6 +5,7 @@ import { generateWorkout } from '../src/domain/generator.ts';
 import { createProfile, restoreExcludedExercises, updateProfileSettings } from '../src/domain/profile.ts';
 import { applyCompletedWorkout, attributeValueFromXp, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, levelFromXp, rankTrialEligibility, totalAttributeXpForValue, totalXpForLevel } from '../src/domain/progression.ts';
 import { calculateRecovery } from '../src/domain/recovery.ts';
+import { createDailyReadiness, recordDailyReadiness } from '../src/domain/readiness.ts';
 import { EQUIPMENT, GOALS, MUSCLE_GROUPS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
 
 const base = createProfile({
@@ -78,7 +79,8 @@ test('recovery decreases after load and returns after 72 hours', () => {
 });
 
 test('rank requires readiness and a completed trial', () => {
-  const ready: UserProfile = { ...base, level: 5, totalWorkouts: 12, streak: 3, activeTrainingWeeks: ['w1', 'w2', 'w3', 'w4'] };
+  const readyBase: UserProfile = { ...base, level: 5, totalWorkouts: 12, streak: 3, activeTrainingWeeks: ['w1', 'w2', 'w3', 'w4'] };
+  const ready = recordDailyReadiness(readyBase, createDailyReadiness({ energy: 'stable', sleep: 'good', soreness: 'none', soreMuscles: [], painOrWarning: false }));
   assert.equal(rankTrialEligibility(ready).eligible, true);
   const promoted = completeRankTrial(ready);
   assert.equal(promoted.rank, 'D');

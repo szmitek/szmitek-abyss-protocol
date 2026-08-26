@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { rankTrialEligibility } from '../../domain/progression.ts';
 import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
+import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
 import type { AppSnapshot } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
@@ -12,24 +13,34 @@ interface QuestsScreenProps {
   snapshot: AppSnapshot;
   onBeginDaily: () => void;
   onBeginRankTrial: () => void;
+  onOpenReadiness: () => void;
   onOpenMovementCalibration: () => void;
 }
 
-export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenMovementCalibration }: QuestsScreenProps) {
+export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenReadiness, onOpenMovementCalibration }: QuestsScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const trial = rankTrialEligibility(profile);
   const recoveryDay = quest?.plan.kind === 'recovery';
   const safetyHold = quest?.plan.kind === 'safety-hold';
+  const readiness = quest ? readinessForDate(profile, quest.dateKey) : null;
+  const readinessRequired = Boolean(quest && planRequiresDailyReadiness(quest.plan) && !readiness);
+  const readinessHold = quest?.plan.readinessBand === 'hold';
+  const readinessRecovery = quest?.plan.readinessBand === 'recovery';
   const reassessmentDue = quest?.plan.kind === 'reassessment';
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   return (
     <Screen eyebrow="MISSION REGISTRY" title="Quests" subtitle="Clear today's protocol or prepare for ascension.">
-      <SystemPanel eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? 'RECOVERY DAY' : 'DAILY QUEST'} title={quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : reassessmentDue ? 'purple' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
-        {safetyHold ? (
+      <SystemPanel eyebrow={readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'RECOVERY DAY' : 'DAILY QUEST'} title={readinessRequired ? 'Sync Player status' : quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : reassessmentDue ? 'purple' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
+        {readinessRequired ? (
+          <View style={[styles.recoveryMessage, styles.readinessMessage]}>
+            <Text style={[styles.recoveryMark, styles.readinessMark]}>◇</Text>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>PLAYER SIGNAL NOT SYNCED</Text><Text style={styles.recoveryText}>Complete the short Daily Readiness Scan before the System reveals and opens today's protocol.</Text></View>
+          </View>
+        ) : safetyHold ? (
           <View style={[styles.recoveryMessage, styles.holdMessage]}>
             <Text style={[styles.recoveryMark, styles.holdMark]}>!</Text>
-            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>UNRESOLVED SIGNAL DETECTED</Text><Text style={styles.recoveryText}>The System will not generate an unsupervised workout while a safety hold is active. Review Player Scan or Movement Analysis from Status.</Text></View>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>UNRESOLVED SIGNAL DETECTED</Text><Text style={styles.recoveryText}>{readinessHold ? 'Today\'s readiness report contains pain or an unusual symptom. The unsupervised protocol is sealed.' : 'The System will not generate an unsupervised workout while a safety hold is active. Review Player Scan or Movement Analysis from Status.'}</Text></View>
           </View>
         ) : reassessmentDue ? (
           <View style={[styles.recoveryMessage, styles.reassessmentMessage]}>
@@ -39,7 +50,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenM
         ) : recoveryDay ? (
           <View style={styles.recoveryMessage}>
             <Text style={styles.recoveryMark}>◇</Text>
-            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>RECOVERY DIRECTIVE ACTIVE</Text><Text style={styles.recoveryText}>No workout is required today. Your next training protocol is scheduled for {nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }) : 'the next training day'}.</Text></View>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>{readinessRecovery ? 'READINESS RECOVERY ACTIVE' : 'RECOVERY DIRECTIVE ACTIVE'}</Text><Text style={styles.recoveryText}>{readinessRecovery ? 'Today\'s combined signal replaced the planned workout with protected recovery.' : `No workout is required today. Your next training protocol is scheduled for ${nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }) : 'the next training day'}.`}</Text></View>
           </View>
         ) : quest?.plan.exercises.map((item, index) => (
           <View key={item.exercise.id} style={styles.sequence}>
@@ -49,9 +60,9 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenM
           </View>
         ))}
         <GlowButton
-          label={safetyHold ? 'PROTOCOL SEALED' : reassessmentDue ? 'BEGIN PLAYER RE-SCAN' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
-          disabled={quest?.status === 'complete' && !reassessmentDue}
-          onPress={reassessmentDue ? onOpenMovementCalibration : onBeginDaily}
+          label={readinessRequired ? 'SYNC DAILY READINESS' : readinessHold || readinessRecovery ? 'REVIEW DAILY READINESS' : safetyHold ? 'PROTOCOL SEALED' : reassessmentDue ? 'BEGIN PLAYER RE-SCAN' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
+          disabled={!readinessRequired && !readinessHold && !readinessRecovery && quest?.status === 'complete' && !reassessmentDue}
+          onPress={readinessRequired || readinessHold || readinessRecovery ? onOpenReadiness : reassessmentDue ? onOpenMovementCalibration : onBeginDaily}
           style={styles.button}
         />
       </SystemPanel>
@@ -65,6 +76,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenM
           </View>
         </View>
         {trial.reasons.map((reason) => <View key={reason} style={styles.requirement}><Text style={styles.requirementMark}>◇</Text><Text style={styles.requirementText}>{reason}</Text></View>)}
+        {trial.target && trial.reasons.length === 1 && trial.reasons[0]?.includes('Daily Readiness') ? <GlowButton label="SYNC DAILY READINESS" variant="secondary" onPress={onOpenReadiness} style={styles.button} /> : null}
         <GlowButton label={trial.eligible ? 'ENTER RANK TRIAL' : 'TRIAL LOCKED'} variant={trial.eligible ? 'danger' : 'secondary'} disabled={!trial.eligible} onPress={onBeginRankTrial} style={styles.button} />
       </SystemPanel>
 
@@ -95,6 +107,8 @@ const styles = StyleSheet.create({
   holdMark: { color: colors.danger, fontWeight: '900', textAlign: 'center', width: 30 },
   reassessmentMessage: { borderColor: 'rgba(106,92,255,0.3)', backgroundColor: 'rgba(106,92,255,0.07)' },
   reassessmentMark: { color: colors.purple },
+  readinessMessage: { borderColor: colors.lineStrong, backgroundColor: 'rgba(41,182,255,0.07)' },
+  readinessMark: { color: colors.primary },
   trialHero: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
   trialRune: { color: colors.danger, fontSize: 44, marginRight: spacing.lg, textShadowColor: colors.danger, textShadowRadius: 14 },
   trialCopy: { flex: 1 },

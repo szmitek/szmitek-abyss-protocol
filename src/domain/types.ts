@@ -38,6 +38,10 @@ export type MovementCheck = (typeof MOVEMENT_CHECKS)[number];
 export type MovementRating = 'clear' | 'limited' | 'pain';
 export type MovementAssessmentKind = 'baseline' | 'reassessment';
 export type TrainingArcPhase = 'calibration' | 'foundation' | 'overload' | 'consolidation';
+export type ReadinessEnergy = 'low' | 'stable' | 'high';
+export type ReadinessSleep = 'poor' | 'fair' | 'good';
+export type ReadinessSoreness = 'none' | 'mild' | 'high';
+export type ReadinessBand = 'normal' | 'reduced' | 'recovery' | 'hold';
 
 export const POSTURE_VIEWS = ['front', 'side', 'back'] as const;
 export type PostureView = (typeof POSTURE_VIEWS)[number];
@@ -100,6 +104,7 @@ export interface WorkoutPlan {
   exercises: ExercisePrescription[];
   rewardXp: number;
   trainingArc?: TrainingArcContext;
+  readinessBand?: ReadinessBand;
 }
 
 export interface ExerciseResult {
@@ -170,6 +175,26 @@ export interface PostureScan {
   photos: PosturePhotoMap;
 }
 
+export interface DailyReadiness {
+  id: string;
+  date: string;
+  dateKey: string;
+  energy: ReadinessEnergy;
+  sleep: ReadinessSleep;
+  soreness: ReadinessSoreness;
+  soreMuscles: MuscleGroup[];
+  painOrWarning: boolean;
+  band: ReadinessBand;
+}
+
+export interface DailyReadinessInput {
+  energy: ReadinessEnergy;
+  sleep: ReadinessSleep;
+  soreness: ReadinessSoreness;
+  soreMuscles: MuscleGroup[];
+  painOrWarning: boolean;
+}
+
 export interface WorkoutHistoryEntry {
   id: string;
   date: string;
@@ -196,6 +221,7 @@ export interface UserProfile extends StatBlock {
   movementAssessments: MovementAssessment[];
   trainingArcs: TrainingArc[];
   postureScans: PostureScan[];
+  readinessLog: DailyReadiness[];
   availableEquipment: Equipment[];
   excludedExercises: string[];
   goal: Goal;
@@ -239,7 +265,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 5;
+  schemaVersion: 6;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   dailyQuest: DailyQuest | null;
