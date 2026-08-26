@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { calculateRecovery } from '../../domain/recovery.ts';
+import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from '../../domain/calibration.ts';
 import { levelProgress } from '../../domain/progression.ts';
 import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
 import type { AppSnapshot, StatKey } from '../../domain/types.ts';
@@ -14,6 +15,7 @@ interface DashboardScreenProps {
   snapshot: AppSnapshot;
   onBeginQuest: () => void;
   onOpenSystemScan: () => void;
+  onOpenMovementCalibration: () => void;
 }
 
 const STATS: { key: StatKey; code: string }[] = [
@@ -24,13 +26,15 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan, onOpenMovementCalibration }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
   const recovery = calculateRecovery(snapshot.history);
   const recoveryDay = quest?.plan.kind === 'recovery';
   const safetyHold = quest?.plan.kind === 'safety-hold';
+  const movementAssessment = latestMovementAssessment(profile);
+  const movementPain = hasMovementPain(profile);
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   const recoveryHighlights = Object.entries(recovery).filter(([group]) => ['chest', 'core', 'quads'].includes(group));
 
@@ -62,6 +66,13 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan }: Da
         </SystemPanel>
       ) : null}
 
+      {profile.healthProfile.scanCompleted && !movementAssessment && profile.healthProfile.safetySignals.length === 0 ? (
+        <SystemPanel eyebrow="MOVEMENT ANALYSIS REQUIRED" title="Establish Player baseline" accent="purple">
+          <Text style={styles.scanCopy}>Complete five controlled movement checks. Your first Training Arc will use the result to cap difficulty and bias corrective work.</Text>
+          <GlowButton label="START PLAYER CALIBRATION" variant="secondary" onPress={onOpenMovementCalibration} style={styles.scanButton} />
+        </SystemPanel>
+      ) : null}
+
       <SystemPanel
         eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : recoveryDay ? 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
         title={quest?.plan.title ?? 'SCANNING...'}
@@ -72,8 +83,8 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan }: Da
             <Text style={[styles.recoveryDirectiveMark, styles.holdMark]}>!</Text>
             <View style={styles.recoveryDirectiveCopy}>
               <Text style={styles.recoveryDirectiveTitle}>PLAYER CLEARANCE REQUIRED</Text>
-              <Text style={styles.recoveryDirectiveText}>Review unresolved warning signals in Player Scan before returning to unsupervised training.</Text>
-              <GlowButton label="REVIEW PLAYER SCAN" variant="secondary" onPress={onOpenSystemScan} style={styles.scanButton} />
+              <Text style={styles.recoveryDirectiveText}>{movementPain ? 'Pain was reported during Movement Analysis. Repeat the check only when comfortable or review the signal in Player Scan.' : 'Review unresolved warning signals in Player Scan before returning to unsupervised training.'}</Text>
+              <GlowButton label={movementPain ? 'REVIEW MOVEMENT ANALYSIS' : 'REVIEW PLAYER SCAN'} variant="secondary" onPress={movementPain ? onOpenMovementCalibration : onOpenSystemScan} style={styles.scanButton} />
             </View>
           </View>
         ) : recoveryDay ? (
@@ -109,6 +120,12 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan }: Da
           </>
         ) : null}
       </SystemPanel>
+
+      {movementAssessment && !movementPain ? (
+        <SystemPanel eyebrow="MOVEMENT ANALYSIS" title="Calibration linked" accent="purple" trailing={<Text style={styles.questStatus}>{limitedMovementChecks(profile).length} LIMITS</Text>}>
+          <Text style={styles.scanCopy}>{limitedMovementChecks(profile).length > 0 ? 'Limited checks are actively reducing conflicting difficulty and prioritizing foundation movements.' : 'All five baseline checks are clear. The System can progress within your current level and recovery limits.'}</Text>
+        </SystemPanel>
+      ) : null}
 
       <SystemPanel eyebrow="RECOVERY SCAN" title="Muscle readiness">
         <View style={styles.recoveryList}>

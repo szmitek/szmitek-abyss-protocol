@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { attributeProgress, levelProgress } from '../../domain/progression.ts';
+import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from '../../domain/calibration.ts';
 import type { StatKey, UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -16,9 +17,12 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onRestoreExercises: () => void }) {
+export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onRestoreExercises: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
+  const movementAssessment = latestMovementAssessment(profile);
+  const movementPain = hasMovementPain(profile);
+  const limitedChecks = limitedMovementChecks(profile);
   return (
     <Screen eyebrow="CHARACTER DATA" title="Status" subtitle="Parameters reflect completed work. No points are assigned arbitrarily.">
       <SystemPanel accent="purple">
@@ -58,6 +62,16 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onResto
         </View>
         <Text style={styles.settingsCopy}>{profile.healthProfile.safetySignals.length > 0 ? 'Training is sealed until unresolved warning signals are reviewed.' : 'The generator uses these signals as hard safety filters and calibration priorities.'}</Text>
         <GlowButton label={profile.healthProfile.scanCompleted ? 'RECALIBRATE PLAYER SCAN' : 'START PLAYER SCAN'} variant="secondary" onPress={onOpenSystemScan} style={styles.settingsButton} />
+      </SystemPanel>
+
+      <SystemPanel eyebrow="MOVEMENT ANALYSIS" title={movementAssessment ? 'Movement baseline linked' : 'Baseline incomplete'} accent={movementPain ? 'danger' : 'purple'}>
+        <View style={styles.scanMeta}>
+          <ScanMetric value={movementAssessment ? 5 : 0} label="CHECKS LOGGED" />
+          <ScanMetric value={limitedChecks.length} label="LIMITED" />
+          <ScanMetric value={movementPain ? 1 : 0} label="PAIN HOLD" danger={movementPain} />
+        </View>
+        <Text style={styles.settingsCopy}>{movementPain ? 'A pain response seals unsupervised training. It is a safety signal, not a diagnosis.' : limitedChecks.length > 0 ? 'The generator caps conflicting movements and inserts foundation work for limited checks.' : movementAssessment ? 'Current baseline allows normal progression within recovery and workload limits.' : 'Five submaximal checks give the System a safer starting point than experience level alone.'}</Text>
+        <GlowButton label={movementAssessment ? 'RECALIBRATE MOVEMENT' : 'START MOVEMENT ANALYSIS'} variant="secondary" onPress={onOpenMovementCalibration} style={styles.settingsButton} />
       </SystemPanel>
 
       <SystemPanel eyebrow="PROTOCOL SETTINGS" title="System calibration">

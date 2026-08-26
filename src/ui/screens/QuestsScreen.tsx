@@ -27,7 +27,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
         {safetyHold ? (
           <View style={[styles.recoveryMessage, styles.holdMessage]}>
             <Text style={[styles.recoveryMark, styles.holdMark]}>!</Text>
-            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>UNRESOLVED SIGNAL DETECTED</Text><Text style={styles.recoveryText}>The System will not generate an unsupervised workout while a safety hold is active. Review Player Scan from Status.</Text></View>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>UNRESOLVED SIGNAL DETECTED</Text><Text style={styles.recoveryText}>The System will not generate an unsupervised workout while a safety hold is active. Review Player Scan or Movement Analysis from Status.</Text></View>
           </View>
         ) : recoveryDay ? (
           <View style={styles.recoveryMessage}>
