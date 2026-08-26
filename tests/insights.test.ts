@@ -17,6 +17,7 @@ function historyEntry(id: string, dateKey: string, exerciseId: string, target: n
     perceivedDifficulty: 'perfect',
     results: [{ exerciseId, completedSets: 3, targetPerSet: target, completedVolume: volume }],
     xpEarned: 100,
+    attributeXpEarned: { strength: 12, endurance: 12, agility: 0, vitality: 0, mobility: 0 },
     statGains: { strength: 1, endurance: 1, agility: 0, vitality: 0, mobility: 0 },
   };
 }

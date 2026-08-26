@@ -57,7 +57,7 @@ function SummaryMetric({ value, label }: { value: string | number; label: string
 }
 
 function HistoryRow({ workout, expanded, onToggle }: { workout: WorkoutHistoryEntry; expanded: boolean; onToggle: () => void }) {
-  const statGains = Object.entries(workout.statGains).filter(([, gain]) => gain > 0);
+  const attributeXp = Object.entries(workout.attributeXpEarned).filter(([, gain]) => gain > 0);
   return (
     <View style={styles.historyEntry}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={onToggle} style={styles.historyRow}>
@@ -76,7 +76,7 @@ function HistoryRow({ workout, expanded, onToggle }: { workout: WorkoutHistoryEn
               </View>
             );
           })}
-          {statGains.length > 0 ? <View style={styles.gainsRow}>{statGains.map(([stat, gain]) => <Text key={stat} style={styles.gain}>+{gain} {stat.slice(0, 3).toUpperCase()}</Text>)}</View> : null}
+          {attributeXp.length > 0 ? <View style={styles.gainsRow}>{attributeXp.map(([stat, gain]) => <Text key={stat} style={styles.gain}>+{gain} {stat.slice(0, 3).toUpperCase()} AP</Text>)}</View> : null}
         </View>
       ) : null}
     </View>

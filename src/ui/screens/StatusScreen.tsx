@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { levelProgress } from '../../domain/progression.ts';
+import { attributeProgress, levelProgress } from '../../domain/progression.ts';
 import type { StatKey, UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -24,7 +24,7 @@ export function StatusScreen({ profile, onEditProfile, onRestoreExercises }: { p
       <SystemPanel accent="purple">
         <View style={styles.identity}>
           <View style={styles.avatar}><Text style={styles.avatarRune}>◇</Text></View>
-          <View style={styles.identityCopy}><Text style={styles.designation}>AWAKENED HUNTER</Text><Text style={styles.level}>LEVEL {profile.level}</Text><Text style={styles.total}>TOTAL ATTRIBUTE POWER {totalStats}</Text></View>
+          <View style={styles.identityCopy}><Text style={styles.designation}>SYSTEM PLAYER</Text><Text style={styles.level}>LEVEL {profile.level}</Text><Text style={styles.total}>TOTAL ATTRIBUTE POWER {totalStats}</Text></View>
           <View style={styles.rank}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rankValue}>{profile.rank}</Text></View>
         </View>
         <View style={styles.xpRow}><Text style={styles.xpLabel}>LEVEL PROGRESS</Text><Text style={styles.xpValue}>{xp.current} / {xp.required} XP</Text></View>
@@ -36,7 +36,7 @@ export function StatusScreen({ profile, onEditProfile, onRestoreExercises }: { p
           {STATS.map(({ key, code, label }) => (
             <View key={key} style={styles.attribute}>
               <View style={styles.codeBox}><Text style={styles.code}>{code}</Text></View>
-              <View style={styles.attributeCopy}><Text style={styles.attributeLabel}>{label}</Text><ProgressBar progress={Math.min(1, profile[key] / Math.max(10, totalStats / 2))} /></View>
+              <View style={styles.attributeCopy}><View style={styles.attributeHeader}><Text style={styles.attributeLabel}>{label}</Text><Text style={styles.attributeXp}>{attributeProgress(profile, key).current} / {attributeProgress(profile, key).required} AP</Text></View><ProgressBar progress={attributeProgress(profile, key).ratio} /></View>
               <Text style={styles.attributeValue}>{Math.floor(profile[key])}</Text>
             </View>
           ))}
@@ -84,7 +84,9 @@ const styles = StyleSheet.create({
   codeBox: { width: 42, height: 42, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(41,182,255,0.08)', borderWidth: 1, borderColor: colors.line },
   code: { color: colors.primary, fontSize: 11, fontWeight: '900' },
   attributeCopy: { flex: 1, marginHorizontal: spacing.md, gap: 7 },
+  attributeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   attributeLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
+  attributeXp: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
   attributeValue: { color: colors.text, fontSize: 23, fontWeight: '900', width: 38, textAlign: 'right' },
   metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   metric: { width: '47%', minHeight: 104, padding: spacing.lg, justifyContent: 'center', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(147,164,195,0.14)', backgroundColor: 'rgba(14,19,32,0.72)' },

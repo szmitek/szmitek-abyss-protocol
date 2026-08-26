@@ -20,7 +20,7 @@ export function CompletionReportScreen({ report, onContinue }: { report: Complet
   const translateY = useRef(new Animated.Value(18)).current;
   const levelUp = report.levelAfter > report.levelBefore;
   const rankUp = report.rankAfter !== report.rankBefore;
-  const gains = STAT_KEYS.filter((key) => report.statGains[key] > 0);
+  const gains = STAT_KEYS.filter((key) => report.attributeXpEarned[key] > 0);
 
   useEffect(() => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
@@ -57,10 +57,10 @@ export function CompletionReportScreen({ report, onContinue }: { report: Complet
             <Text style={styles.rewardValue}>+{report.xpEarned} XP</Text>
           </View>
 
-          <Text style={styles.sectionLabel}>ATTRIBUTE DEVELOPMENT</Text>
+          <Text style={styles.sectionLabel}>ATTRIBUTE EXPERIENCE</Text>
           <View style={styles.gainsGrid}>
             {gains.length > 0 ? gains.map((key) => (
-              <View key={key} style={styles.gainCard}><Text style={styles.gainCode}>{STAT_CODES[key]}</Text><Text style={styles.gainValue}>+{report.statGains[key]}</Text></View>
+              <View key={key} style={styles.gainCard}><Text style={styles.gainCode}>{STAT_CODES[key]}{report.statGains[key] > 0 ? ` // +${report.statGains[key]} POINT` : ''}</Text><Text style={styles.gainValue}>+{report.attributeXpEarned[key]} AP</Text></View>
             )) : <Text style={styles.noGains}>No attribute increase in this protocol.</Text>}
           </View>
 
