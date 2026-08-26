@@ -17,7 +17,7 @@ import { colors, radius, spacing } from '../theme.ts';
 
 interface SystemScanScreenProps {
   initialProfile: PlayerHealthProfile;
-  onCancel?: () => void;
+  onCancel?: (() => void) | undefined;
   onSave: (profile: PlayerHealthProfile) => void;
 }
 
