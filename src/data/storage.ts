@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { INITIAL_SNAPSHOT } from '../domain/profile.ts';
+import { EMPTY_HEALTH_PROFILE, INITIAL_SNAPSHOT } from '../domain/profile.ts';
 import { totalAttributeXpForValue, trainingWeekKey } from '../domain/progression.ts';
 import { STAT_KEYS, type AppSnapshot, type StatBlock, type UserProfile, type WorkoutHistoryEntry } from '../domain/types.ts';
 
@@ -9,14 +9,14 @@ const EMPTY_STATS: StatBlock = { strength: 0, endurance: 0, agility: 0, vitality
 type StoredSnapshot = Omit<Partial<AppSnapshot>, 'schemaVersion'> & { schemaVersion?: number };
 
 function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): UserProfile {
-  const legacy = profile as UserProfile & { attributeXp?: StatBlock; activeTrainingWeeks?: string[] };
+  const legacy = profile as UserProfile & { attributeXp?: StatBlock; activeTrainingWeeks?: string[]; healthProfile?: UserProfile['healthProfile'] };
   const attributeXp = legacy.attributeXp ?? { ...EMPTY_STATS };
   if (!legacy.attributeXp) {
     for (const key of STAT_KEYS) attributeXp[key] = totalAttributeXpForValue(profile[key]);
   }
   const activeTrainingWeeks = legacy.activeTrainingWeeks
     ?? [...new Set(history.filter((entry) => entry.completed).map((entry) => trainingWeekKey(entry.dateKey)))];
-  return { ...profile, attributeXp, activeTrainingWeeks };
+  return { ...profile, attributeXp, activeTrainingWeeks, healthProfile: legacy.healthProfile ?? { ...EMPTY_HEALTH_PROFILE } };
 }
 
 function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {

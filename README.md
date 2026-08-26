@@ -9,10 +9,12 @@ The visual language is an original dark-fantasy “System” interface. It inten
 - Five-step onboarding for goal, level, duration, weekly rhythm, and equipment.
 - 70+ equipment-free exercises with cues, muscle load, stat impact, and progression chains.
 - Deterministic workout generator with equipment as a hard constraint.
+- Local Player Scan for pain signals, posture priorities, known conditions, and unresolved safety holds.
+- Deterministic health constraints and posture-calibrated exercise selection.
 - Recovery-aware rotation and same-session monotony protection.
 - Progressive overload based on two successful exposures and user feedback.
 - Daily Quest, guided set flow, duration timers, recovery timer, and Quest Complete feedback.
-- XP, levels, evidence-based STR / END / AGI / VIT / MOB gains, safe streak handling, and E–S ranks.
+- XP, levels, threshold-based STR / END / AGI / VIT / MOB development, safe streak handling, and E–S ranks gated by active training weeks.
 - Rank Trial eligibility and playable rank-up protocol.
 - Persistent local profile and workout history through AsyncStorage.
 - Quality workflow for typecheck, lint, and domain tests.
@@ -47,7 +49,7 @@ Android may ask for permission to install an application from the browser or fil
 manager used to open the APK. Preview builds use Android's development signature
 and are intended only for testing outside Google Play.
 
-## Non-negotiable equipment invariant
+## Non-negotiable safety invariants
 
 Every generated exercise must satisfy:
 
@@ -58,6 +60,8 @@ exercise.requiredEquipment ⊆ user.availableEquipment
 `none` is normalized as the bodyweight capability. Selecting any real equipment adds it alongside `none`; selecting **No equipment** removes every other capability. The final plan is validated again after selection and throws instead of returning an unsafe plan if the invariant is ever violated.
 
 The permanent regression test generates 100 `none` workouts and checks every prescription.
+
+Player Scan pain signals are also deterministic constraints. Unresolved warning signals produce a zero-reward `SYSTEM SAFEGUARD` instead of an unsupervised workout. Free-text health notes never bypass either constraint.
 
 ## Architecture
 
@@ -78,8 +82,8 @@ More detail: [Architecture](docs/ARCHITECTURE.md), [Design system](docs/DESIGN_S
 
 ## Safety
 
-Abyss Protocol does not diagnose injuries or prescribe rehabilitation. Planned rest does not break a streak, “too hard” feedback reduces future targets, volume increases only after repeated success, and no penalty workout exists. Users should stop on pain, dizziness, or unusual shortness of breath and seek qualified medical advice when needed.
+Abyss Protocol does not diagnose injuries or replace a clinician. Player Scan observations calibrate or pause training; they are not diagnoses. Planned rest does not break a streak, “too hard” feedback reduces future targets, volume increases only after repeated success, and no penalty workout exists. Users should stop on pain, dizziness, chest discomfort, or unusual shortness of breath and seek qualified medical advice when needed.
 
 ## Roadmap boundary
 
-Cloud auth/sync, achievements, weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside the first MVP slice. The next product milestone is Supabase sync with row-level security and conflict-safe local-first history.
+Photo posture capture/analysis, cloud auth/sync, achievements, weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. The next personal-trainer milestone is a structured multi-week training block and reassessment flow; photo capture follows after its local privacy model is finalized.

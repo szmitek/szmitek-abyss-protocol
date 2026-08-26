@@ -13,6 +13,7 @@ import { colors, radius, spacing } from '../theme.ts';
 interface DashboardScreenProps {
   snapshot: AppSnapshot;
   onBeginQuest: () => void;
+  onOpenSystemScan: () => void;
 }
 
 const STATS: { key: StatKey; code: string }[] = [
@@ -23,12 +24,13 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
   const recovery = calculateRecovery(snapshot.history);
   const recoveryDay = quest?.plan.kind === 'recovery';
+  const safetyHold = quest?.plan.kind === 'safety-hold';
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   const recoveryHighlights = Object.entries(recovery).filter(([group]) => ['chest', 'core', 'quads'].includes(group));
 
@@ -36,7 +38,7 @@ export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps
     <Screen
       eyebrow="SYSTEM ONLINE"
       title="Welcome, Player"
-      subtitle={recoveryDay ? 'Scheduled recovery protects long-term progression.' : 'Your parameters are stable. One protocol awaits.'}
+      subtitle={safetyHold ? 'Safeguard active. Training remains sealed.' : recoveryDay ? 'Scheduled recovery protects long-term progression.' : 'Your parameters are stable. One protocol awaits.'}
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >
       <SystemPanel>
@@ -53,12 +55,28 @@ export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps
         ))}
       </View>
 
+      {!profile.healthProfile.scanCompleted ? (
+        <SystemPanel eyebrow="PLAYER SCAN REQUIRED" title="Complete System calibration" accent="purple">
+          <Text style={styles.scanCopy}>Register pain signals, posture priorities and known restrictions so generated protocols can adapt to you.</Text>
+          <GlowButton label="START PLAYER SCAN" variant="secondary" onPress={onOpenSystemScan} style={styles.scanButton} />
+        </SystemPanel>
+      ) : null}
+
       <SystemPanel
-        eyebrow={recoveryDay ? 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
+        eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : recoveryDay ? 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
         title={quest?.plan.title ?? 'SCANNING...'}
-        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete]}>● {recoveryDay ? 'RECOVERY' : quest?.status.toUpperCase()}</Text>}
+        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete, safetyHold && styles.holdStatus]}>● {safetyHold ? 'SEALED' : recoveryDay ? 'RECOVERY' : quest?.status.toUpperCase()}</Text>}
       >
-        {recoveryDay ? (
+        {safetyHold ? (
+          <View style={[styles.recoveryDirective, styles.holdDirective]}>
+            <Text style={[styles.recoveryDirectiveMark, styles.holdMark]}>!</Text>
+            <View style={styles.recoveryDirectiveCopy}>
+              <Text style={styles.recoveryDirectiveTitle}>PLAYER CLEARANCE REQUIRED</Text>
+              <Text style={styles.recoveryDirectiveText}>Review unresolved warning signals in Player Scan before returning to unsupervised training.</Text>
+              <GlowButton label="REVIEW PLAYER SCAN" variant="secondary" onPress={onOpenSystemScan} style={styles.scanButton} />
+            </View>
+          </View>
+        ) : recoveryDay ? (
           <View style={styles.recoveryDirective}>
             <Text style={styles.recoveryDirectiveMark}>◇</Text>
             <View style={styles.recoveryDirectiveCopy}>
@@ -132,11 +150,16 @@ const styles = StyleSheet.create({
   statValue: { color: colors.text, fontSize: 18, fontWeight: '900', marginTop: 4 },
   questStatus: { color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   complete: { color: colors.success },
+  holdStatus: { color: colors.danger },
+  scanCopy: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },
+  scanButton: { marginTop: spacing.md },
   recoveryDirective: { minHeight: 92, flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(85,230,177,0.2)', backgroundColor: 'rgba(85,230,177,0.05)' },
   recoveryDirectiveMark: { color: colors.success, fontSize: 34, marginRight: spacing.md },
   recoveryDirectiveCopy: { flex: 1 },
   recoveryDirectiveTitle: { color: colors.text, fontSize: 12, fontWeight: '900', letterSpacing: 0.8 },
   recoveryDirectiveText: { color: colors.textMuted, fontSize: 10, lineHeight: 16, marginTop: 5 },
+  holdDirective: { borderColor: 'rgba(226,61,87,0.28)', backgroundColor: 'rgba(226,61,87,0.06)' },
+  holdMark: { color: colors.danger, fontWeight: '900', width: 34, textAlign: 'center' },
   questMeta: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   meta: { flex: 1 },
   metaLabel: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 1.2 },

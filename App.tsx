@@ -13,6 +13,7 @@ import { ProgressScreen } from './src/ui/screens/ProgressScreen.tsx';
 import { QuestsScreen } from './src/ui/screens/QuestsScreen.tsx';
 import { CompletionReportScreen } from './src/ui/screens/CompletionReportScreen.tsx';
 import { StatusScreen } from './src/ui/screens/StatusScreen.tsx';
+import { SystemScanScreen } from './src/ui/screens/SystemScanScreen.tsx';
 import { WorkoutScreen } from './src/ui/screens/WorkoutScreen.tsx';
 import { colors } from './src/ui/theme.ts';
 
@@ -28,17 +29,18 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
+  const [systemScanEditing, setSystemScanEditing] = useState(false);
 
   if (!hydrated) {
     return <View style={styles.loading}><ActivityIndicator color={colors.primary} size="large" /><Text style={styles.loadingText}>INITIALIZING SYSTEM</Text></View>;
   }
 
   if (!snapshot.onboardingComplete || !snapshot.profile) {
-    return <OnboardingScreen onComplete={completeOnboarding} />;
+    return <OnboardingScreen onComplete={(answers) => { completeOnboarding(answers); setSystemScanEditing(true); }} />;
   }
 
   if (snapshot.activeWorkout) {
@@ -62,6 +64,21 @@ function SystemRoot() {
     );
   }
 
+  if (systemScanEditing) {
+    return (
+      <SystemBackground>
+        <SystemScanScreen
+          initialProfile={snapshot.profile.healthProfile}
+          onCancel={snapshot.profile.healthProfile.scanCompleted ? () => setSystemScanEditing(false) : undefined}
+          onSave={(healthProfile) => {
+            updateSystemScan(healthProfile);
+            setSystemScanEditing(false);
+          }}
+        />
+      </SystemBackground>
+    );
+  }
+
   const acceptDailyQuest = () => {
     setDailyBriefingOpen(false);
     beginDailyQuest();
@@ -69,9 +86,9 @@ function SystemRoot() {
 
   return (
     <SystemBackground>
-      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} /> : null}
+      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} /> : null}
       {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} /> : null}
-      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onRestoreExercises={restoreExercises} /> : null}
+      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onRestoreExercises={restoreExercises} /> : null}
       {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
       <QuestBriefing

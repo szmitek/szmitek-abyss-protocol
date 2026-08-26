@@ -1,4 +1,14 @@
-import { EQUIPMENT, type AppSnapshot, type Equipment, type OnboardingAnswers, type UserProfile } from './types.ts';
+import { EQUIPMENT, type AppSnapshot, type Equipment, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile } from './types.ts';
+
+export const EMPTY_HEALTH_PROFILE: PlayerHealthProfile = {
+  scanCompleted: false,
+  painAreas: [],
+  posturePriorities: [],
+  safetySignals: [],
+  knownConditions: '',
+  clinicianRestrictions: '',
+  updatedAt: null,
+};
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
   schemaVersion: 2,
@@ -24,6 +34,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     xp: 0,
     rank: 'E',
     attributeXp: { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 },
+    healthProfile: { ...EMPTY_HEALTH_PROFILE },
     strength: 1,
     endurance: 1,
     agility: 1,
@@ -57,4 +68,15 @@ export function updateProfileSettings(profile: UserProfile, answers: OnboardingA
 
 export function restoreExcludedExercises(profile: UserProfile): UserProfile {
   return profile.excludedExercises.length === 0 ? profile : { ...profile, excludedExercises: [] };
+}
+
+export function updateHealthProfile(profile: UserProfile, healthProfile: PlayerHealthProfile): UserProfile {
+  return {
+    ...profile,
+    healthProfile: {
+      ...healthProfile,
+      scanCompleted: true,
+      updatedAt: new Date().toISOString(),
+    },
+  };
 }

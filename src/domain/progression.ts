@@ -129,6 +129,7 @@ export function rankTrialEligibility(profile: UserProfile): { eligible: boolean;
   if (profile.totalWorkouts < requirement.workouts) reasons.push(`Complete ${requirement.workouts} workouts`);
   if (profile.streak < requirement.streak) reasons.push(`Build a ${requirement.streak}-workout streak`);
   if (profile.activeTrainingWeeks.length < requirement.activeWeeks) reasons.push(`Train across ${requirement.activeWeeks} active weeks`);
+  if (profile.healthProfile.safetySignals.length > 0) reasons.push('Resolve the Player Scan safety hold');
   return { eligible: reasons.length === 0, target, reasons };
 }
 
