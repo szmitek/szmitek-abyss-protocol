@@ -42,6 +42,7 @@ export function ReadinessScreen({ onBack, onSubmit }: ReadinessScreenProps) {
 
   const input = useMemo<DailyReadinessInput | null>(() => {
     if (!energy || !sleep || !soreness) return null;
+    if (soreness !== 'none' && soreMuscles.length === 0) return null;
     return { energy, sleep, soreness, soreMuscles: soreness === 'none' ? [] : soreMuscles, painOrWarning };
   }, [energy, sleep, soreness, soreMuscles, painOrWarning]);
   const band = input ? calculateReadinessBand(input) : null;
