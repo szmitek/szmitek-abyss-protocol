@@ -1,7 +1,7 @@
 import { EQUIPMENT, type AppSnapshot, type Equipment, type OnboardingAnswers, type UserProfile } from './types.ts';
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   onboardingComplete: false,
   profile: null,
   dailyQuest: null,
@@ -23,6 +23,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     level: 1,
     xp: 0,
     rank: 'E',
+    attributeXp: { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 },
     strength: 1,
     endurance: 1,
     agility: 1,
@@ -38,6 +39,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     longestStreak: 0,
     totalWorkouts: 0,
     lastWorkoutDateKey: null,
+    activeTrainingWeeks: [],
     rankTrialCompleted: [],
   };
 }

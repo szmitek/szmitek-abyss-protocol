@@ -82,6 +82,7 @@ test('progressive overload requires repeated successful exposures', () => {
       completedVolume: push.sets * push.target,
     }],
     xpEarned: first.rewardXp,
+    attributeXpEarned: { strength: 12, endurance: 12, agility: 0, vitality: 0, mobility: 0 },
     statGains: { strength: 1, endurance: 1, agility: 0, vitality: 0, mobility: 0 },
   });
 

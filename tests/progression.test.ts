@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { generateWorkout } from '../src/domain/generator.ts';
 import { createProfile, restoreExcludedExercises, updateProfileSettings } from '../src/domain/profile.ts';
-import { applyCompletedWorkout, calculateStatGains, completeRankTrial, createCompletionSummary, levelFromXp, rankTrialEligibility, totalXpForLevel } from '../src/domain/progression.ts';
+import { applyCompletedWorkout, attributeValueFromXp, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, levelFromXp, rankTrialEligibility, totalAttributeXpForValue, totalXpForLevel } from '../src/domain/progression.ts';
 import { calculateRecovery } from '../src/domain/recovery.ts';
 import { EQUIPMENT, GOALS, MUSCLE_GROUPS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
 
@@ -17,6 +17,7 @@ const base = createProfile({
 
 function completedEntry(overrides: Partial<WorkoutHistoryEntry> = {}): WorkoutHistoryEntry {
   const plan = generateWorkout(base, [], '2026-09-01');
+  const development = calculateAttributeDevelopment(base, plan);
   return {
     id: 'workout-1',
     date: '2026-09-01T10:00:00.000Z',
@@ -34,7 +35,8 @@ function completedEntry(overrides: Partial<WorkoutHistoryEntry> = {}): WorkoutHi
       completedVolume: item.sets * item.target,
     })),
     xpEarned: plan.rewardXp,
-    statGains: calculateStatGains(plan),
+    attributeXpEarned: development.attributeXpEarned,
+    statGains: development.statGains,
     ...overrides,
   };
 }
@@ -45,11 +47,20 @@ test('XP produces deterministic level progression', () => {
   assert.equal(levelFromXp(totalXpForLevel(5) - 1), 4);
 });
 
-test('completed exercises generate only evidence-based stat gains', () => {
+test('completed exercises generate evidence-based attribute XP without instant stat inflation', () => {
   const entry = completedEntry();
-  const total = Object.values(entry.statGains).reduce((sum, gain) => sum + gain, 0);
+  const total = Object.values(entry.attributeXpEarned).reduce((sum, gain) => sum + gain, 0);
   assert.ok(total > 0);
-  assert.ok(Object.values(entry.statGains).every((gain) => gain >= 0 && gain <= 3));
+  assert.ok(Object.values(entry.statGains).every((gain) => gain === 0));
+  const updated = applyCompletedWorkout(base, entry);
+  assert.equal(updated.strength, 1);
+  assert.equal(updated.endurance, 1);
+});
+
+test('attribute points unlock only after crossing accumulated XP thresholds', () => {
+  assert.equal(attributeValueFromXp(totalAttributeXpForValue(2) - 1), 1);
+  assert.equal(attributeValueFromXp(totalAttributeXpForValue(2)), 2);
+  assert.equal(attributeValueFromXp(totalAttributeXpForValue(5)), 5);
 });
 
 test('planned recovery gap does not destroy streak', () => {
@@ -67,7 +78,7 @@ test('recovery decreases after load and returns after 72 hours', () => {
 });
 
 test('rank requires readiness and a completed trial', () => {
-  const ready: UserProfile = { ...base, level: 4, totalWorkouts: 8, streak: 3 };
+  const ready: UserProfile = { ...base, level: 5, totalWorkouts: 12, streak: 3, activeTrainingWeeks: ['w1', 'w2', 'w3', 'w4'] };
   assert.equal(rankTrialEligibility(ready).eligible, true);
   const promoted = completeRankTrial(ready);
   assert.equal(promoted.rank, 'D');
@@ -128,5 +139,13 @@ test('completion report captures level and rank transitions', () => {
   assert.equal(report.rankBefore, 'E');
   assert.equal(report.rankAfter, 'D');
   assert.equal(report.xpEarned, 180);
+  assert.deepEqual(report.attributeXpEarned, workout.attributeXpEarned);
   assert.equal(report.rankTrial, true);
+});
+
+test('rank trial stays locked when workout count is reached too quickly', () => {
+  const rushed: UserProfile = { ...base, level: 5, totalWorkouts: 12, streak: 12, activeTrainingWeeks: ['2026-W35', '2026-W36'] };
+  const trial = rankTrialEligibility(rushed);
+  assert.equal(trial.eligible, false);
+  assert.ok(trial.reasons.includes('Train across 4 active weeks'));
 });

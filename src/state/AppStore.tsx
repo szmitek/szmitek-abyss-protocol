@@ -5,7 +5,7 @@ import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
 import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateProfileSettings } from '../domain/profile.ts';
-import { applyCompletedWorkout, calculateStatGains, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
+import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
 import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
@@ -174,6 +174,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       const active = current.activeWorkout;
       if (!active || !current.profile || active.exerciseIndex < active.plan.exercises.length) return current;
       const now = new Date();
+      const development = calculateAttributeDevelopment(current.profile, active.plan);
       const entry: WorkoutHistoryEntry = {
         id: `workout-${now.getTime()}`,
         date: now.toISOString(),
@@ -191,7 +192,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
           completedVolume: (active.completedSets[index] ?? 0) * item.target,
         })),
         xpEarned: active.plan.rewardXp,
-        statGains: calculateStatGains(active.plan),
+        attributeXpEarned: development.attributeXpEarned,
+        statGains: development.statGains,
       };
       const rankTrial = active.questId.startsWith('rank-');
       let profile = applyCompletedWorkout(current.profile, entry);

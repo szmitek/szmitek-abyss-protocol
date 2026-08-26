@@ -35,7 +35,7 @@ export function DashboardScreen({ snapshot, onBeginQuest }: DashboardScreenProps
   return (
     <Screen
       eyebrow="SYSTEM ONLINE"
-      title="Welcome, Hunter"
+      title="Welcome, Player"
       subtitle={recoveryDay ? 'Scheduled recovery protects long-term progression.' : 'Your parameters are stable. One protocol awaits.'}
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >

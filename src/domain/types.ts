@@ -109,6 +109,7 @@ export interface WorkoutHistoryEntry {
   perceivedDifficulty: PerceivedDifficulty;
   results: ExerciseResult[];
   xpEarned: number;
+  attributeXpEarned: StatBlock;
   statGains: StatBlock;
 }
 
@@ -117,6 +118,7 @@ export interface UserProfile extends StatBlock {
   level: number;
   xp: number;
   rank: Rank;
+  attributeXp: StatBlock;
   availableEquipment: Equipment[];
   excludedExercises: string[];
   goal: Goal;
@@ -127,6 +129,7 @@ export interface UserProfile extends StatBlock {
   longestStreak: number;
   totalWorkouts: number;
   lastWorkoutDateKey: string | null;
+  activeTrainingWeeks: string[];
   rankTrialCompleted: Rank[];
 }
 
@@ -141,6 +144,7 @@ export interface CompletionSummary {
   id: string;
   planTitle: string;
   xpEarned: number;
+  attributeXpEarned: StatBlock;
   statGains: StatBlock;
   levelBefore: number;
   levelAfter: number;
@@ -158,7 +162,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 1;
+  schemaVersion: 2;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   dailyQuest: DailyQuest | null;
