@@ -4,9 +4,9 @@ import { AppState } from 'react-native';
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
+import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, WorkoutHistoryEntry } from '../domain/types.ts';
+import type { AppSnapshot, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
@@ -14,6 +14,7 @@ interface AppStoreValue {
   completeOnboarding: (answers: OnboardingAnswers) => void;
   updateProfile: (answers: OnboardingAnswers) => void;
   updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
+  completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
   restoreExercises: () => void;
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
@@ -83,6 +84,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = updateHealthProfile(current.profile, healthProfile);
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
+      return freshQuest({ ...current, profile, dailyQuest: null });
+    });
+  }, [commit]);
+
+  const completeMovementAssessment = useCallback((results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => {
+    commit((current) => {
+      if (!current.profile || current.activeWorkout) return current;
+      const profile = recordMovementAssessment(current.profile, results, kind);
       if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
       return freshQuest({ ...current, profile, dailyQuest: null });
     });
@@ -226,6 +236,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     completeOnboarding,
     updateProfile,
     updateSystemScan,
+    completeMovementAssessment,
     restoreExercises,
     beginDailyQuest,
     beginRankTrial,
@@ -234,7 +245,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, completeMovementAssessment, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

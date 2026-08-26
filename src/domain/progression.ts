@@ -1,5 +1,6 @@
 import { dayDifference } from './date.ts';
 import { STAT_KEYS, type CompletionSummary, type Rank, type StatBlock, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+import { hasMovementPain } from './calibration.ts';
 
 export function xpRequiredForLevel(level: number): number {
   return 120 + level * 80;
@@ -130,6 +131,7 @@ export function rankTrialEligibility(profile: UserProfile): { eligible: boolean;
   if (profile.streak < requirement.streak) reasons.push(`Build a ${requirement.streak}-workout streak`);
   if (profile.activeTrainingWeeks.length < requirement.activeWeeks) reasons.push(`Train across ${requirement.activeWeeks} active weeks`);
   if (profile.healthProfile.safetySignals.length > 0) reasons.push('Resolve the Player Scan safety hold');
+  if (hasMovementPain(profile)) reasons.push('Resolve the Movement Analysis pain hold');
   return { eligible: reasons.length === 0, target, reasons };
 }
 

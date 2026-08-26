@@ -33,6 +33,11 @@ export type PosturePriority = (typeof POSTURE_PRIORITIES)[number];
 export const SAFETY_SIGNALS = ['chest-pain', 'fainting-dizziness', 'unusual-breathlessness', 'acute-injury', 'medical-restriction'] as const;
 export type SafetySignal = (typeof SAFETY_SIGNALS)[number];
 
+export const MOVEMENT_CHECKS = ['squat-control', 'overhead-reach', 'hip-hinge', 'single-leg-balance', 'plank-control'] as const;
+export type MovementCheck = (typeof MOVEMENT_CHECKS)[number];
+export type MovementRating = 'clear' | 'limited' | 'pain';
+export type MovementAssessmentKind = 'baseline' | 'reassessment';
+
 export const STAT_KEYS = ['strength', 'endurance', 'agility', 'vitality', 'mobility'] as const;
 export type StatKey = (typeof STAT_KEYS)[number];
 
@@ -116,6 +121,14 @@ export interface PlayerHealthProfile {
   updatedAt: string | null;
 }
 
+export interface MovementAssessment {
+  id: string;
+  kind: MovementAssessmentKind;
+  date: string;
+  dateKey: string;
+  results: Record<MovementCheck, MovementRating>;
+}
+
 export interface WorkoutHistoryEntry {
   id: string;
   date: string;
@@ -139,6 +152,7 @@ export interface UserProfile extends StatBlock {
   rank: Rank;
   attributeXp: StatBlock;
   healthProfile: PlayerHealthProfile;
+  movementAssessments: MovementAssessment[];
   availableEquipment: Equipment[];
   excludedExercises: string[];
   goal: Goal;
@@ -182,7 +196,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 2;
+  schemaVersion: 3;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   dailyQuest: DailyQuest | null;
