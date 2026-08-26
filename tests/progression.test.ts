@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { generateWorkout } from '../src/domain/generator.ts';
 import { createProfile, restoreExcludedExercises, updateProfileSettings } from '../src/domain/profile.ts';
-import { applyCompletedWorkout, calculateStatGains, completeRankTrial, levelFromXp, rankTrialEligibility, totalXpForLevel } from '../src/domain/progression.ts';
+import { applyCompletedWorkout, calculateStatGains, completeRankTrial, createCompletionSummary, levelFromXp, rankTrialEligibility, totalXpForLevel } from '../src/domain/progression.ts';
 import { calculateRecovery } from '../src/domain/recovery.ts';
 import { EQUIPMENT, GOALS, MUSCLE_GROUPS, type UserProfile, type WorkoutHistoryEntry } from '../src/domain/types.ts';
 
@@ -116,4 +116,17 @@ test('restoring excluded exercises changes no progression values', () => {
   assert.equal(restored.xp, progressed.xp);
   assert.equal(restored.level, progressed.level);
   assert.equal(restored.totalWorkouts, progressed.totalWorkouts);
+});
+
+test('completion report captures level and rank transitions', () => {
+  const before: UserProfile = { ...base, level: 3, rank: 'E' };
+  const after: UserProfile = { ...before, level: 4, rank: 'D', xp: 800 };
+  const workout = completedEntry({ xpEarned: 180 });
+  const report = createCompletionSummary(before, after, workout, true);
+  assert.equal(report.levelBefore, 3);
+  assert.equal(report.levelAfter, 4);
+  assert.equal(report.rankBefore, 'E');
+  assert.equal(report.rankAfter, 'D');
+  assert.equal(report.xpEarned, 180);
+  assert.equal(report.rankTrial, true);
 });

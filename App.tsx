@@ -11,6 +11,7 @@ import { DashboardScreen } from './src/ui/screens/DashboardScreen.tsx';
 import { OnboardingScreen } from './src/ui/screens/OnboardingScreen.tsx';
 import { ProgressScreen } from './src/ui/screens/ProgressScreen.tsx';
 import { QuestsScreen } from './src/ui/screens/QuestsScreen.tsx';
+import { CompletionReportScreen } from './src/ui/screens/CompletionReportScreen.tsx';
 import { StatusScreen } from './src/ui/screens/StatusScreen.tsx';
 import { WorkoutScreen } from './src/ui/screens/WorkoutScreen.tsx';
 import { colors } from './src/ui/theme.ts';
@@ -27,7 +28,7 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
@@ -42,6 +43,10 @@ function SystemRoot() {
 
   if (snapshot.activeWorkout) {
     return <WorkoutScreen active={snapshot.activeWorkout} onReplaceExercise={replaceCurrentExercise} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
+  }
+
+  if (snapshot.lastCompletion) {
+    return <CompletionReportScreen report={snapshot.lastCompletion} onContinue={dismissCompletion} />;
   }
 
   if (profileEditing) {
