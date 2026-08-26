@@ -7,13 +7,24 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#07090F",
     "primaryColor": "#29B6FF",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Abyss Protocol accesses selected posture photos to store them privately on this device.",
+          "cameraPermission": "Abyss Protocol uses the camera for private Player posture scans.",
+          "microphonePermission": false
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.abyssprotocol.mobile"
     },
     "android": {
       "package": "app.abyssprotocol.mobile",
-      "versionCode": 4,
+      "versionCode": 5,
+      "allowBackup": false,
       "predictiveBackGestureEnabled": true,
       "edgeToEdgeEnabled": true
     }

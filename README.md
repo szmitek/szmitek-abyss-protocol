@@ -10,13 +10,16 @@ The visual language is an original dark-fantasy “System” interface. It inten
 - 70+ equipment-free exercises with cues, muscle load, stat impact, and progression chains.
 - Deterministic workout generator with equipment as a hard constraint.
 - Local Player Scan for pain signals, posture priorities, known conditions, and unresolved safety holds.
+- Five-check Movement Analysis with deterministic limits, pain holds, and required re-scans.
+- Four-week Training Arcs with calibration, foundation, overload, and consolidation phases.
+- Private Posture Archive with front/side/back capture, on-device storage, and before/current comparison.
 - Deterministic health constraints and posture-calibrated exercise selection.
 - Recovery-aware rotation and same-session monotony protection.
 - Progressive overload based on two successful exposures and user feedback.
 - Daily Quest, guided set flow, duration timers, recovery timer, and Quest Complete feedback.
 - XP, levels, threshold-based STR / END / AGI / VIT / MOB development, safe streak handling, and E–S ranks gated by active training weeks.
 - Rank Trial eligibility and playable rank-up protocol.
-- Persistent local profile and workout history through AsyncStorage.
+- Persistent local profile and workout history through AsyncStorage; posture photos remain in app-private document storage.
 - Quality workflow for typecheck, lint, and domain tests.
 
 ## Run locally
@@ -86,4 +89,4 @@ Abyss Protocol does not diagnose injuries or replace a clinician. Player Scan ob
 
 ## Roadmap boundary
 
-Photo posture capture/analysis, cloud auth/sync, achievements, weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. The next personal-trainer milestone is a structured multi-week training block and reassessment flow; photo capture follows after its local privacy model is finalized.
+Automatic posture analysis, cloud auth/sync, achievements, weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. Visual records deliberately do not diagnose posture yet; the next personal-trainer milestone is a structured, reviewable observation layer that can influence the generator without pretending to replace a clinician.
