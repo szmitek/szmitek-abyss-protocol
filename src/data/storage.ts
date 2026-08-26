@@ -6,6 +6,7 @@ import { STAT_KEYS, type AppSnapshot, type StatBlock, type UserProfile, type Wor
 
 const STORAGE_KEY = '@abyss-protocol/app-snapshot-v1';
 const EMPTY_STATS: StatBlock = { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 };
+type StoredSnapshot = Omit<Partial<AppSnapshot>, 'schemaVersion'> & { schemaVersion?: number };
 
 function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): UserProfile {
   const legacy = profile as UserProfile & { attributeXp?: StatBlock; activeTrainingWeeks?: string[] };
@@ -18,7 +19,7 @@ function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): U
   return { ...profile, attributeXp, activeTrainingWeeks };
 }
 
-function migrateSnapshot(parsed: Partial<AppSnapshot> & { schemaVersion?: number }): AppSnapshot {
+function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
   const history = (parsed.history ?? []).map((entry) => ({
     ...entry,
     attributeXpEarned: entry.attributeXpEarned ?? { ...EMPTY_STATS },
@@ -34,7 +35,7 @@ export async function loadSnapshot(): Promise<AppSnapshot> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return INITIAL_SNAPSHOT;
-    const parsed = JSON.parse(raw) as Partial<AppSnapshot> & { schemaVersion?: number };
+    const parsed = JSON.parse(raw) as StoredSnapshot;
     if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2) return INITIAL_SNAPSHOT;
     return migrateSnapshot(parsed);
   } catch {
