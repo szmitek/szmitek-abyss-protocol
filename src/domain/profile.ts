@@ -13,7 +13,7 @@ export const EMPTY_HEALTH_PROFILE: PlayerHealthProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 5,
+  schemaVersion: 6,
   onboardingComplete: false,
   profile: null,
   dailyQuest: null,
@@ -40,6 +40,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     movementAssessments: [],
     trainingArcs: [],
     postureScans: [],
+    readinessLog: [],
     strength: 1,
     endurance: 1,
     agility: 1,

@@ -1,6 +1,7 @@
 import { dayDifference, toDateKey } from './date.ts';
 import { STAT_KEYS, type CompletionSummary, type Rank, type StatBlock, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 import { hasMovementPain } from './calibration.ts';
+import { readinessForDate } from './readiness.ts';
 import { getTrainingArcState } from './trainingArc.ts';
 
 export function xpRequiredForLevel(level: number): number {
@@ -134,6 +135,9 @@ export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(n
   if (profile.healthProfile.safetySignals.length > 0) reasons.push('Resolve the Player Scan safety hold');
   if (hasMovementPain(profile)) reasons.push('Resolve the Movement Analysis pain hold');
   if (getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue) reasons.push('Complete the Training Arc re-scan');
+  const readiness = readinessForDate(profile, dateKey);
+  if (!readiness) reasons.push('Complete today\'s Daily Readiness Scan');
+  else if (readiness.band !== 'normal') reasons.push('Return with normal Daily Readiness');
   return { eligible: reasons.length === 0, target, reasons };
 }
 

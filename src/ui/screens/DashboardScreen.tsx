@@ -5,6 +5,7 @@ import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from
 import { getTrainingArcState } from '../../domain/trainingArc.ts';
 import { levelProgress } from '../../domain/progression.ts';
 import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
+import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
 import type { AppSnapshot, StatKey } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -15,6 +16,7 @@ import { colors, radius, spacing } from '../theme.ts';
 interface DashboardScreenProps {
   snapshot: AppSnapshot;
   onBeginQuest: () => void;
+  onOpenReadiness: () => void;
   onOpenSystemScan: () => void;
   onOpenMovementCalibration: () => void;
 }
@@ -27,13 +29,18 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan, onOpenMovementCalibration }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
   const recovery = calculateRecovery(snapshot.history);
   const recoveryDay = quest?.plan.kind === 'recovery';
   const safetyHold = quest?.plan.kind === 'safety-hold';
+  const readiness = quest ? readinessForDate(profile, quest.dateKey) : null;
+  const readinessRequired = Boolean(quest && planRequiresDailyReadiness(quest.plan) && !readiness);
+  const readinessHold = quest?.plan.readinessBand === 'hold';
+  const readinessRecovery = quest?.plan.readinessBand === 'recovery';
+  const reducedLoad = quest?.plan.readinessBand === 'reduced';
   const reassessmentDue = quest?.plan.kind === 'reassessment';
   const movementAssessment = latestMovementAssessment(profile);
   const movementPain = hasMovementPain(profile);
@@ -45,7 +52,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan, onOp
     <Screen
       eyebrow="SYSTEM ONLINE"
       title="Welcome, Player"
-      subtitle={safetyHold ? 'Safeguard active. Training remains sealed.' : reassessmentDue ? 'Training Arc complete. A new Player signal is required.' : recoveryDay ? 'Scheduled recovery protects long-term progression.' : 'Your parameters are stable. One protocol awaits.'}
+      subtitle={readinessRequired ? 'Today\'s protocol awaits a Player signal.' : safetyHold ? 'Safeguard active. Training remains sealed.' : reassessmentDue ? 'Training Arc complete. A new Player signal is required.' : readinessRecovery ? 'Today\'s signal converted training into protected recovery.' : recoveryDay ? 'Scheduled recovery protects long-term progression.' : reducedLoad ? 'The System reduced today\'s load from your readiness signal.' : 'Your parameters are stable. One protocol awaits.'}
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >
       <SystemPanel>
@@ -84,17 +91,26 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan, onOp
       ) : null}
 
       <SystemPanel
-        eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
-        title={quest?.plan.title ?? 'SCANNING...'}
-        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete, safetyHold && styles.holdStatus]}>● {safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'RECOVERY' : quest?.status.toUpperCase()}</Text>}
+        eyebrow={readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
+        title={readinessRequired ? 'Sync Player status' : quest?.plan.title ?? 'SCANNING...'}
+        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete, safetyHold && styles.holdStatus]}>● {readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'RECOVERY' : reducedLoad ? 'REDUCED' : quest?.status.toUpperCase()}</Text>}
       >
-        {safetyHold ? (
+        {readinessRequired ? (
+          <View style={[styles.recoveryDirective, styles.readinessDirective]}>
+            <Text style={[styles.recoveryDirectiveMark, styles.readinessMark]}>◇</Text>
+            <View style={styles.recoveryDirectiveCopy}>
+              <Text style={styles.recoveryDirectiveTitle}>PLAYER SIGNAL NOT SYNCED</Text>
+              <Text style={styles.recoveryDirectiveText}>Log energy, sleep and muscle soreness. The System will keep, reduce, recover or seal the planned load.</Text>
+              <GlowButton label="SYNC DAILY READINESS" onPress={onOpenReadiness} style={styles.scanButton} />
+            </View>
+          </View>
+        ) : safetyHold ? (
           <View style={[styles.recoveryDirective, styles.holdDirective]}>
             <Text style={[styles.recoveryDirectiveMark, styles.holdMark]}>!</Text>
             <View style={styles.recoveryDirectiveCopy}>
               <Text style={styles.recoveryDirectiveTitle}>PLAYER CLEARANCE REQUIRED</Text>
-              <Text style={styles.recoveryDirectiveText}>{movementPain ? 'Pain was reported during Movement Analysis. Repeat the check only when comfortable or review the signal in Player Scan.' : 'Review unresolved warning signals in Player Scan before returning to unsupervised training.'}</Text>
-              <GlowButton label={movementPain ? 'REVIEW MOVEMENT ANALYSIS' : 'REVIEW PLAYER SCAN'} variant="secondary" onPress={movementPain ? onOpenMovementCalibration : onOpenSystemScan} style={styles.scanButton} />
+              <Text style={styles.recoveryDirectiveText}>{readinessHold ? 'A pain or unusual-symptom signal was logged today. The System will not issue an unsupervised workout from that signal.' : movementPain ? 'Pain was reported during Movement Analysis. Repeat the check only when comfortable or review the signal in Player Scan.' : 'Review unresolved warning signals in Player Scan before returning to unsupervised training.'}</Text>
+              <GlowButton label={readinessHold ? 'REVIEW DAILY READINESS' : movementPain ? 'REVIEW MOVEMENT ANALYSIS' : 'REVIEW PLAYER SCAN'} variant="secondary" onPress={readinessHold ? onOpenReadiness : movementPain ? onOpenMovementCalibration : onOpenSystemScan} style={styles.scanButton} />
             </View>
           </View>
         ) : reassessmentDue ? (
@@ -110,8 +126,8 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan, onOp
           <View style={styles.recoveryDirective}>
             <Text style={styles.recoveryDirectiveMark}>◇</Text>
             <View style={styles.recoveryDirectiveCopy}>
-              <Text style={styles.recoveryDirectiveTitle}>NO TRAINING REQUIRED</Text>
-              <Text style={styles.recoveryDirectiveText}>Your streak is protected. Next training: {nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }).toUpperCase() : 'SCHEDULED'}</Text>
+              <Text style={styles.recoveryDirectiveTitle}>{readinessRecovery ? 'RECOVERY OVERRIDE ACTIVE' : 'NO TRAINING REQUIRED'}</Text>
+              <Text style={styles.recoveryDirectiveText}>{readinessRecovery ? 'Low combined readiness or high muscle soreness replaced today\'s workout. No streak penalty applies.' : `Your streak is protected. Next training: ${nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }).toUpperCase() : 'SCHEDULED'}`}</Text>
             </View>
           </View>
         ) : quest ? (
@@ -136,6 +152,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenSystemScan, onOp
               onPress={onBeginQuest}
               disabled={quest.status === 'complete'}
             />
+            {readiness ? <Text style={styles.readinessStamp}>READINESS // {readiness.band.toUpperCase()} · ENERGY {readiness.energy.toUpperCase()} · SLEEP {readiness.sleep.toUpperCase()}</Text> : null}
           </>
         ) : null}
       </SystemPanel>
@@ -200,6 +217,8 @@ const styles = StyleSheet.create({
   holdMark: { color: colors.danger, fontWeight: '900', width: 34, textAlign: 'center' },
   reassessmentDirective: { borderColor: 'rgba(106,92,255,0.3)', backgroundColor: 'rgba(106,92,255,0.07)' },
   reassessmentMark: { color: colors.purple },
+  readinessDirective: { borderColor: colors.lineStrong, backgroundColor: 'rgba(41,182,255,0.07)' },
+  readinessMark: { color: colors.primary },
   questMeta: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   meta: { flex: 1 },
   metaLabel: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 1.2 },
@@ -210,6 +229,7 @@ const styles = StyleSheet.create({
   exerciseName: { flex: 1, color: colors.text, fontSize: 13, fontWeight: '700' },
   exerciseTarget: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
   more: { color: colors.textDim, fontSize: 9, fontWeight: '800', letterSpacing: 1, marginTop: spacing.sm },
+  readinessStamp: { color: colors.textDim, fontSize: 8, fontWeight: '900', letterSpacing: 0.7, lineHeight: 14, marginTop: spacing.md, textAlign: 'center' },
   recoveryList: { gap: spacing.md },
   recoveryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   recoveryName: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1, width: 52 },

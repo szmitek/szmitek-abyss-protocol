@@ -4,6 +4,7 @@ import { attributeProgress, levelProgress } from '../../domain/progression.ts';
 import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from '../../domain/calibration.ts';
 import { compareAssessments, getTrainingArcState } from '../../domain/trainingArc.ts';
 import { toDateKey } from '../../domain/date.ts';
+import { latestReadiness } from '../../domain/readiness.ts';
 import type { StatKey, UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -26,6 +27,7 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
   const movementPain = hasMovementPain(profile);
   const limitedChecks = limitedMovementChecks(profile);
   const arcState = getTrainingArcState(profile.trainingArcs, toDateKey(new Date()));
+  const readiness = latestReadiness(profile);
   const comparison = profile.movementAssessments[0] && profile.movementAssessments[1]
     ? compareAssessments(profile.movementAssessments[0], profile.movementAssessments[1])
     : null;
@@ -59,6 +61,17 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
         <Metric value={profile.longestStreak} label="LONGEST STREAK" />
         <Metric value={profile.rankTrialCompleted.length} label="TRIALS SURVIVED" />
       </View>
+
+      <SystemPanel eyebrow="DAILY READINESS" title={readiness ? `${readiness.band.toUpperCase()} SIGNAL` : 'No daily signal recorded'} accent={readiness?.band === 'hold' ? 'danger' : readiness?.band === 'recovery' ? 'purple' : 'blue'} {...(readiness ? { trailing: <Text style={styles.arcPhase}>{readiness.dateKey}</Text> } : {})}>
+        {readiness ? (
+          <View style={styles.scanMeta}>
+            <ReadinessMetric value={readiness.energy} label="ENERGY" />
+            <ReadinessMetric value={readiness.sleep} label="SLEEP" />
+            <ReadinessMetric value={readiness.soreness} label="SORENESS" danger={readiness.band === 'hold'} />
+          </View>
+        ) : null}
+        <Text style={styles.settingsCopy}>{readiness ? readiness.band === 'normal' ? 'The planned load was preserved; readiness never raises it above progression rules.' : readiness.band === 'reduced' ? 'Working volume and progression were reduced for this session.' : readiness.band === 'recovery' ? 'The training day was replaced with protected recovery.' : 'A warning signal sealed unsupervised training for that day.' : 'A signal will be requested before the next scheduled training protocol.'}</Text>
+      </SystemPanel>
 
       <SystemPanel eyebrow="TRAINING ARC" title={arcState ? `Cycle ${arcState.cycleNumber} · Week ${arcState.week} / 4` : 'Awaiting movement baseline'} accent="purple" {...(arcState ? { trailing: <Text style={styles.arcPhase}>{arcState.reassessmentDue ? 'RE-SCAN' : arcState.phase.toUpperCase()}</Text> } : {})}>
         {arcState ? <ProgressBar progress={arcState.progress} /> : null}
@@ -116,6 +129,10 @@ function ScanMetric({ value, label, danger = false }: { value: number; label: st
   return <View style={styles.scanMetric}><Text style={[styles.scanValue, danger && styles.scanDanger]}>{value}</Text><Text style={styles.scanLabel}>{label}</Text></View>;
 }
 
+function ReadinessMetric({ value, label, danger = false }: { value: string; label: string; danger?: boolean }) {
+  return <View style={styles.scanMetric}><Text style={[styles.readinessValue, danger && styles.scanDanger]}>{value.toUpperCase()}</Text><Text style={styles.scanLabel}>{label}</Text></View>;
+}
+
 const styles = StyleSheet.create({
   identity: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xl },
   avatar: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(106,92,255,0.7)', backgroundColor: 'rgba(106,92,255,0.12)' },
@@ -147,6 +164,7 @@ const styles = StyleSheet.create({
   scanMeta: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   scanMetric: { flex: 1, minHeight: 68, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(147,164,195,0.12)', backgroundColor: 'rgba(7,9,15,0.35)' },
   scanValue: { color: colors.primary, fontSize: 20, fontWeight: '900' },
+  readinessValue: { color: colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 0.7 },
   scanDanger: { color: colors.danger },
   scanLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 0.7, marginTop: 3, textAlign: 'center' },
   settingsButton: { marginTop: spacing.lg },

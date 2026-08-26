@@ -7,7 +7,8 @@ import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from 
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import type { AppSnapshot, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
+import { createDailyReadiness, planRequiresDailyReadiness, readinessForDate, recordDailyReadiness } from '../domain/readiness.ts';
+import type { AppSnapshot, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
@@ -18,6 +19,7 @@ interface AppStoreValue {
   completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
   savePostureScan: (scan: PostureScan) => void;
   deletePostureScan: (scanId: string) => void;
+  submitDailyReadiness: (input: DailyReadinessInput) => void;
   restoreExercises: () => void;
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
@@ -113,6 +115,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       : current);
   }, [commit]);
 
+  const submitDailyReadiness = useCallback((input: DailyReadinessInput) => {
+    commit((current) => {
+      if (!current.profile || current.activeWorkout) return current;
+      const readiness = createDailyReadiness(input);
+      const profile = recordDailyReadiness(current.profile, readiness);
+      return freshQuest({ ...current, profile, dailyQuest: null }, readiness.dateKey);
+    });
+  }, [commit]);
+
   const restoreExercises = useCallback(() => {
     commit((current) => {
       if (!current.profile || current.activeWorkout || current.profile.excludedExercises.length === 0) return current;
@@ -125,7 +136,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   const beginDailyQuest = useCallback(() => {
     commit((current) => {
       const quest = current.dailyQuest;
-      if (!quest || quest.status === 'complete') return current;
+      if (!quest || quest.status === 'complete' || !current.profile) return current;
+      if (planRequiresDailyReadiness(quest.plan) && !readinessForDate(current.profile, quest.dateKey)) return current;
       return {
         ...current,
         dailyQuest: { ...quest, status: 'active' },
@@ -254,6 +266,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     completeMovementAssessment,
     savePostureScan,
     deletePostureScan,
+    submitDailyReadiness,
     restoreExercises,
     beginDailyQuest,
     beginRankTrial,
@@ -262,7 +275,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, completeMovementAssessment, savePostureScan, deletePostureScan, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, completeMovementAssessment, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

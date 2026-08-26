@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppStoreProvider, useAppStore } from './src/state/AppStore.tsx';
+import { planRequiresDailyReadiness, readinessForDate } from './src/domain/readiness.ts';
 import { BottomNav, type AppTab } from './src/ui/components/BottomNav.tsx';
 import { QuestBriefing } from './src/ui/components/QuestBriefing.tsx';
 import { SystemBackground } from './src/ui/components/SystemBackground.tsx';
@@ -16,6 +17,7 @@ import { StatusScreen } from './src/ui/screens/StatusScreen.tsx';
 import { SystemScanScreen } from './src/ui/screens/SystemScanScreen.tsx';
 import { MovementCalibrationScreen } from './src/ui/screens/MovementCalibrationScreen.tsx';
 import { PostureArchiveScreen } from './src/ui/screens/PostureArchiveScreen.tsx';
+import { ReadinessScreen } from './src/ui/screens/ReadinessScreen.tsx';
 import { WorkoutScreen } from './src/ui/screens/WorkoutScreen.tsx';
 import { colors } from './src/ui/theme.ts';
 
@@ -31,13 +33,14 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, completeMovementAssessment, savePostureScan, deletePostureScan, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, completeMovementAssessment, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
   const [systemScanEditing, setSystemScanEditing] = useState(false);
   const [movementCalibrationEditing, setMovementCalibrationEditing] = useState(false);
   const [postureArchiveOpen, setPostureArchiveOpen] = useState(false);
+  const [readinessOpen, setReadinessOpen] = useState(false);
 
   if (!hydrated) {
     return <View style={styles.loading}><ActivityIndicator color={colors.primary} size="large" /><Text style={styles.loadingText}>INITIALIZING SYSTEM</Text></View>;
@@ -113,6 +116,29 @@ function SystemRoot() {
     );
   }
 
+  if (readinessOpen) {
+    return (
+      <SystemBackground>
+        <ReadinessScreen
+          onBack={() => setReadinessOpen(false)}
+          onSubmit={(input) => {
+            submitDailyReadiness(input);
+            setReadinessOpen(false);
+          }}
+        />
+      </SystemBackground>
+    );
+  }
+
+  const requestDailyQuest = () => {
+    const quest = snapshot.dailyQuest;
+    if (quest && planRequiresDailyReadiness(quest.plan) && !readinessForDate(snapshot.profile!, quest.dateKey)) {
+      setReadinessOpen(true);
+      return;
+    }
+    setDailyBriefingOpen(true);
+  };
+
   const acceptDailyQuest = () => {
     setDailyBriefingOpen(false);
     beginDailyQuest();
@@ -120,8 +146,8 @@ function SystemRoot() {
 
   return (
     <SystemBackground>
-      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
-      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
+      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={requestDailyQuest} onOpenReadiness={() => setReadinessOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
+      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={requestDailyQuest} onBeginRankTrial={beginRankTrial} onOpenReadiness={() => setReadinessOpen(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
       {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenPostureArchive={() => setPostureArchiveOpen(true)} onRestoreExercises={restoreExercises} /> : null}
       {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
