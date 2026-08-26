@@ -5,6 +5,7 @@ import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from
 import { compareAssessments, getTrainingArcState } from '../../domain/trainingArc.ts';
 import { toDateKey } from '../../domain/date.ts';
 import { latestReadiness } from '../../domain/readiness.ts';
+import { CORRECTIVE_GOAL_DETAILS, primaryCorrectiveTarget } from '../../domain/correctiveProfile.ts';
 import type { StatKey, UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -20,7 +21,7 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onOpenPostureArchive, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onOpenPostureArchive: () => void; onRestoreExercises: () => void }) {
+export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onOpenCorrectiveProfile, onOpenPostureArchive, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onOpenCorrectiveProfile: () => void; onOpenPostureArchive: () => void; onRestoreExercises: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
   const movementAssessment = latestMovementAssessment(profile);
@@ -28,6 +29,7 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
   const limitedChecks = limitedMovementChecks(profile);
   const arcState = getTrainingArcState(profile.trainingArcs, toDateKey(new Date()));
   const readiness = latestReadiness(profile);
+  const correctiveTarget = primaryCorrectiveTarget(profile);
   const comparison = profile.movementAssessments[0] && profile.movementAssessments[1]
     ? compareAssessments(profile.movementAssessments[0], profile.movementAssessments[1])
     : null;
@@ -98,6 +100,21 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
         <Text style={styles.settingsCopy}>{movementPain ? 'A pain response seals unsupervised training. It is a safety signal, not a diagnosis.' : limitedChecks.length > 0 ? 'The generator caps conflicting movements and inserts foundation work for limited checks.' : movementAssessment ? 'Current baseline allows normal progression within recovery and workload limits.' : 'Five submaximal checks give the System a safer starting point than experience level alone.'}</Text>
         {comparison ? <Text style={styles.comparison}>LAST RE-SCAN // {comparison.improved} IMPROVED · {comparison.unchanged} STABLE · {comparison.declined} DECLINED</Text> : null}
         <GlowButton label={movementAssessment ? 'RECALIBRATE MOVEMENT' : 'START MOVEMENT ANALYSIS'} variant="secondary" onPress={onOpenMovementCalibration} style={styles.settingsButton} />
+      </SystemPanel>
+
+      <SystemPanel eyebrow="CORRECTIVE PROFILE" title={profile.correctiveProfile.configured ? correctiveTarget ? CORRECTIVE_GOAL_DETAILS[correctiveTarget.goal].label : 'General training profile' : 'Directive not confirmed'} accent="purple">
+        {profile.correctiveProfile.targets.length > 0 ? (
+          <View style={styles.correctiveTargets}>
+            {profile.correctiveProfile.targets.map((target) => (
+              <View key={target.goal} style={[styles.correctiveTarget, target.priority === 'primary' && styles.correctivePrimary]}>
+                <Text style={[styles.correctiveTargetText, target.priority === 'primary' && styles.correctivePrimaryText]}>{target.priority === 'primary' ? '◆ ' : '◇ '}{CORRECTIVE_GOAL_DETAILS[target.goal].label.toUpperCase()}</Text>
+                <Text style={styles.correctiveEvidence}>{target.sources.length} SIGNAL{target.sources.length === 1 ? '' : 'S'}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        <Text style={styles.settingsCopy}>{profile.correctiveProfile.configured ? correctiveTarget ? 'The generator reserves compatible corrective work and explains its selections inside Quest Info.' : 'Corrective bias is disabled; all hard safety and movement constraints remain active.' : 'Confirm suggested priorities from Player Scan and Movement Analysis or choose a general profile.'}</Text>
+        <GlowButton label={profile.correctiveProfile.configured ? 'EDIT CORRECTIVE PROFILE' : 'CREATE CORRECTIVE PROFILE'} variant="secondary" onPress={onOpenCorrectiveProfile} style={styles.settingsButton} />
       </SystemPanel>
 
       <SystemPanel eyebrow="POSTURE ARCHIVE" title={profile.postureScans.length > 0 ? `${profile.postureScans.length} visual checkpoint${profile.postureScans.length === 1 ? '' : 's'}` : 'Visual baseline missing'} accent="purple">
@@ -172,4 +189,10 @@ const styles = StyleSheet.create({
   arcPhase: { color: colors.purple, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   arcCopy: { marginTop: spacing.md },
   comparison: { color: colors.success, fontSize: 8, fontWeight: '900', letterSpacing: 0.8, lineHeight: 14, marginTop: spacing.md },
+  correctiveTargets: { gap: spacing.sm, marginBottom: spacing.md },
+  correctiveTarget: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(147,164,195,0.14)', backgroundColor: 'rgba(7,9,15,0.35)' },
+  correctivePrimary: { borderColor: 'rgba(106,92,255,0.58)', backgroundColor: 'rgba(106,92,255,0.08)' },
+  correctiveTargetText: { flex: 1, color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 0.6 },
+  correctivePrimaryText: { color: colors.purple },
+  correctiveEvidence: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 0.7 },
 });

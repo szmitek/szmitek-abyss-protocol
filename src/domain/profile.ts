@@ -1,4 +1,4 @@
-import { EQUIPMENT, type AppSnapshot, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile } from './types.ts';
+import { EQUIPMENT, type AppSnapshot, type CorrectiveProfile, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile } from './types.ts';
 import { toDateKey } from './date.ts';
 import { registerAssessmentWithTrainingArcs } from './trainingArc.ts';
 
@@ -12,8 +12,14 @@ export const EMPTY_HEALTH_PROFILE: PlayerHealthProfile = {
   updatedAt: null,
 };
 
+export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
+  configured: false,
+  targets: [],
+  updatedAt: null,
+};
+
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 6,
+  schemaVersion: 7,
   onboardingComplete: false,
   profile: null,
   dailyQuest: null,
@@ -37,6 +43,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     rank: 'E',
     attributeXp: { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 },
     healthProfile: { ...EMPTY_HEALTH_PROFILE },
+    correctiveProfile: { ...EMPTY_CORRECTIVE_PROFILE },
     movementAssessments: [],
     trainingArcs: [],
     postureScans: [],
@@ -58,6 +65,17 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     lastWorkoutDateKey: null,
     activeTrainingWeeks: [],
     rankTrialCompleted: [],
+  };
+}
+
+export function updateCorrectiveProfile(profile: UserProfile, correctiveProfile: CorrectiveProfile): UserProfile {
+  return {
+    ...profile,
+    correctiveProfile: {
+      ...correctiveProfile,
+      configured: true,
+      updatedAt: new Date().toISOString(),
+    },
   };
 }
 

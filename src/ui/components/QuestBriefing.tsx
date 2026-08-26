@@ -48,7 +48,7 @@ export function QuestBriefing({ visible, plan, onAccept, onClose }: QuestBriefin
                   <Text style={styles.sequenceIndex}>{`${index + 1}`.padStart(2, '0')}</Text>
                   <View style={styles.sequenceCopy}>
                     <Text style={styles.sequenceName}>{item.exercise.name}</Text>
-                    <Text style={styles.sequenceMeta}>{item.exercise.primaryMuscle.toUpperCase()}</Text>
+                    <Text style={styles.sequenceMeta}>{item.selectionReasons?.map((reason) => reason.label).join(' · ') ?? item.exercise.primaryMuscle.toUpperCase()}</Text>
                   </View>
                   <Text style={styles.sequenceTarget}>{item.sets} × {item.target}{item.exercise.repType === 'seconds' ? ' SEC' : ''}</Text>
                 </View>
@@ -104,11 +104,11 @@ const styles = StyleSheet.create({
   verificationLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 1.2 },
   verificationValue: { color: colors.success, fontSize: 7, fontWeight: '900', letterSpacing: 1 },
   sequenceList: { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(147,164,195,0.14)' },
-  sequence: { minHeight: 48, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(147,164,195,0.1)' },
+  sequence: { minHeight: 56, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(147,164,195,0.1)' },
   sequenceIndex: { width: 28, color: colors.primary, fontSize: 9, fontWeight: '900' },
   sequenceCopy: { flex: 1, paddingRight: spacing.sm },
   sequenceName: { color: colors.text, fontSize: 11, fontWeight: '800' },
-  sequenceMeta: { color: colors.textDim, fontSize: 6, fontWeight: '900', letterSpacing: 1.1, marginTop: 3 },
+  sequenceMeta: { color: colors.primary, fontSize: 6, lineHeight: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 3 },
   sequenceTarget: { color: colors.textMuted, fontSize: 9, fontWeight: '800' },
   rewardBox: { alignItems: 'center', marginTop: spacing.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, backgroundColor: 'rgba(41,182,255,0.06)' },
   rewardLabel: { color: colors.textMuted, fontSize: 7, fontWeight: '900', letterSpacing: 1.4 },

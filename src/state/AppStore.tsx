@@ -5,10 +5,10 @@ import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
-import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
+import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
 import { createDailyReadiness, planRequiresDailyReadiness, readinessForDate, recordDailyReadiness } from '../domain/readiness.ts';
-import type { AppSnapshot, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
+import type { AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
@@ -16,6 +16,7 @@ interface AppStoreValue {
   completeOnboarding: (answers: OnboardingAnswers) => void;
   updateProfile: (answers: OnboardingAnswers) => void;
   updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
+  updateCorrectiveProfile: (correctiveProfile: CorrectiveProfile) => void;
   completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
   savePostureScan: (scan: PostureScan) => void;
   deletePostureScan: (scanId: string) => void;
@@ -98,6 +99,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = recordMovementAssessment(current.profile, results, kind);
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
+      return freshQuest({ ...current, profile, dailyQuest: null });
+    });
+  }, [commit]);
+
+  const saveCorrectiveProfile = useCallback((correctiveProfile: CorrectiveProfile) => {
+    commit((current) => {
+      if (!current.profile || current.activeWorkout) return current;
+      const profile = updateCorrectiveProfile(current.profile, correctiveProfile);
       if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
       return freshQuest({ ...current, profile, dailyQuest: null });
     });
@@ -263,6 +273,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     completeOnboarding,
     updateProfile,
     updateSystemScan,
+    updateCorrectiveProfile: saveCorrectiveProfile,
     completeMovementAssessment,
     savePostureScan,
     deletePostureScan,
@@ -275,7 +286,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, completeMovementAssessment, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
