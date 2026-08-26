@@ -7,6 +7,7 @@ export const INITIAL_SNAPSHOT: AppSnapshot = {
   dailyQuest: null,
   activeWorkout: null,
   history: [],
+  lastCompletion: null,
 };
 
 export function normalizeEquipment(availableEquipment: readonly Equipment[]): Equipment[] {

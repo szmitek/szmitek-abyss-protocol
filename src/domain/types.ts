@@ -137,6 +137,18 @@ export interface DailyQuest {
   plan: WorkoutPlan;
 }
 
+export interface CompletionSummary {
+  id: string;
+  planTitle: string;
+  xpEarned: number;
+  statGains: StatBlock;
+  levelBefore: number;
+  levelAfter: number;
+  rankBefore: Rank;
+  rankAfter: Rank;
+  rankTrial: boolean;
+}
+
 export interface ActiveWorkout {
   questId: string;
   plan: WorkoutPlan;
@@ -152,6 +164,7 @@ export interface AppSnapshot {
   dailyQuest: DailyQuest | null;
   activeWorkout: ActiveWorkout | null;
   history: WorkoutHistoryEntry[];
+  lastCompletion: CompletionSummary | null;
 }
 
 export interface OnboardingAnswers {

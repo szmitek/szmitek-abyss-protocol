@@ -1,5 +1,5 @@
 import { dayDifference } from './date.ts';
-import { STAT_KEYS, type Rank, type StatBlock, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+import { STAT_KEYS, type CompletionSummary, type Rank, type StatBlock, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 
 export function xpRequiredForLevel(level: number): number {
   return 120 + level * 80;
@@ -86,5 +86,19 @@ export function completeRankTrial(profile: UserProfile): UserProfile {
     ...profile,
     rank: eligibility.target,
     rankTrialCompleted: [...profile.rankTrialCompleted, eligibility.target],
+  };
+}
+
+export function createCompletionSummary(before: UserProfile, after: UserProfile, workout: WorkoutHistoryEntry, rankTrial: boolean): CompletionSummary {
+  return {
+    id: `report-${workout.id}`,
+    planTitle: workout.title,
+    xpEarned: workout.xpEarned,
+    statGains: workout.statGains,
+    levelBefore: before.level,
+    levelAfter: after.level,
+    rankBefore: before.rank,
+    rankAfter: after.rank,
+    rankTrial,
   };
 }

@@ -5,7 +5,7 @@ import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
 import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateProfileSettings } from '../domain/profile.ts';
-import { applyCompletedWorkout, calculateStatGains, completeRankTrial, rankTrialEligibility } from '../domain/progression.ts';
+import { applyCompletedWorkout, calculateStatGains, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
 import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
@@ -20,6 +20,7 @@ interface AppStoreValue {
   completeCurrentSet: () => void;
   abandonWorkout: () => void;
   finishWorkout: (difficulty: PerceivedDifficulty) => void;
+  dismissCompletion: () => void;
 }
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
@@ -192,13 +193,19 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         xpEarned: active.plan.rewardXp,
         statGains: calculateStatGains(active.plan),
       };
+      const rankTrial = active.questId.startsWith('rank-');
       let profile = applyCompletedWorkout(current.profile, entry);
-      if (active.questId.startsWith('rank-')) profile = completeRankTrial(profile);
-      const dailyQuest = active.questId.startsWith('rank-')
+      if (rankTrial) profile = completeRankTrial(profile);
+      const dailyQuest = rankTrial
         ? current.dailyQuest
         : current.dailyQuest ? { ...current.dailyQuest, status: 'complete' as const } : null;
-      return { ...current, profile, history: [entry, ...current.history], dailyQuest, activeWorkout: null };
+      const lastCompletion = createCompletionSummary(current.profile, profile, entry, rankTrial);
+      return { ...current, profile, history: [entry, ...current.history], dailyQuest, activeWorkout: null, lastCompletion };
     });
+  }, [commit]);
+
+  const dismissCompletion = useCallback(() => {
+    commit((current) => current.lastCompletion ? { ...current, lastCompletion: null } : current);
   }, [commit]);
 
   const value = useMemo<AppStoreValue>(() => ({
@@ -213,7 +220,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     completeCurrentSet,
     abandonWorkout,
     finishWorkout,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout]);
+    dismissCompletion,
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
