@@ -73,8 +73,11 @@ Ping me the exercise ids and I'll author + verify the angle data.
 
 ## Current status
 
-- Seeded: `bodyweight-squat`, `pushup`, `forearm-plank`.
-- v1 renders one leg + one arm, with a dimmed offset copy for depth.
-- v1.1 (planned): independent back-leg chain for lunges / split stances, and a
-  supine root for bridges. The skeleton and FK already generalize to these; it's
-  additional pose data + a second render branch.
+- Seeded: 22 exercises (squats, warmup knee-drives, holds, prone/vertical push, lunges).
+- Single leg + arm, with a dimmed offset copy for depth.
+- v1.1 DONE: independent back leg + back arm for lunges / split stances.
+  A pose adds `backLeg` and `backArm` — one entry per keyframe, angles are
+  DIRECT chain directions (hip→knee→ankle→toe, shoulder→elbow→wrist; 0 up,
+  180 down, + forward). See `reverse-lunge` / `split-squat` for the pattern.
+- Next: supine root (bridges, floor core) — same skeleton, a lying anchor plus
+  a second render branch.
