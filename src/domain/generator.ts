@@ -3,7 +3,8 @@ import { calibrationPriorityScore, hasMovementPain, isCalibrationCompatible, pre
 import { hasSafetyHold, healthPriorityScore, isHealthCompatible, preferredHealthExercises } from './health.ts';
 import { calculateRecovery } from './recovery.ts';
 import { isScheduledTrainingDay } from './schedule.ts';
-import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type MuscleGroup, type Rank, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+import { getTrainingArcState } from './trainingArc.ts';
+import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type MuscleGroup, type Rank, type TrainingArcPhase, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 
 export function isEquipmentCompatible(exercise: Exercise, availableEquipment: readonly string[]): boolean {
   return exercise.requiredEquipment.every((required) => availableEquipment.includes(required));
@@ -26,10 +27,13 @@ function randomFactory(seed: string): () => number {
   };
 }
 
-function difficultyCap(profile: UserProfile): 1 | 2 | 3 {
-  if (profile.experienceLevel === 'beginner') return profile.totalWorkouts >= 8 ? 2 : 1;
-  if (profile.experienceLevel === 'intermediate') return profile.totalWorkouts >= 12 ? 3 : 2;
-  return 3;
+function difficultyCap(profile: UserProfile, phase?: TrainingArcPhase): 1 | 2 | 3 {
+  const base = profile.experienceLevel === 'beginner'
+    ? profile.totalWorkouts >= 8 ? 2 : 1
+    : profile.experienceLevel === 'intermediate'
+      ? profile.totalWorkouts >= 12 ? 3 : 2
+      : 3;
+  return (phase === 'calibration' ? Math.min(2, base) : base) as 1 | 2 | 3;
 }
 
 function goalPriorities(profile: UserProfile): MuscleGroup[] {
@@ -52,7 +56,7 @@ function recentExerciseIds(history: WorkoutHistoryEntry[]): Set<string> {
   return new Set(latest?.results.map((result) => result.exerciseId) ?? []);
 }
 
-function chooseVariant(group: Exercise[], profile: UserProfile, history: WorkoutHistoryEntry[]): Exercise {
+function chooseVariant(group: Exercise[], profile: UserProfile, history: WorkoutHistoryEntry[], phase?: TrainingArcPhase): Exercise {
   const ordered = [...group].sort((a, b) => a.progressionLevel - b.progressionLevel);
   const results = history.flatMap((workout) => workout.results.map((result) => ({ workout, result })))
     .filter(({ result }) => ordered.some((exercise) => exercise.id === result.exerciseId))
@@ -68,11 +72,11 @@ function chooseVariant(group: Exercise[], profile: UserProfile, history: Workout
   const mastered = currentResults.length >= 2 && currentResults.every(({ workout, result }) =>
     workout.perceivedDifficulty !== 'too-hard' && result.completedSets > 0 && result.completedVolume >= result.completedSets * result.targetPerSet,
   );
-  if (!mastered) return current;
+  if (!mastered || (phase !== undefined && phase !== 'overload')) return current;
   return ordered[ordered.indexOf(current) + 1] ?? current;
 }
 
-function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHistoryEntry[]): ExercisePrescription {
+function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHistoryEntry[], phase?: TrainingArcPhase): ExercisePrescription {
   const previous = history.flatMap((workout) => workout.results.map((result) => ({ workout, result })))
     .filter(({ result }) => result.exerciseId === exercise.id)
     .sort((a, b) => b.workout.date.localeCompare(a.workout.date));
@@ -85,12 +89,14 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
     const lastTwoMastered = previous.length >= 2 && previous.slice(0, 2).every(({ workout, result }) =>
       workout.perceivedDifficulty !== 'too-hard' && result.completedVolume >= result.completedSets * result.targetPerSet,
     );
-    if (lastTwoMastered) target = Math.min(exercise.maxReps, target + (exercise.repType === 'seconds' ? 5 : 2));
+    if (lastTwoMastered && (phase === undefined || phase === 'overload')) target = Math.min(exercise.maxReps, target + (exercise.repType === 'seconds' ? 5 : 2));
   }
 
-  const sets = exercise.exerciseType === 'warmup' || exercise.exerciseType === 'mobility'
+  let sets = exercise.exerciseType === 'warmup' || exercise.exerciseType === 'mobility'
     ? 1
     : profile.workoutDuration <= 15 ? 2 : profile.workoutDuration === 60 && profile.experienceLevel === 'advanced' ? 4 : 3;
+  if (phase === 'calibration' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.min(2, sets);
+  if (phase === 'consolidation' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
   return { exercise, sets, target, restSeconds: exercise.defaultRest };
 }
 
@@ -147,7 +153,8 @@ export function replaceExerciseInPlan(plan: WorkoutPlan, exerciseIndex: number, 
 
 export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
   const random = randomFactory(`${profile.id}:${dateKey}:${profile.totalWorkouts}`);
-  const cap = difficultyCap(profile);
+  const arcState = getTrainingArcState(profile.trainingArcs, dateKey);
+  const cap = difficultyCap(profile, arcState?.phase);
   const eligible = EXERCISES.filter((exercise) =>
     isEquipmentCompatible(exercise, profile.availableEquipment) &&
     isHealthCompatible(exercise, profile) &&
@@ -197,7 +204,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   for (const candidate of scoredGroups) {
     if (selected.length >= totalCount - 1) break;
     if (candidate.variants.some((exercise) => selected.some((item) => item.progressionGroup === exercise.progressionGroup))) continue;
-    selected.push(chooseVariant(candidate.variants, profile, history));
+    selected.push(chooseVariant(candidate.variants, profile, history, arcState?.phase));
   }
 
   const mobility = eligible.filter((exercise) => exercise.exerciseType === 'mobility' && !selected.some((item) => item.id === exercise.id));
@@ -206,7 +213,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     if (best) selected.push(best);
   }
 
-  const prescriptions = selected.slice(0, totalCount).map((exercise) => prescribe(exercise, profile, history));
+  const prescriptions = selected.slice(0, totalCount).map((exercise) => prescribe(exercise, profile, history, arcState?.phase));
   if (!prescriptions.every((item) => isEquipmentCompatible(item.exercise, profile.availableEquipment) && isHealthCompatible(item.exercise, profile) && isCalibrationCompatible(item.exercise, profile))) {
     throw new Error('Workout safety constraint invariant violated.');
   }
@@ -223,6 +230,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     difficulty,
     exercises: prescriptions,
     rewardXp: 80 + prescriptions.length * 12 + difficulty * 20,
+    ...(arcState ? { trainingArc: { cycleNumber: arcState.cycleNumber, week: arcState.week, phase: arcState.phase } } : {}),
   };
 }
 
@@ -254,8 +262,23 @@ export function generateSafetyHoldProtocol(dateKey: string): WorkoutPlan {
   };
 }
 
+export function generateReassessmentProtocol(dateKey: string): WorkoutPlan {
+  return {
+    id: `reassessment-${dateKey}`,
+    kind: 'reassessment',
+    dateKey,
+    title: 'PLAYER RE-SCAN',
+    focus: 'TRAINING ARC COMPLETE',
+    estimatedMinutes: 5,
+    difficulty: 1,
+    exercises: [],
+    rewardXp: 0,
+  };
+}
+
 export function generateDailyProtocol(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
   if (hasSafetyHold(profile.healthProfile) || hasMovementPain(profile)) return generateSafetyHoldProtocol(dateKey);
+  if (getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue) return generateReassessmentProtocol(dateKey);
   return isScheduledTrainingDay(profile, dateKey)
     ? generateWorkout(profile, history, dateKey)
     : generateRecoveryProtocol(dateKey);

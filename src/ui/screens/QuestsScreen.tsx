@@ -12,22 +12,29 @@ interface QuestsScreenProps {
   snapshot: AppSnapshot;
   onBeginDaily: () => void;
   onBeginRankTrial: () => void;
+  onOpenMovementCalibration: () => void;
 }
 
-export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: QuestsScreenProps) {
+export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenMovementCalibration }: QuestsScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const trial = rankTrialEligibility(profile);
   const recoveryDay = quest?.plan.kind === 'recovery';
   const safetyHold = quest?.plan.kind === 'safety-hold';
+  const reassessmentDue = quest?.plan.kind === 'reassessment';
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   return (
     <Screen eyebrow="MISSION REGISTRY" title="Quests" subtitle="Clear today's protocol or prepare for ascension.">
-      <SystemPanel eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : recoveryDay ? 'RECOVERY DAY' : 'DAILY QUEST'} title={quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{safetyHold ? 'SEALED' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
+      <SystemPanel eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? 'RECOVERY DAY' : 'DAILY QUEST'} title={quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : reassessmentDue ? 'purple' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
         {safetyHold ? (
           <View style={[styles.recoveryMessage, styles.holdMessage]}>
             <Text style={[styles.recoveryMark, styles.holdMark]}>!</Text>
             <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>UNRESOLVED SIGNAL DETECTED</Text><Text style={styles.recoveryText}>The System will not generate an unsupervised workout while a safety hold is active. Review Player Scan or Movement Analysis from Status.</Text></View>
+          </View>
+        ) : reassessmentDue ? (
+          <View style={[styles.recoveryMessage, styles.reassessmentMessage]}>
+            <Text style={[styles.recoveryMark, styles.reassessmentMark]}>◇</Text>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>NEW PLAYER SIGNAL REQUIRED</Text><Text style={styles.recoveryText}>Repeat Movement Analysis to compare the completed cycle and generate the next Training Arc.</Text></View>
           </View>
         ) : recoveryDay ? (
           <View style={styles.recoveryMessage}>
@@ -42,9 +49,9 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
           </View>
         ))}
         <GlowButton
-          label={safetyHold ? 'PROTOCOL SEALED' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
-          disabled={quest?.status === 'complete'}
-          onPress={onBeginDaily}
+          label={safetyHold ? 'PROTOCOL SEALED' : reassessmentDue ? 'BEGIN PLAYER RE-SCAN' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
+          disabled={quest?.status === 'complete' && !reassessmentDue}
+          onPress={reassessmentDue ? onOpenMovementCalibration : onBeginDaily}
           style={styles.button}
         />
       </SystemPanel>
@@ -86,6 +93,8 @@ const styles = StyleSheet.create({
   recoveryText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 4 },
   holdMessage: { borderColor: 'rgba(226,61,87,0.3)', backgroundColor: 'rgba(226,61,87,0.06)' },
   holdMark: { color: colors.danger, fontWeight: '900', textAlign: 'center', width: 30 },
+  reassessmentMessage: { borderColor: 'rgba(106,92,255,0.3)', backgroundColor: 'rgba(106,92,255,0.07)' },
+  reassessmentMark: { color: colors.purple },
   trialHero: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
   trialRune: { color: colors.danger, fontSize: 44, marginRight: spacing.lg, textShadowColor: colors.danger, textShadowRadius: 14 },
   trialCopy: { flex: 1 },

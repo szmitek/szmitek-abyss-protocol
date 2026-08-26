@@ -37,6 +37,7 @@ export const MOVEMENT_CHECKS = ['squat-control', 'overhead-reach', 'hip-hinge', 
 export type MovementCheck = (typeof MOVEMENT_CHECKS)[number];
 export type MovementRating = 'clear' | 'limited' | 'pain';
 export type MovementAssessmentKind = 'baseline' | 'reassessment';
+export type TrainingArcPhase = 'calibration' | 'foundation' | 'overload' | 'consolidation';
 
 export const STAT_KEYS = ['strength', 'endurance', 'agility', 'vitality', 'mobility'] as const;
 export type StatKey = (typeof STAT_KEYS)[number];
@@ -86,7 +87,7 @@ export interface ExercisePrescription {
 
 export interface WorkoutPlan {
   id: string;
-  kind?: 'training' | 'recovery' | 'safety-hold' | 'rank-trial';
+  kind?: 'training' | 'recovery' | 'safety-hold' | 'reassessment' | 'rank-trial';
   dateKey: string;
   title: string;
   focus: string;
@@ -94,6 +95,7 @@ export interface WorkoutPlan {
   difficulty: 1 | 2 | 3;
   exercises: ExercisePrescription[];
   rewardXp: number;
+  trainingArc?: TrainingArcContext;
 }
 
 export interface ExerciseResult {
@@ -129,6 +131,21 @@ export interface MovementAssessment {
   results: Record<MovementCheck, MovementRating>;
 }
 
+export interface TrainingArc {
+  id: string;
+  cycleNumber: number;
+  startDateKey: string;
+  durationWeeks: 4;
+  baselineAssessmentId: string;
+  completionAssessmentId: string | null;
+}
+
+export interface TrainingArcContext {
+  cycleNumber: number;
+  week: 1 | 2 | 3 | 4;
+  phase: TrainingArcPhase;
+}
+
 export interface WorkoutHistoryEntry {
   id: string;
   date: string;
@@ -153,6 +170,7 @@ export interface UserProfile extends StatBlock {
   attributeXp: StatBlock;
   healthProfile: PlayerHealthProfile;
   movementAssessments: MovementAssessment[];
+  trainingArcs: TrainingArc[];
   availableEquipment: Equipment[];
   excludedExercises: string[];
   goal: Goal;
@@ -196,7 +214,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 3;
+  schemaVersion: 4;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   dailyQuest: DailyQuest | null;

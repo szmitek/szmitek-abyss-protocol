@@ -87,6 +87,7 @@ function SystemRoot() {
     return (
       <SystemBackground>
         <MovementCalibrationScreen
+          kind={baseline ? 'baseline' : 'reassessment'}
           {...(!baseline ? { onCancel: () => setMovementCalibrationEditing(false) } : {})}
           onComplete={(results) => {
             completeMovementAssessment(results, baseline ? 'baseline' : 'reassessment');
@@ -105,7 +106,7 @@ function SystemRoot() {
   return (
     <SystemBackground>
       {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={() => setDailyBriefingOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
-      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} /> : null}
+      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={() => setDailyBriefingOpen(true)} onBeginRankTrial={beginRankTrial} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
       {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onRestoreExercises={restoreExercises} /> : null}
       {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />

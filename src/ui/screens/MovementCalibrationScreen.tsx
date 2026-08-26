@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { MOVEMENT_CHECKS, type MovementCheck, type MovementRating } from '../../domain/types.ts';
+import { MOVEMENT_CHECKS, type MovementAssessmentKind, type MovementCheck, type MovementRating } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
 import { colors, radius, spacing } from '../theme.ts';
 
 interface MovementCalibrationScreenProps {
+  kind: MovementAssessmentKind;
   onCancel?: (() => void) | undefined;
   onComplete: (results: Record<MovementCheck, MovementRating>) => void;
 }
@@ -46,7 +47,7 @@ const RATINGS: { value: MovementRating; label: string; detail: string }[] = [
   { value: 'pain', label: 'PAIN', detail: 'Pain during the check' },
 ];
 
-export function MovementCalibrationScreen({ onCancel, onComplete }: MovementCalibrationScreenProps) {
+export function MovementCalibrationScreen({ kind, onCancel, onComplete }: MovementCalibrationScreenProps) {
   const [results, setResults] = useState<Partial<Record<MovementCheck, MovementRating>>>({});
   const complete = MOVEMENT_CHECKS.every((check) => results[check] !== undefined);
   const painDetected = Object.values(results).includes('pain');
@@ -59,8 +60,8 @@ export function MovementCalibrationScreen({ onCancel, onComplete }: MovementCali
   return (
     <Screen
       eyebrow="SYSTEM // MOVEMENT ANALYSIS"
-      title="Player Calibration"
-      subtitle="Five submaximal checks establish a movement baseline. The System adapts difficulty and exercise selection from your report."
+      title={kind === 'baseline' ? 'Player Calibration' : 'Player Re-scan'}
+      subtitle={kind === 'baseline' ? 'Five submaximal checks establish a movement baseline. The System adapts difficulty and exercise selection from your report.' : 'Repeat the same five checks. The System will compare the signal and calibrate the next Training Arc.'}
     >
       <View style={styles.directive}>
         <Text style={styles.directiveMark}>!</Text>

@@ -1,5 +1,6 @@
 import { EQUIPMENT, type AppSnapshot, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile } from './types.ts';
 import { toDateKey } from './date.ts';
+import { registerAssessmentWithTrainingArcs } from './trainingArc.ts';
 
 export const EMPTY_HEALTH_PROFILE: PlayerHealthProfile = {
   scanCompleted: false,
@@ -12,7 +13,7 @@ export const EMPTY_HEALTH_PROFILE: PlayerHealthProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   onboardingComplete: false,
   profile: null,
   dailyQuest: null,
@@ -37,6 +38,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     attributeXp: { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 },
     healthProfile: { ...EMPTY_HEALTH_PROFILE },
     movementAssessments: [],
+    trainingArcs: [],
     strength: 1,
     endurance: 1,
     agility: 1,
@@ -92,5 +94,9 @@ export function recordMovementAssessment(profile: UserProfile, results: Record<M
     dateKey: toDateKey(now),
     results,
   };
-  return { ...profile, movementAssessments: [assessment, ...profile.movementAssessments] };
+  return {
+    ...profile,
+    movementAssessments: [assessment, ...profile.movementAssessments],
+    trainingArcs: registerAssessmentWithTrainingArcs(profile.trainingArcs, assessment),
+  };
 }
