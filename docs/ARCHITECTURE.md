@@ -17,6 +17,7 @@
 | `src/domain/generator.ts` | Equipment/health constraint filtering, recovery-aware selection, overload prescription |
 | `src/domain/health.ts` | Player Scan safety filters and posture-priority calibration |
 | `src/domain/calibration.ts` | Movement Analysis constraints and foundation priorities |
+| `src/domain/correctiveProfile.ts` | Confirmed corrective targets, evidence fusion, scoring, and explanations |
 | `src/domain/trainingArc.ts` | Four-week phase and reassessment lifecycle |
 | `src/domain/postureArchive.ts` | Visual record lifecycle and comparison selection |
 | `src/domain/readiness.ts` | Daily signal scoring, one-per-day log, and workout gate |
@@ -34,10 +35,11 @@
 4. Filter the catalog by the equipment subset invariant, health constraints, Movement Analysis constraints, and exclusions.
 5. Apply the experience/difficulty ceiling, including a stricter reduced-readiness cap.
 6. Calculate muscle readiness from completed history and deprioritize same-day sore areas.
-7. Score progression groups using goal, recovery, posture priorities, movement priorities, Training Arc phase, last-session variety, and seeded jitter.
-8. Select one safe variant per progression group.
-9. Prescribe sets/reps from the latest two successful exposures and feedback; reduced readiness blocks overload and removes working sets.
-10. Add warm-up and mobility sequences, then validate equipment and health invariants again on the final plan.
+7. Reserve compatible corrective capacity for the confirmed primary/support targets.
+8. Score progression groups using goal, recovery, corrective priorities, posture priorities, movement priorities, Training Arc phase, last-session variety, and seeded jitter.
+9. Select one safe variant per progression group and attach human-readable selection reasons.
+10. Prescribe sets/reps from the latest two successful exposures and feedback; reduced readiness blocks overload and removes working sets.
+11. Add warm-up and mobility sequences, then validate equipment and health invariants again on the final plan.
 
 Randomness is seeded from user, date, and completed-workout count. A generated daily plan is therefore stable until it is persisted and changes naturally on another day.
 
@@ -50,6 +52,6 @@ The exercise selection validator remains deterministic client-side and server-si
 ## Failure behavior
 
 - A missing or incompatible catalog returns an explicit generator error, never an unsafe fallback.
-- Legacy schema v1–v5 snapshots migrate to schema v6 without erasing existing progress.
+- Legacy schema v1–v6 snapshots migrate to schema v7 without erasing existing progress.
 - An interrupted active workout is persisted and resumes before normal navigation.
 - Reward application occurs once, only after all prescribed sets are cleared and feedback is selected.

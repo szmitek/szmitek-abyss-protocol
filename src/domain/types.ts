@@ -43,6 +43,19 @@ export type ReadinessSleep = 'poor' | 'fair' | 'good';
 export type ReadinessSoreness = 'none' | 'mild' | 'high';
 export type ReadinessBand = 'normal' | 'reduced' | 'recovery' | 'hold';
 
+export const CORRECTIVE_GOALS = [
+  'pelvic-control',
+  'upper-back-capacity',
+  'shoulder-position',
+  'head-neck-control',
+  'hip-mobility',
+  'shoulder-mobility',
+  'left-right-control',
+] as const;
+export type CorrectiveGoal = (typeof CORRECTIVE_GOALS)[number];
+export type CorrectivePriority = 'primary' | 'support';
+export type CorrectiveEvidenceSource = 'self-observation' | 'player-scan' | 'movement-analysis' | 'posture-archive';
+
 export const POSTURE_VIEWS = ['front', 'side', 'back'] as const;
 export type PostureView = (typeof POSTURE_VIEWS)[number];
 export type PosturePhotoSource = 'camera' | 'library';
@@ -53,6 +66,7 @@ export type StatKey = (typeof STAT_KEYS)[number];
 export const MUSCLE_GROUPS = [
   'chest',
   'back',
+  'neck',
   'shoulders',
   'arms',
   'core',
@@ -91,6 +105,12 @@ export interface ExercisePrescription {
   sets: number;
   target: number;
   restSeconds: number;
+  selectionReasons?: ExerciseSelectionReason[];
+}
+
+export interface ExerciseSelectionReason {
+  code: 'prepare' | 'training-goal' | 'corrective' | 'player-scan' | 'movement-analysis' | 'recovery' | 'mobility';
+  label: string;
 }
 
 export interface WorkoutPlan {
@@ -105,6 +125,7 @@ export interface WorkoutPlan {
   rewardXp: number;
   trainingArc?: TrainingArcContext;
   readinessBand?: ReadinessBand;
+  correctiveFocus?: CorrectiveGoal;
 }
 
 export interface ExerciseResult {
@@ -129,6 +150,18 @@ export interface PlayerHealthProfile {
   safetySignals: SafetySignal[];
   knownConditions: string;
   clinicianRestrictions: string;
+  updatedAt: string | null;
+}
+
+export interface CorrectiveTarget {
+  goal: CorrectiveGoal;
+  priority: CorrectivePriority;
+  sources: CorrectiveEvidenceSource[];
+}
+
+export interface CorrectiveProfile {
+  configured: boolean;
+  targets: CorrectiveTarget[];
   updatedAt: string | null;
 }
 
@@ -218,6 +251,7 @@ export interface UserProfile extends StatBlock {
   rank: Rank;
   attributeXp: StatBlock;
   healthProfile: PlayerHealthProfile;
+  correctiveProfile: CorrectiveProfile;
   movementAssessments: MovementAssessment[];
   trainingArcs: TrainingArc[];
   postureScans: PostureScan[];
@@ -265,7 +299,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 6;
+  schemaVersion: 7;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   dailyQuest: DailyQuest | null;

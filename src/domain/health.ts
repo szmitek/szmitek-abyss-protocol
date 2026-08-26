@@ -33,7 +33,8 @@ function conflictsWithPain(exercise: Exercise, painArea: PainArea): boolean {
     case 'lower-back':
       return LOWER_BACK_EXTENSION.has(exercise.id);
     case 'upper-back-neck':
-      return exercise.exerciseType !== 'mobility' && ((exercise.muscleLoad.back ?? 0) >= 3 || (exercise.muscleLoad.shoulders ?? 0) >= 3);
+      return exercise.muscleGroups.includes('neck')
+        || (exercise.exerciseType !== 'mobility' && ((exercise.muscleLoad.back ?? 0) >= 3 || (exercise.muscleLoad.shoulders ?? 0) >= 3));
   }
 }
 

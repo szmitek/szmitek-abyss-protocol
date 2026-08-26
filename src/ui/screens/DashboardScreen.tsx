@@ -6,6 +6,7 @@ import { getTrainingArcState } from '../../domain/trainingArc.ts';
 import { levelProgress } from '../../domain/progression.ts';
 import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
 import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
+import { CORRECTIVE_GOAL_DETAILS, primaryCorrectiveTarget } from '../../domain/correctiveProfile.ts';
 import type { AppSnapshot, StatKey } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -19,6 +20,7 @@ interface DashboardScreenProps {
   onOpenReadiness: () => void;
   onOpenSystemScan: () => void;
   onOpenMovementCalibration: () => void;
+  onOpenCorrectiveProfile: () => void;
 }
 
 const STATS: { key: StatKey; code: string }[] = [
@@ -29,7 +31,7 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenCorrectiveProfile }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
@@ -44,6 +46,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
   const reassessmentDue = quest?.plan.kind === 'reassessment';
   const movementAssessment = latestMovementAssessment(profile);
   const movementPain = hasMovementPain(profile);
+  const correctiveTarget = primaryCorrectiveTarget(profile);
   const arcState = getTrainingArcState(profile.trainingArcs, quest?.dateKey ?? new Date().toISOString().slice(0, 10));
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   const recoveryHighlights = Object.entries(recovery).filter(([group]) => ['chest', 'core', 'quads'].includes(group));
@@ -87,6 +90,13 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
         <SystemPanel eyebrow="MOVEMENT ANALYSIS REQUIRED" title="Establish Player baseline" accent="purple">
           <Text style={styles.scanCopy}>Complete five controlled movement checks. Your first Training Arc will use the result to cap difficulty and bias corrective work.</Text>
           <GlowButton label="START PLAYER CALIBRATION" variant="secondary" onPress={onOpenMovementCalibration} style={styles.scanButton} />
+        </SystemPanel>
+      ) : null}
+
+      {movementAssessment && !movementPain && !profile.correctiveProfile.configured ? (
+        <SystemPanel eyebrow="CORRECTIVE PROFILE AVAILABLE" title="Choose your long-term directive" accent="purple">
+          <Text style={styles.scanCopy}>Fuse Player Scan and Movement Analysis into a confirmed training focus. Suggestions remain editable and never override safety constraints.</Text>
+          <GlowButton label="CALIBRATE CORRECTIVE PROFILE" variant="secondary" onPress={onOpenCorrectiveProfile} style={styles.scanButton} />
         </SystemPanel>
       ) : null}
 
@@ -160,6 +170,14 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
       {movementAssessment && !movementPain ? (
         <SystemPanel eyebrow="MOVEMENT ANALYSIS" title="Calibration linked" accent="purple" trailing={<Text style={styles.questStatus}>{limitedMovementChecks(profile).length} LIMITS</Text>}>
           <Text style={styles.scanCopy}>{limitedMovementChecks(profile).length > 0 ? 'Limited checks are actively reducing conflicting difficulty and prioritizing foundation movements.' : 'All five baseline checks are clear. The System can progress within your current level and recovery limits.'}</Text>
+        </SystemPanel>
+      ) : null}
+
+
+      {profile.correctiveProfile.configured ? (
+        <SystemPanel eyebrow="CORRECTIVE DIRECTIVE" title={correctiveTarget ? CORRECTIVE_GOAL_DETAILS[correctiveTarget.goal].label : 'General training profile'} accent="purple" trailing={<Text style={styles.questStatus}>{profile.correctiveProfile.targets.length} TARGETS</Text>}>
+          <Text style={styles.scanCopy}>{correctiveTarget ? 'The primary directive receives first consideration after equipment, pain, movement and readiness constraints.' : 'No corrective target is active. The System is using goal, recovery and movement rules only.'}</Text>
+          <GlowButton label="EDIT CORRECTIVE PROFILE" variant="secondary" onPress={onOpenCorrectiveProfile} style={styles.scanButton} />
         </SystemPanel>
       ) : null}
 

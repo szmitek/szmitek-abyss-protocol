@@ -1,11 +1,12 @@
 import { EXERCISES } from '../data/exercises.ts';
 import { calibrationPriorityScore, hasMovementPain, isCalibrationCompatible, preferredCalibrationExercises } from './calibration.ts';
 import { hasSafetyHold, healthPriorityScore, isHealthCompatible, preferredHealthExercises } from './health.ts';
+import { correctivePriorityScore, correctiveSelectionReasons, preferredCorrectiveExercises, primaryCorrectiveTarget } from './correctiveProfile.ts';
 import { calculateRecovery } from './recovery.ts';
 import { readinessForDate } from './readiness.ts';
 import { isScheduledTrainingDay } from './schedule.ts';
 import { getTrainingArcState } from './trainingArc.ts';
-import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type MuscleGroup, type Rank, type ReadinessBand, type TrainingArcPhase, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type ExerciseSelectionReason, type MuscleGroup, type Rank, type ReadinessBand, type TrainingArcPhase, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 
 export function isEquipmentCompatible(exercise: Exercise, availableEquipment: readonly string[]): boolean {
   return exercise.requiredEquipment.every((required) => availableEquipment.includes(required));
@@ -78,6 +79,19 @@ function chooseVariant(group: Exercise[], profile: UserProfile, history: Workout
   return ordered[ordered.indexOf(current) + 1] ?? current;
 }
 
+function selectionReasons(exercise: Exercise, profile: UserProfile, readinessBand?: ReadinessBand): ExerciseSelectionReason[] {
+  const reasons = correctiveSelectionReasons(exercise, profile);
+  if (healthPriorityScore(exercise, profile) > 0) reasons.push({ code: 'player-scan', label: 'PLAYER SCAN // REGISTERED PRIORITY' });
+  if (calibrationPriorityScore(exercise, profile) > 0) reasons.push({ code: 'movement-analysis', label: 'MOVEMENT ANALYSIS // FOUNDATION' });
+  if (readinessBand === 'reduced') reasons.push({ code: 'recovery', label: 'READINESS // REDUCED LOAD' });
+  if (reasons.length === 0) {
+    if (exercise.exerciseType === 'warmup') reasons.push({ code: 'prepare', label: 'SYSTEM // MOVEMENT PREP' });
+    else if (exercise.exerciseType === 'mobility') reasons.push({ code: 'mobility', label: 'SYSTEM // RANGE RESTORATION' });
+    else reasons.push({ code: 'training-goal', label: 'OBJECTIVE // PRIMARY TRAINING' });
+  }
+  return reasons.slice(0, 2);
+}
+
 function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHistoryEntry[], phase?: TrainingArcPhase, readinessBand?: ReadinessBand): ExercisePrescription {
   const previous = history.flatMap((workout) => workout.results.map((result) => ({ workout, result })))
     .filter(({ result }) => result.exerciseId === exercise.id)
@@ -100,7 +114,7 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
   if (phase === 'calibration' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.min(2, sets);
   if (phase === 'consolidation' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
   if (readinessBand === 'reduced' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
-  return { exercise, sets, target, restSeconds: exercise.defaultRest };
+  return { exercise, sets, target, restSeconds: exercise.defaultRest, selectionReasons: selectionReasons(exercise, profile, readinessBand) };
 }
 
 function desiredExerciseCount(minutes: UserProfile['workoutDuration']): number {
@@ -146,6 +160,7 @@ export function replaceExerciseInPlan(plan: WorkoutPlan, exerciseIndex: number, 
     exercise: replacement,
     target: Math.max(replacement.minReps, Math.min(replacement.maxReps, current.target)),
     restSeconds: replacement.defaultRest,
+    selectionReasons: selectionReasons(replacement, profile, plan.readinessBand),
   };
 
   if (!isEquipmentCompatible(replacement, profile.availableEquipment)) {
@@ -183,6 +198,17 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const warmups = eligible.filter((exercise) => exercise.exerciseType === 'warmup');
   if (warmups.length > 0) selected.push(warmups[Math.floor(random() * warmups.length)]!);
 
+  const correctiveLimit = profile.workoutDuration >= 20 ? 2 : 1;
+  const correctiveExercises = preferredCorrectiveExercises(profile, eligible)
+    .filter((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
+  let correctiveCount = 0;
+  for (const exercise of correctiveExercises) {
+    if (correctiveCount >= correctiveLimit) break;
+    if (selected.length >= totalCount - 1 || selected.some((item) => item.progressionGroup === exercise.progressionGroup)) continue;
+    selected.push(exercise);
+    correctiveCount += 1;
+  }
+
   const calibratedExercise = preferredHealthExercises(profile, eligible)
     .concat(preferredCalibrationExercises(profile, eligible))
     .find((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
@@ -202,7 +228,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     const focusScore = focusIndex < 0 ? 0 : 30 - focusIndex * 6;
     const varietyScore = variants.some((exercise) => recent.has(exercise.id)) ? -18 : 8;
     const jitter = random() * 10;
-    const calibrationScore = Math.max(...variants.map((exercise) => healthPriorityScore(exercise, profile) + calibrationPriorityScore(exercise, profile)));
+    const calibrationScore = Math.max(...variants.map((exercise) => healthPriorityScore(exercise, profile) + calibrationPriorityScore(exercise, profile) + correctivePriorityScore(exercise, profile)));
     const sorenessPenalty = readiness?.soreMuscles.some((muscle) => representative.muscleGroups.includes(muscle)) ? -120 : 0;
     return { variants, score: focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + calibrationScore + sorenessPenalty + jitter };
   }).sort((a, b) => b.score - a.score);
@@ -215,7 +241,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
 
   const mobility = eligible.filter((exercise) => exercise.exerciseType === 'mobility' && !selected.some((item) => item.id === exercise.id));
   if (mobility.length > 0) {
-    const best = [...mobility].sort((a, b) => focusGroups.indexOf(a.primaryMuscle) - focusGroups.indexOf(b.primaryMuscle))[0];
+    const best = [...mobility].sort((a, b) => correctivePriorityScore(b, profile) - correctivePriorityScore(a, profile) || focusGroups.indexOf(a.primaryMuscle) - focusGroups.indexOf(b.primaryMuscle))[0];
     if (best) selected.push(best);
   }
 
@@ -226,6 +252,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
 
   const difficulty = Math.max(...prescriptions.map((item) => item.exercise.difficulty)) as 1 | 2 | 3;
   const focus = focusGroups.slice(0, 2).map((group) => group.replace('-', ' ')).join(' + ');
+  const correctiveFocus = primaryCorrectiveTarget(profile)?.goal;
   return {
     id: `daily-${dateKey}`,
     kind: 'training',
@@ -238,6 +265,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     rewardXp: Math.round((80 + prescriptions.length * 12 + difficulty * 20) * (readinessBand === 'reduced' ? 0.8 : 1)),
     ...(arcState ? { trainingArc: { cycleNumber: arcState.cycleNumber, week: arcState.week, phase: arcState.phase } } : {}),
     ...(readinessBand ? { readinessBand } : {}),
+    ...(correctiveFocus ? { correctiveFocus } : {}),
   };
 }
 
