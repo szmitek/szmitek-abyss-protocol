@@ -31,7 +31,7 @@ function freshQuest(snapshot: AppSnapshot, dateKey = toDateKey(new Date())): App
   if (!snapshot.profile || snapshot.activeWorkout) return snapshot;
   if (snapshot.dailyQuest?.dateKey === dateKey) return snapshot;
   const plan = generateDailyProtocol(snapshot.profile, snapshot.history, dateKey);
-  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' || plan.kind === 'safety-hold' ? 'complete' : 'available', plan } };
+  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' || plan.kind === 'safety-hold' || plan.kind === 'reassessment' ? 'complete' : 'available', plan } };
 }
 
 export function AppStoreProvider({ children }: PropsWithChildren) {

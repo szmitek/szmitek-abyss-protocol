@@ -1,6 +1,7 @@
-import { dayDifference } from './date.ts';
+import { dayDifference, toDateKey } from './date.ts';
 import { STAT_KEYS, type CompletionSummary, type Rank, type StatBlock, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 import { hasMovementPain } from './calibration.ts';
+import { getTrainingArcState } from './trainingArc.ts';
 
 export function xpRequiredForLevel(level: number): number {
   return 120 + level * 80;
@@ -121,7 +122,7 @@ export function nextRank(rank: Rank): Rank | null {
   return RANK_ORDER[RANK_ORDER.indexOf(rank) + 1] ?? null;
 }
 
-export function rankTrialEligibility(profile: UserProfile): { eligible: boolean; target: Rank | null; reasons: string[] } {
+export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(new Date())): { eligible: boolean; target: Rank | null; reasons: string[] } {
   const target = nextRank(profile.rank);
   if (!target || target === 'E') return { eligible: false, target: null, reasons: ['Maximum rank reached'] };
   const requirement = RANK_REQUIREMENTS[target];
@@ -132,6 +133,7 @@ export function rankTrialEligibility(profile: UserProfile): { eligible: boolean;
   if (profile.activeTrainingWeeks.length < requirement.activeWeeks) reasons.push(`Train across ${requirement.activeWeeks} active weeks`);
   if (profile.healthProfile.safetySignals.length > 0) reasons.push('Resolve the Player Scan safety hold');
   if (hasMovementPain(profile)) reasons.push('Resolve the Movement Analysis pain hold');
+  if (getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue) reasons.push('Complete the Training Arc re-scan');
   return { eligible: reasons.length === 0, target, reasons };
 }
 

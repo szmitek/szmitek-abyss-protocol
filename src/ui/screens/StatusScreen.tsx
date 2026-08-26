@@ -2,6 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { attributeProgress, levelProgress } from '../../domain/progression.ts';
 import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from '../../domain/calibration.ts';
+import { compareAssessments, getTrainingArcState } from '../../domain/trainingArc.ts';
+import { toDateKey } from '../../domain/date.ts';
 import type { StatKey, UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -23,6 +25,10 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
   const movementAssessment = latestMovementAssessment(profile);
   const movementPain = hasMovementPain(profile);
   const limitedChecks = limitedMovementChecks(profile);
+  const arcState = getTrainingArcState(profile.trainingArcs, toDateKey(new Date()));
+  const comparison = profile.movementAssessments[0] && profile.movementAssessments[1]
+    ? compareAssessments(profile.movementAssessments[0], profile.movementAssessments[1])
+    : null;
   return (
     <Screen eyebrow="CHARACTER DATA" title="Status" subtitle="Parameters reflect completed work. No points are assigned arbitrarily.">
       <SystemPanel accent="purple">
@@ -54,6 +60,12 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
         <Metric value={profile.rankTrialCompleted.length} label="TRIALS SURVIVED" />
       </View>
 
+      <SystemPanel eyebrow="TRAINING ARC" title={arcState ? `Cycle ${arcState.cycleNumber} · Week ${arcState.week} / 4` : 'Awaiting movement baseline'} accent="purple" {...(arcState ? { trailing: <Text style={styles.arcPhase}>{arcState.reassessmentDue ? 'RE-SCAN' : arcState.phase.toUpperCase()}</Text> } : {})}>
+        {arcState ? <ProgressBar progress={arcState.progress} /> : null}
+        <Text style={[styles.settingsCopy, arcState && styles.arcCopy]}>{arcState ? arcState.reassessmentDue ? 'The four-week cycle is complete. Re-scan to archive the result and open the next cycle.' : `${arcState.daysRemaining} days remain before the next required Movement Analysis.` : 'Complete Player Calibration to activate phased workload instead of isolated daily sessions.'}</Text>
+        {arcState?.reassessmentDue ? <GlowButton label="BEGIN PLAYER RE-SCAN" variant="secondary" onPress={onOpenMovementCalibration} style={styles.settingsButton} /> : null}
+      </SystemPanel>
+
       <SystemPanel eyebrow="PLAYER SCAN" title={profile.healthProfile.scanCompleted ? 'Biometric parameters linked' : 'Calibration incomplete'} accent={profile.healthProfile.safetySignals.length > 0 ? 'danger' : 'purple'}>
         <View style={styles.scanMeta}>
           <ScanMetric value={profile.healthProfile.painAreas.length} label="PAIN SIGNALS" />
@@ -71,6 +83,7 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
           <ScanMetric value={movementPain ? 1 : 0} label="PAIN HOLD" danger={movementPain} />
         </View>
         <Text style={styles.settingsCopy}>{movementPain ? 'A pain response seals unsupervised training. It is a safety signal, not a diagnosis.' : limitedChecks.length > 0 ? 'The generator caps conflicting movements and inserts foundation work for limited checks.' : movementAssessment ? 'Current baseline allows normal progression within recovery and workload limits.' : 'Five submaximal checks give the System a safer starting point than experience level alone.'}</Text>
+        {comparison ? <Text style={styles.comparison}>LAST RE-SCAN // {comparison.improved} IMPROVED · {comparison.unchanged} STABLE · {comparison.declined} DECLINED</Text> : null}
         <GlowButton label={movementAssessment ? 'RECALIBRATE MOVEMENT' : 'START MOVEMENT ANALYSIS'} variant="secondary" onPress={onOpenMovementCalibration} style={styles.settingsButton} />
       </SystemPanel>
 
@@ -128,4 +141,7 @@ const styles = StyleSheet.create({
   scanLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 0.7, marginTop: 3, textAlign: 'center' },
   settingsButton: { marginTop: spacing.lg },
   restoreButton: { marginTop: spacing.sm },
+  arcPhase: { color: colors.purple, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  arcCopy: { marginTop: spacing.md },
+  comparison: { color: colors.success, fontSize: 8, fontWeight: '900', letterSpacing: 0.8, lineHeight: 14, marginTop: spacing.md },
 });
