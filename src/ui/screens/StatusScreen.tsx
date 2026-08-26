@@ -16,7 +16,7 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile, onEditProfile, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onRestoreExercises: () => void }) {
+export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onRestoreExercises: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
   return (
@@ -50,6 +50,16 @@ export function StatusScreen({ profile, onEditProfile, onRestoreExercises }: { p
         <Metric value={profile.rankTrialCompleted.length} label="TRIALS SURVIVED" />
       </View>
 
+      <SystemPanel eyebrow="PLAYER SCAN" title={profile.healthProfile.scanCompleted ? 'Biometric parameters linked' : 'Calibration incomplete'} accent={profile.healthProfile.safetySignals.length > 0 ? 'danger' : 'purple'}>
+        <View style={styles.scanMeta}>
+          <ScanMetric value={profile.healthProfile.painAreas.length} label="PAIN SIGNALS" />
+          <ScanMetric value={profile.healthProfile.posturePriorities.length} label="POSTURE TARGETS" />
+          <ScanMetric value={profile.healthProfile.safetySignals.length} label="SAFETY HOLDS" danger={profile.healthProfile.safetySignals.length > 0} />
+        </View>
+        <Text style={styles.settingsCopy}>{profile.healthProfile.safetySignals.length > 0 ? 'Training is sealed until unresolved warning signals are reviewed.' : 'The generator uses these signals as hard safety filters and calibration priorities.'}</Text>
+        <GlowButton label={profile.healthProfile.scanCompleted ? 'RECALIBRATE PLAYER SCAN' : 'START PLAYER SCAN'} variant="secondary" onPress={onOpenSystemScan} style={styles.settingsButton} />
+      </SystemPanel>
+
       <SystemPanel eyebrow="PROTOCOL SETTINGS" title="System calibration">
         <Text style={styles.settingsCopy}>Update your objective, training level, mission duration, weekly rhythm, or registered equipment without resetting progress.</Text>
         <GlowButton label="EDIT PROTOCOL" variant="secondary" onPress={onEditProfile} style={styles.settingsButton} />
@@ -63,6 +73,10 @@ export function StatusScreen({ profile, onEditProfile, onRestoreExercises }: { p
 
 function Metric({ value, label }: { value: number; label: string }) {
   return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>;
+}
+
+function ScanMetric({ value, label, danger = false }: { value: number; label: string; danger?: boolean }) {
+  return <View style={styles.scanMetric}><Text style={[styles.scanValue, danger && styles.scanDanger]}>{value}</Text><Text style={styles.scanLabel}>{label}</Text></View>;
 }
 
 const styles = StyleSheet.create({
@@ -93,6 +107,11 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.text, fontSize: 27, fontWeight: '900' },
   metricLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginTop: spacing.sm },
   settingsCopy: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },
+  scanMeta: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  scanMetric: { flex: 1, minHeight: 68, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(147,164,195,0.12)', backgroundColor: 'rgba(7,9,15,0.35)' },
+  scanValue: { color: colors.primary, fontSize: 20, fontWeight: '900' },
+  scanDanger: { color: colors.danger },
+  scanLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 0.7, marginTop: 3, textAlign: 'center' },
   settingsButton: { marginTop: spacing.lg },
   restoreButton: { marginTop: spacing.sm },
 });

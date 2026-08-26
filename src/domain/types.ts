@@ -24,6 +24,15 @@ export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type Rank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
 export type PerceivedDifficulty = 'too-easy' | 'perfect' | 'too-hard';
 
+export const PAIN_AREAS = ['lower-back', 'upper-back-neck', 'shoulders', 'wrists', 'hips', 'knees', 'ankles'] as const;
+export type PainArea = (typeof PAIN_AREAS)[number];
+
+export const POSTURE_PRIORITIES = ['pelvic-control', 'rounded-upper-back', 'forward-shoulders', 'hip-mobility', 'shoulder-mobility'] as const;
+export type PosturePriority = (typeof POSTURE_PRIORITIES)[number];
+
+export const SAFETY_SIGNALS = ['chest-pain', 'fainting-dizziness', 'unusual-breathlessness', 'acute-injury', 'medical-restriction'] as const;
+export type SafetySignal = (typeof SAFETY_SIGNALS)[number];
+
 export const STAT_KEYS = ['strength', 'endurance', 'agility', 'vitality', 'mobility'] as const;
 export type StatKey = (typeof STAT_KEYS)[number];
 
@@ -72,7 +81,7 @@ export interface ExercisePrescription {
 
 export interface WorkoutPlan {
   id: string;
-  kind?: 'training' | 'recovery' | 'rank-trial';
+  kind?: 'training' | 'recovery' | 'safety-hold' | 'rank-trial';
   dateKey: string;
   title: string;
   focus: string;
@@ -97,6 +106,16 @@ export interface StatBlock {
   mobility: number;
 }
 
+export interface PlayerHealthProfile {
+  scanCompleted: boolean;
+  painAreas: PainArea[];
+  posturePriorities: PosturePriority[];
+  safetySignals: SafetySignal[];
+  knownConditions: string;
+  clinicianRestrictions: string;
+  updatedAt: string | null;
+}
+
 export interface WorkoutHistoryEntry {
   id: string;
   date: string;
@@ -119,6 +138,7 @@ export interface UserProfile extends StatBlock {
   xp: number;
   rank: Rank;
   attributeXp: StatBlock;
+  healthProfile: PlayerHealthProfile;
   availableEquipment: Equipment[];
   excludedExercises: string[];
   goal: Goal;

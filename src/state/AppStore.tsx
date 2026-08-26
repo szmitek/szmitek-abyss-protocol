@@ -4,15 +4,16 @@ import { AppState } from 'react-native';
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateProfileSettings } from '../domain/profile.ts';
+import { createProfile, INITIAL_SNAPSHOT, restoreExcludedExercises, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, WorkoutHistoryEntry } from '../domain/types.ts';
+import type { AppSnapshot, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
   hydrated: boolean;
   completeOnboarding: (answers: OnboardingAnswers) => void;
   updateProfile: (answers: OnboardingAnswers) => void;
+  updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
   restoreExercises: () => void;
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
@@ -29,7 +30,7 @@ function freshQuest(snapshot: AppSnapshot, dateKey = toDateKey(new Date())): App
   if (!snapshot.profile || snapshot.activeWorkout) return snapshot;
   if (snapshot.dailyQuest?.dateKey === dateKey) return snapshot;
   const plan = generateDailyProtocol(snapshot.profile, snapshot.history, dateKey);
-  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' ? 'complete' : 'available', plan } };
+  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' || plan.kind === 'safety-hold' ? 'complete' : 'available', plan } };
 }
 
 export function AppStoreProvider({ children }: PropsWithChildren) {
@@ -74,6 +75,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       if (!current.profile || current.activeWorkout) return current;
       const profile = updateProfileSettings(current.profile, answers);
       if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile };
+      return freshQuest({ ...current, profile, dailyQuest: null });
+    });
+  }, [commit]);
+
+  const updateSystemScan = useCallback((healthProfile: PlayerHealthProfile) => {
+    commit((current) => {
+      if (!current.profile || current.activeWorkout) return current;
+      const profile = updateHealthProfile(current.profile, healthProfile);
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
       return freshQuest({ ...current, profile, dailyQuest: null });
     });
   }, [commit]);
@@ -215,6 +225,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     hydrated,
     completeOnboarding,
     updateProfile,
+    updateSystemScan,
     restoreExercises,
     beginDailyQuest,
     beginRankTrial,
@@ -223,7 +234,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

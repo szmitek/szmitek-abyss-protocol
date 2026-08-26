@@ -1,4 +1,5 @@
 import { EXERCISES } from '../data/exercises.ts';
+import { hasSafetyHold, healthPriorityScore, isHealthCompatible, preferredHealthExercises } from './health.ts';
 import { calculateRecovery } from './recovery.ts';
 import { isScheduledTrainingDay } from './schedule.ts';
 import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type MuscleGroup, type Rank, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
@@ -120,6 +121,7 @@ export function replaceExerciseInPlan(plan: WorkoutPlan, exerciseIndex: number, 
     && !planExerciseIds.has(exercise.id)
     && !profile.excludedExercises.includes(exercise.id)
     && isEquipmentCompatible(exercise, profile.availableEquipment)
+    && isHealthCompatible(exercise, profile)
     && exercise.exerciseType === current.exercise.exerciseType
     && exercise.repType === current.exercise.repType
     && exercise.difficulty <= current.exercise.difficulty,
@@ -146,6 +148,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const cap = difficultyCap(profile);
   const eligible = EXERCISES.filter((exercise) =>
     isEquipmentCompatible(exercise, profile.availableEquipment) &&
+    isHealthCompatible(exercise, profile) &&
     !profile.excludedExercises.includes(exercise.id) &&
     exercise.difficulty <= cap,
   );
@@ -165,6 +168,10 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const warmups = eligible.filter((exercise) => exercise.exerciseType === 'warmup');
   if (warmups.length > 0) selected.push(warmups[Math.floor(random() * warmups.length)]!);
 
+  const calibratedExercise = preferredHealthExercises(profile, eligible)
+    .find((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
+  if (calibratedExercise && selected.length < totalCount - 1) selected.push(calibratedExercise);
+
   const workPool = eligible.filter((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
   const grouped = new Map<string, Exercise[]>();
   for (const exercise of workPool) {
@@ -179,11 +186,13 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     const focusScore = focusIndex < 0 ? 0 : 30 - focusIndex * 6;
     const varietyScore = variants.some((exercise) => recent.has(exercise.id)) ? -18 : 8;
     const jitter = random() * 10;
-    return { variants, score: focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + jitter };
+    const calibrationScore = Math.max(...variants.map((exercise) => healthPriorityScore(exercise, profile)));
+    return { variants, score: focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + calibrationScore + jitter };
   }).sort((a, b) => b.score - a.score);
 
   for (const candidate of scoredGroups) {
     if (selected.length >= totalCount - 1) break;
+    if (candidate.variants.some((exercise) => selected.some((item) => item.progressionGroup === exercise.progressionGroup))) continue;
     selected.push(chooseVariant(candidate.variants, profile, history));
   }
 
@@ -194,8 +203,8 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   }
 
   const prescriptions = selected.slice(0, totalCount).map((exercise) => prescribe(exercise, profile, history));
-  if (!prescriptions.every((item) => isEquipmentCompatible(item.exercise, profile.availableEquipment))) {
-    throw new Error('Equipment constraint invariant violated.');
+  if (!prescriptions.every((item) => isEquipmentCompatible(item.exercise, profile.availableEquipment) && isHealthCompatible(item.exercise, profile))) {
+    throw new Error('Workout safety constraint invariant violated.');
   }
 
   const difficulty = Math.max(...prescriptions.map((item) => item.exercise.difficulty)) as 1 | 2 | 3;
@@ -227,7 +236,22 @@ export function generateRecoveryProtocol(dateKey: string): WorkoutPlan {
   };
 }
 
+export function generateSafetyHoldProtocol(dateKey: string): WorkoutPlan {
+  return {
+    id: `safety-hold-${dateKey}`,
+    kind: 'safety-hold',
+    dateKey,
+    title: 'SYSTEM SAFEGUARD',
+    focus: 'PLAYER CLEARANCE REQUIRED',
+    estimatedMinutes: 0,
+    difficulty: 1,
+    exercises: [],
+    rewardXp: 0,
+  };
+}
+
 export function generateDailyProtocol(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
+  if (hasSafetyHold(profile.healthProfile)) return generateSafetyHoldProtocol(dateKey);
   return isScheduledTrainingDay(profile, dateKey)
     ? generateWorkout(profile, history, dateKey)
     : generateRecoveryProtocol(dateKey);

@@ -19,11 +19,17 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
   const quest = snapshot.dailyQuest;
   const trial = rankTrialEligibility(profile);
   const recoveryDay = quest?.plan.kind === 'recovery';
+  const safetyHold = quest?.plan.kind === 'safety-hold';
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   return (
     <Screen eyebrow="MISSION REGISTRY" title="Quests" subtitle="Clear today's protocol or prepare for ascension.">
-      <SystemPanel eyebrow={recoveryDay ? 'RECOVERY DAY' : 'DAILY QUEST'} title={quest?.plan.title ?? 'Scanning'} trailing={<Text style={styles.reward}>{recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
-        {recoveryDay ? (
+      <SystemPanel eyebrow={safetyHold ? 'SYSTEM SAFEGUARD' : recoveryDay ? 'RECOVERY DAY' : 'DAILY QUEST'} title={quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{safetyHold ? 'SEALED' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
+        {safetyHold ? (
+          <View style={[styles.recoveryMessage, styles.holdMessage]}>
+            <Text style={[styles.recoveryMark, styles.holdMark]}>!</Text>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>UNRESOLVED SIGNAL DETECTED</Text><Text style={styles.recoveryText}>The System will not generate an unsupervised workout while a safety hold is active. Review Player Scan from Status.</Text></View>
+          </View>
+        ) : recoveryDay ? (
           <View style={styles.recoveryMessage}>
             <Text style={styles.recoveryMark}>◇</Text>
             <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>RECOVERY DIRECTIVE ACTIVE</Text><Text style={styles.recoveryText}>No workout is required today. Your next training protocol is scheduled for {nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }) : 'the next training day'}.</Text></View>
@@ -36,7 +42,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
           </View>
         ))}
         <GlowButton
-          label={recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
+          label={safetyHold ? 'PROTOCOL SEALED' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
           disabled={quest?.status === 'complete'}
           onPress={onBeginDaily}
           style={styles.button}
@@ -65,6 +71,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial }: Quest
 
 const styles = StyleSheet.create({
   reward: { color: colors.primary, fontSize: 11, fontWeight: '900' },
+  holdReward: { color: colors.danger },
   sequence: { minHeight: 54, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(147,164,195,0.1)' },
   sequenceIndex: { color: colors.primary, fontSize: 10, fontWeight: '900', width: 30 },
   sequenceCopy: { flex: 1 },
@@ -77,6 +84,8 @@ const styles = StyleSheet.create({
   recoveryCopy: { flex: 1 },
   recoveryTitle: { color: colors.text, fontSize: 11, fontWeight: '900', letterSpacing: 0.7 },
   recoveryText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 4 },
+  holdMessage: { borderColor: 'rgba(226,61,87,0.3)', backgroundColor: 'rgba(226,61,87,0.06)' },
+  holdMark: { color: colors.danger, fontWeight: '900', textAlign: 'center', width: 30 },
   trialHero: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
   trialRune: { color: colors.danger, fontSize: 44, marginRight: spacing.lg, textShadowColor: colors.danger, textShadowRadius: 14 },
   trialCopy: { flex: 1 },
