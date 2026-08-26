@@ -39,6 +39,10 @@ export type MovementRating = 'clear' | 'limited' | 'pain';
 export type MovementAssessmentKind = 'baseline' | 'reassessment';
 export type TrainingArcPhase = 'calibration' | 'foundation' | 'overload' | 'consolidation';
 
+export const POSTURE_VIEWS = ['front', 'side', 'back'] as const;
+export type PostureView = (typeof POSTURE_VIEWS)[number];
+export type PosturePhotoSource = 'camera' | 'library';
+
 export const STAT_KEYS = ['strength', 'endurance', 'agility', 'vitality', 'mobility'] as const;
 export type StatKey = (typeof STAT_KEYS)[number];
 
@@ -146,6 +150,26 @@ export interface TrainingArcContext {
   phase: TrainingArcPhase;
 }
 
+export interface PosturePhoto {
+  view: PostureView;
+  uri: string;
+  width: number;
+  height: number;
+  source: PosturePhotoSource;
+  capturedAt: string;
+}
+
+export type PosturePhotoMap = Record<PostureView, PosturePhoto>;
+
+export interface PostureScan {
+  id: string;
+  date: string;
+  dateKey: string;
+  trainingArcId: string | null;
+  trainingArcCycle: number | null;
+  photos: PosturePhotoMap;
+}
+
 export interface WorkoutHistoryEntry {
   id: string;
   date: string;
@@ -171,6 +195,7 @@ export interface UserProfile extends StatBlock {
   healthProfile: PlayerHealthProfile;
   movementAssessments: MovementAssessment[];
   trainingArcs: TrainingArc[];
+  postureScans: PostureScan[];
   availableEquipment: Equipment[];
   excludedExercises: string[];
   goal: Goal;
@@ -214,7 +239,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 4;
+  schemaVersion: 5;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   dailyQuest: DailyQuest | null;

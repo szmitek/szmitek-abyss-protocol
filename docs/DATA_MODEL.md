@@ -6,9 +6,15 @@
 
 ## Profile
 
-`UserProfile` stores level, cumulative XP, rank, five visible attributes, per-attribute AP totals, active training weeks, normalized equipment capabilities, exclusions, goal, experience, duration, weekly frequency, streak state, workout count, cleared rank trials, and the local Player Scan.
+`UserProfile` stores level, cumulative XP, rank, five visible attributes, per-attribute AP totals, active training weeks, normalized equipment capabilities, exclusions, goal, experience, duration, weekly frequency, streak state, workout count, cleared rank trials, the local Player Scan, Movement Analysis history, Training Arcs, and Posture Archive metadata.
 
 `PlayerHealthProfile` stores structured current pain areas, posture priorities, unresolved safety signals, user-entered conditions, and professional restrictions. It is a screening and generator-calibration record, not a diagnosis. In the current private MVP it remains on-device.
+
+## Training Arc and visual records
+
+`MovementAssessment` records the five submaximal movement checks. `TrainingArc` links a baseline assessment to a four-week cycle and its eventual reassessment.
+
+`PostureScan` stores the date, active Training Arc link, and metadata for exactly three `PosturePhoto` records: front, side, and back. Image bytes live in the app-private document directory; only their local URIs and dimensions are serialized into the snapshot. The app disables Android backup and performs no upload or automated posture diagnosis.
 
 ## Workout plan and result
 
@@ -25,5 +31,6 @@ The MVP persists one `AppSnapshot`:
 - current Daily Quest
 - resumable active workout
 - workout history
+- local Posture Archive metadata
 
 The schema is deliberately serializable and mirrors the future normalized Supabase model. Cloud sync will add stable UUIDs, `created_at`/`updated_at`, device mutation IDs, and soft-deletion metadata.

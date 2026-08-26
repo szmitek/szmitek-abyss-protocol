@@ -19,7 +19,7 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onRestoreExercises: () => void }) {
+export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onOpenPostureArchive, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onOpenPostureArchive: () => void; onRestoreExercises: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
   const movementAssessment = latestMovementAssessment(profile);
@@ -85,6 +85,16 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
         <Text style={styles.settingsCopy}>{movementPain ? 'A pain response seals unsupervised training. It is a safety signal, not a diagnosis.' : limitedChecks.length > 0 ? 'The generator caps conflicting movements and inserts foundation work for limited checks.' : movementAssessment ? 'Current baseline allows normal progression within recovery and workload limits.' : 'Five submaximal checks give the System a safer starting point than experience level alone.'}</Text>
         {comparison ? <Text style={styles.comparison}>LAST RE-SCAN // {comparison.improved} IMPROVED · {comparison.unchanged} STABLE · {comparison.declined} DECLINED</Text> : null}
         <GlowButton label={movementAssessment ? 'RECALIBRATE MOVEMENT' : 'START MOVEMENT ANALYSIS'} variant="secondary" onPress={onOpenMovementCalibration} style={styles.settingsButton} />
+      </SystemPanel>
+
+      <SystemPanel eyebrow="POSTURE ARCHIVE" title={profile.postureScans.length > 0 ? `${profile.postureScans.length} visual checkpoint${profile.postureScans.length === 1 ? '' : 's'}` : 'Visual baseline missing'} accent="purple">
+        <View style={styles.scanMeta}>
+          <ScanMetric value={profile.postureScans.length} label="RECORDS" />
+          <ScanMetric value={profile.postureScans.length * 3} label="LOCAL PHOTOS" />
+          <ScanMetric value={profile.postureScans.length > 1 ? 1 : 0} label="COMPARE READY" />
+        </View>
+        <Text style={styles.settingsCopy}>{profile.postureScans.length > 1 ? 'Compare consistent front, side and back checkpoints without automatic diagnosis.' : 'Record three repeatable views now, then compare them after a Training Arc.'}</Text>
+        <GlowButton label={profile.postureScans.length > 0 ? 'OPEN POSTURE ARCHIVE' : 'CREATE VISUAL BASELINE'} variant="secondary" onPress={onOpenPostureArchive} style={styles.settingsButton} />
       </SystemPanel>
 
       <SystemPanel eyebrow="PROTOCOL SETTINGS" title="System calibration">
