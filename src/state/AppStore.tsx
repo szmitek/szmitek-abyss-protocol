@@ -4,10 +4,14 @@ import { AppState } from 'react-native';
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
+import { hasMovementPain } from '../domain/calibration.ts';
+import { hasSafetyHold } from '../domain/health.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
 import { createDailyReadiness, planRequiresDailyReadiness, readinessForDate, recordDailyReadiness } from '../domain/readiness.ts';
+import { getTrainingArcState } from '../domain/trainingArc.ts';
+import { ensureWeeklyProtocol } from '../domain/weeklyProtocol.ts';
 import type { AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
@@ -35,9 +39,15 @@ const AppStoreContext = createContext<AppStoreValue | null>(null);
 
 function freshQuest(snapshot: AppSnapshot, dateKey = toDateKey(new Date())): AppSnapshot {
   if (!snapshot.profile || snapshot.activeWorkout) return snapshot;
-  if (snapshot.dailyQuest?.dateKey === dateKey) return snapshot;
-  const plan = generateDailyProtocol(snapshot.profile, snapshot.history, dateKey);
-  return { ...snapshot, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' || plan.kind === 'safety-hold' || plan.kind === 'reassessment' ? 'complete' : 'available', plan } };
+  const profile = snapshot.profile;
+  const hardHold = hasSafetyHold(profile.healthProfile) || hasMovementPain(profile) || Boolean(getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue);
+  const weeklyProtocol = hardHold ? snapshot.weeklyProtocol : ensureWeeklyProtocol(snapshot.weeklyProtocol, profile, snapshot.history, dateKey);
+  const withProtocol = weeklyProtocol === snapshot.weeklyProtocol ? snapshot : { ...snapshot, weeklyProtocol };
+  const currentQuest = withProtocol.dailyQuest;
+  const questUsesProtocol = Boolean(weeklyProtocol && currentQuest?.plan.weeklySession?.protocolId === weeklyProtocol.id);
+  if (currentQuest?.dateKey === dateKey && (currentQuest.status === 'complete' || questUsesProtocol)) return withProtocol;
+  const plan = generateDailyProtocol(profile, withProtocol.history, dateKey, weeklyProtocol);
+  return { ...withProtocol, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' || plan.kind === 'safety-hold' || plan.kind === 'reassessment' ? 'complete' : 'available', plan } };
 }
 
 export function AppStoreProvider({ children }: PropsWithChildren) {
@@ -81,8 +91,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = updateProfileSettings(current.profile, answers);
-      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile };
-      return freshQuest({ ...current, profile, dailyQuest: null });
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile, weeklyProtocol: null };
+      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null });
     });
   }, [commit]);
 
@@ -90,8 +100,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = updateHealthProfile(current.profile, healthProfile);
-      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
-      return freshQuest({ ...current, profile, dailyQuest: null });
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile, weeklyProtocol: null };
+      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null });
     });
   }, [commit]);
 
@@ -99,8 +109,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = recordMovementAssessment(current.profile, results, kind);
-      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
-      return freshQuest({ ...current, profile, dailyQuest: null });
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile, weeklyProtocol: null };
+      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null });
     });
   }, [commit]);
 
@@ -108,8 +118,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const profile = updateCorrectiveProfile(current.profile, correctiveProfile);
-      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile };
-      return freshQuest({ ...current, profile, dailyQuest: null });
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile, weeklyProtocol: null };
+      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null });
     });
   }, [commit]);
 
@@ -138,8 +148,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       if (!current.profile || current.activeWorkout || current.profile.excludedExercises.length === 0) return current;
       const profile = restoreExcludedExercises(current.profile);
-      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile };
-      return freshQuest({ ...current, profile, dailyQuest: null });
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind !== 'recovery') return { ...current, profile, weeklyProtocol: null };
+      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null });
     });
   }, [commit]);
 
@@ -197,7 +207,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       const dailyQuest = current.dailyQuest?.id === active.questId
         ? { ...current.dailyQuest, plan }
         : current.dailyQuest;
-      return { ...current, profile: nextProfile, dailyQuest, activeWorkout: { ...active, plan } };
+      return { ...current, profile: nextProfile, weeklyProtocol: permanentlyExclude ? null : current.weeklyProtocol, dailyQuest, activeWorkout: { ...active, plan } };
     });
   }, [commit]);
 
@@ -264,7 +274,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, [commit]);
 
   const dismissCompletion = useCallback(() => {
-    commit((current) => current.lastCompletion ? { ...current, lastCompletion: null } : current);
+    commit((current) => current.lastCompletion ? freshQuest({ ...current, lastCompletion: null }) : current);
   }, [commit]);
 
   const value = useMemo<AppStoreValue>(() => ({

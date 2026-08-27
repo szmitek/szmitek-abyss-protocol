@@ -6,7 +6,18 @@ import { calculateRecovery } from './recovery.ts';
 import { readinessForDate } from './readiness.ts';
 import { isScheduledTrainingDay } from './schedule.ts';
 import { getTrainingArcState } from './trainingArc.ts';
-import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type ExerciseSelectionReason, type MuscleGroup, type Rank, type ReadinessBand, type TrainingArcPhase, type UserProfile, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type ExerciseSelectionReason, type MuscleGroup, type Rank, type ReadinessBand, type TrainingArcPhase, type UserProfile, type WeeklyProtocol, type WeeklySessionBlueprint, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+
+export interface WorkoutGenerationOptions {
+  session?: WeeklySessionBlueprint;
+  protocolId?: string;
+  weekStartDateKey?: string;
+  sessionIndex?: number;
+  sessionCount?: number;
+  ignoreReadiness?: boolean;
+  weeklyVolumeUsed?: Partial<Record<MuscleGroup, number>>;
+  weeklyVolumeCaps?: Partial<Record<MuscleGroup, number>>;
+}
 
 export function isEquipmentCompatible(exercise: Exercise, availableEquipment: readonly string[]): boolean {
   return exercise.requiredEquipment.every((required) => availableEquipment.includes(required));
@@ -169,10 +180,10 @@ export function replaceExerciseInPlan(plan: WorkoutPlan, exerciseIndex: number, 
   return { ...plan, exercises };
 }
 
-export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
+export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string, options: WorkoutGenerationOptions = {}): WorkoutPlan {
   const random = randomFactory(`${profile.id}:${dateKey}:${profile.totalWorkouts}`);
   const arcState = getTrainingArcState(profile.trainingArcs, dateKey);
-  const readiness = readinessForDate(profile, dateKey);
+  const readiness = options.ignoreReadiness ? null : readinessForDate(profile, dateKey);
   const readinessBand = readiness?.band;
   const cap = difficultyCap(profile, arcState?.phase, readinessBand);
   const eligible = EXERCISES.filter((exercise) =>
@@ -187,10 +198,11 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const now = new Date(`${dateKey}T12:00:00`);
   const recovery = calculateRecovery(history, now);
   const priorityIndex = new Map(goalPriorities(profile).map((group, index) => [group, index]));
-  const focusGroups: MuscleGroup[] = MUSCLE_GROUPS
+  const recoveryFocus: MuscleGroup[] = MUSCLE_GROUPS
     .filter((group) => group !== 'arms' && group !== 'calves')
     .sort((a, b) => (recovery[b] - recovery[a]) || ((priorityIndex.get(a) ?? 99) - (priorityIndex.get(b) ?? 99)))
-    .slice(0, 4);
+    .slice(0, 6);
+  const focusGroups = [...new Set<MuscleGroup>([...(options.session?.focusMuscles ?? []), ...recoveryFocus])].slice(0, 4);
   const recent = recentExerciseIds(history);
   const totalCount = desiredExerciseCount(profile.workoutDuration);
   const selected: Exercise[] = [];
@@ -199,8 +211,10 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   if (warmups.length > 0) selected.push(warmups[Math.floor(random() * warmups.length)]!);
 
   const correctiveLimit = profile.workoutDuration >= 20 ? 2 : 1;
-  const correctiveExercises = preferredCorrectiveExercises(profile, eligible)
+  const correctivePool = preferredCorrectiveExercises(profile, eligible)
     .filter((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
+  const correctiveOffset = options.sessionIndex === undefined || correctivePool.length === 0 ? 0 : options.sessionIndex % correctivePool.length;
+  const correctiveExercises = [...correctivePool.slice(correctiveOffset), ...correctivePool.slice(0, correctiveOffset)];
   let correctiveCount = 0;
   for (const exercise of correctiveExercises) {
     if (correctiveCount >= correctiveLimit) break;
@@ -212,9 +226,14 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const calibratedExercise = preferredHealthExercises(profile, eligible)
     .concat(preferredCalibrationExercises(profile, eligible))
     .find((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
-  if (calibratedExercise && selected.length < totalCount - 1) selected.push(calibratedExercise);
+  if (calibratedExercise && selected.length < totalCount - 1 && (!options.session || correctivePriorityScore(calibratedExercise, profile) === 0)) selected.push(calibratedExercise);
 
-  const workPool = eligible.filter((exercise) => exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility');
+  const workPool = eligible.filter((exercise) => {
+    if (exercise.exerciseType === 'warmup' || exercise.exerciseType === 'mobility') return false;
+    const cap = options.weeklyVolumeCaps?.[exercise.primaryMuscle];
+    const used = options.weeklyVolumeUsed?.[exercise.primaryMuscle] ?? 0;
+    return cap === undefined || used < cap;
+  });
   const grouped = new Map<string, Exercise[]>();
   for (const exercise of workPool) {
     const bucket = grouped.get(exercise.progressionGroup) ?? [];
@@ -225,17 +244,23 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const scoredGroups = [...grouped.values()].map((variants) => {
     const representative = variants[0]!;
     const focusIndex = focusGroups.indexOf(representative.primaryMuscle);
-    const focusScore = focusIndex < 0 ? 0 : 30 - focusIndex * 6;
+    const focusScore = focusIndex < 0 ? 0 : 48 - focusIndex * 8;
     const varietyScore = variants.some((exercise) => recent.has(exercise.id)) ? -18 : 8;
     const jitter = random() * 10;
     const calibrationScore = Math.max(...variants.map((exercise) => healthPriorityScore(exercise, profile) + calibrationPriorityScore(exercise, profile) + correctivePriorityScore(exercise, profile)));
+    const weeklyCorrectivePenalty = options.session && variants.some((exercise) => correctivePriorityScore(exercise, profile) > 0) ? -180 : 0;
     const sorenessPenalty = readiness?.soreMuscles.some((muscle) => representative.muscleGroups.includes(muscle)) ? -120 : 0;
-    return { variants, score: focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + calibrationScore + sorenessPenalty + jitter };
+    return { variants, score: focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + calibrationScore + weeklyCorrectivePenalty + sorenessPenalty + jitter };
   }).sort((a, b) => b.score - a.score);
 
   for (const candidate of scoredGroups) {
     if (selected.length >= totalCount - 1) break;
     if (candidate.variants.some((exercise) => selected.some((item) => item.progressionGroup === exercise.progressionGroup))) continue;
+    if (options.session) {
+      const primary = candidate.variants[0]?.primaryMuscle;
+      const existingPrimaryCount = selected.filter((item) => item.exerciseType !== 'warmup' && item.exerciseType !== 'mobility' && item.primaryMuscle === primary).length;
+      if (existingPrimaryCount >= 1) continue;
+    }
     selected.push(chooseVariant(candidate.variants, profile, history, arcState?.phase, readinessBand));
   }
 
@@ -245,19 +270,41 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     if (best) selected.push(best);
   }
 
-  const prescriptions = selected.slice(0, totalCount).map((exercise) => prescribe(exercise, profile, history, arcState?.phase, readinessBand));
+  const weeklyVolume = { ...(options.weeklyVolumeUsed ?? {}) };
+  const prescriptions = selected.slice(0, totalCount).flatMap((exercise) => {
+    const prescription = prescribe(exercise, profile, history, arcState?.phase, readinessBand);
+    if (exercise.exerciseType === 'warmup' || exercise.exerciseType === 'mobility') return [prescription];
+    const cap = options.weeklyVolumeCaps?.[exercise.primaryMuscle];
+    if (cap === undefined) return [prescription];
+    const used = weeklyVolume[exercise.primaryMuscle] ?? 0;
+    const remaining = Math.max(0, cap - used);
+    if (remaining === 0) return [];
+    const sets = Math.min(prescription.sets, remaining);
+    weeklyVolume[exercise.primaryMuscle] = used + sets;
+    return [{ ...prescription, sets }];
+  });
   if (!prescriptions.every((item) => isEquipmentCompatible(item.exercise, profile.availableEquipment) && isHealthCompatible(item.exercise, profile) && isCalibrationCompatible(item.exercise, profile))) {
     throw new Error('Workout safety constraint invariant violated.');
   }
 
   const difficulty = Math.max(...prescriptions.map((item) => item.exercise.difficulty)) as 1 | 2 | 3;
-  const focus = focusGroups.slice(0, 2).map((group) => group.replace('-', ' ')).join(' + ');
+  const focus = options.session?.objective ?? focusGroups.slice(0, 2).map((group) => group.replace('-', ' ')).join(' + ');
   const correctiveFocus = primaryCorrectiveTarget(profile)?.goal;
+  const weeklySession = options.session && options.protocolId && options.weekStartDateKey && options.sessionIndex !== undefined && options.sessionCount !== undefined
+    ? {
+        protocolId: options.protocolId,
+        code: options.session.code,
+        sessionIndex: options.sessionIndex,
+        sessionCount: options.sessionCount,
+        weekStartDateKey: options.weekStartDateKey,
+        objective: options.session.objective,
+      }
+    : undefined;
   return {
-    id: `daily-${dateKey}`,
+    id: weeklySession ? `${weeklySession.protocolId}-${weeklySession.code}` : `daily-${dateKey}`,
     kind: 'training',
     dateKey,
-    title: profile.goal === GOALS.MOBILITY ? 'AURA RESTORATION' : 'DAILY PROTOCOL',
+    title: options.session ? `PROTOCOL ${options.session.code} // ${options.session.title}` : profile.goal === GOALS.MOBILITY ? 'AURA RESTORATION' : 'DAILY PROTOCOL',
     focus: readinessBand === 'reduced' ? `REDUCED // ${focus.toUpperCase()}` : focus.toUpperCase(),
     estimatedMinutes: readinessBand === 'reduced' ? Math.max(10, Math.round(profile.workoutDuration * 0.8)) : profile.workoutDuration,
     difficulty,
@@ -266,6 +313,27 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     ...(arcState ? { trainingArc: { cycleNumber: arcState.cycleNumber, week: arcState.week, phase: arcState.phase } } : {}),
     ...(readinessBand ? { readinessBand } : {}),
     ...(correctiveFocus ? { correctiveFocus } : {}),
+    ...(weeklySession ? { weeklySession } : {}),
+  };
+}
+
+export function adaptWorkoutToReadiness(plan: WorkoutPlan, readinessBand: ReadinessBand | undefined): WorkoutPlan {
+  if (!readinessBand) return plan;
+  if (readinessBand === 'normal') return { ...plan, readinessBand };
+  if (readinessBand !== 'reduced') return plan;
+
+  const exercises = plan.exercises.map((item) => {
+    if (item.exercise.exerciseType === 'warmup' || item.exercise.exerciseType === 'mobility') return item;
+    const selectionReasons = [...(item.selectionReasons ?? []).filter((reason) => reason.code !== 'recovery'), { code: 'recovery' as const, label: 'READINESS // REDUCED LOAD' }].slice(0, 2);
+    return { ...item, sets: Math.max(1, item.sets - 1), selectionReasons };
+  });
+  return {
+    ...plan,
+    focus: `REDUCED // ${plan.focus.replace(/^REDUCED \/\/ /, '')}`,
+    estimatedMinutes: Math.max(10, Math.round(plan.estimatedMinutes * 0.8)),
+    exercises,
+    rewardXp: Math.round(plan.rewardXp * 0.8),
+    readinessBand,
   };
 }
 
@@ -313,14 +381,15 @@ export function generateReassessmentProtocol(dateKey: string): WorkoutPlan {
   };
 }
 
-export function generateDailyProtocol(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WorkoutPlan {
+export function generateDailyProtocol(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string, weeklyProtocol?: WeeklyProtocol | null): WorkoutPlan {
   if (hasSafetyHold(profile.healthProfile) || hasMovementPain(profile)) return generateSafetyHoldProtocol(dateKey);
   if (getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue) return generateReassessmentProtocol(dateKey);
-  if (!isScheduledTrainingDay(profile, dateKey)) return generateRecoveryProtocol(dateKey);
+  const plannedSession = weeklyProtocol?.sessions.find((session) => session.dateKey === dateKey);
+  if (weeklyProtocol ? !plannedSession : !isScheduledTrainingDay(profile, dateKey)) return generateRecoveryProtocol(dateKey);
   const readiness = readinessForDate(profile, dateKey);
   if (readiness?.band === 'hold') return generateSafetyHoldProtocol(dateKey, true);
   if (readiness?.band === 'recovery') return generateRecoveryProtocol(dateKey, true);
-  return generateWorkout(profile, history, dateKey);
+  return plannedSession ? adaptWorkoutToReadiness(plannedSession.plan, readiness?.band) : generateWorkout(profile, history, dateKey);
 }
 
 export function generateRankTrial(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string, targetRank: Rank): WorkoutPlan {

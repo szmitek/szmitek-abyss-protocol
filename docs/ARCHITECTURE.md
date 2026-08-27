@@ -18,6 +18,7 @@
 | `src/domain/health.ts` | Player Scan safety filters and posture-priority calibration |
 | `src/domain/calibration.ts` | Movement Analysis constraints and foundation priorities |
 | `src/domain/correctiveProfile.ts` | Confirmed corrective targets, evidence fusion, scoring, and explanations |
+| `src/domain/weeklyProtocol.ts` | Persisted micro-cycle construction, session objectives, fingerprints, and volume ceilings |
 | `src/domain/trainingArc.ts` | Four-week phase and reassessment lifecycle |
 | `src/domain/postureArchive.ts` | Visual record lifecycle and comparison selection |
 | `src/domain/readiness.ts` | Daily signal scoring, one-per-day log, and workout gate |
@@ -31,17 +32,18 @@
 
 1. Normalize the user loadout so bodyweight (`none`) is always explicit.
 2. Stop generation when an unresolved Player Scan or same-day Daily Readiness warning signal is active.
-3. Replace a scheduled workout with protected recovery when the readiness band requires it.
-4. Filter the catalog by the equipment subset invariant, health constraints, Movement Analysis constraints, and exclusions.
-5. Apply the experience/difficulty ceiling, including a stricter reduced-readiness cap.
-6. Calculate muscle readiness from completed history and deprioritize same-day sore areas.
-7. Reserve compatible corrective capacity for the confirmed primary/support targets.
-8. Score progression groups using goal, recovery, corrective priorities, posture priorities, movement priorities, Training Arc phase, last-session variety, and seeded jitter.
-9. Select one safe variant per progression group and attach human-readable selection reasons.
-10. Prescribe sets/reps from the latest two successful exposures and feedback; reduced readiness blocks overload and removes working sets.
-11. Add warm-up and mobility sequences, then validate equipment and health invariants again on the final plan.
+3. Build and persist the current weekly A/B/C+ micro-cycle before any Daily Readiness adjustment.
+4. Assign each session an objective, focus groups, corrective capacity, recovery spacing, and shared weekly volume ceilings.
+5. Filter the catalog by the equipment subset invariant, health constraints, Movement Analysis constraints, and exclusions.
+6. Apply the experience/difficulty ceiling for the active Training Arc phase.
+7. Calculate muscle readiness from completed history and balance the planned session objective.
+8. Reserve compatible corrective capacity for the confirmed primary/support targets.
+9. Score progression groups using goal, recovery, corrective priorities, posture priorities, movement priorities, Training Arc phase, last-session variety, and seeded jitter.
+10. Select one safe variant per progression group, enforce the weekly volume contract, and attach human-readable selection reasons.
+11. Prescribe sets/reps from the latest two successful exposures and feedback, then validate equipment and health invariants again on the final plan.
+12. On the training day, Daily Readiness may preserve the locked session, remove working sets, replace it with recovery, or seal it; it never redraws or increases the planned session.
 
-Randomness is seeded from user, date, and completed-workout count. A generated daily plan is therefore stable until it is persisted and changes naturally on another day.
+Randomness is seeded from user, date, and completed-workout count. The complete week is persisted as one protocol and remains stable until its planning fingerprint or training window changes.
 
 ## Supabase target
 
@@ -52,6 +54,6 @@ The exercise selection validator remains deterministic client-side and server-si
 ## Failure behavior
 
 - A missing or incompatible catalog returns an explicit generator error, never an unsafe fallback.
-- Legacy schema v1–v6 snapshots migrate to schema v7 without erasing existing progress.
+- Legacy schema v1–v7 snapshots migrate to schema v8 without erasing existing progress.
 - An interrupted active workout is persisted and resumes before normal navigation.
 - Reward application occurs once, only after all prescribed sets are cleared and feedback is selected.
