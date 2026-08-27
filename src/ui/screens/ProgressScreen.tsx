@@ -3,12 +3,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { EXERCISE_BY_ID } from '../../data/exercises.ts';
 import { buildExerciseInsights } from '../../domain/insights.ts';
-import type { WorkoutHistoryEntry } from '../../domain/types.ts';
+import type { TrainingArcDecision, UserProfile, WorkoutHistoryEntry } from '../../domain/types.ts';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
 import { colors, radius, spacing } from '../theme.ts';
 
-export function ProgressScreen({ history }: { history: WorkoutHistoryEntry[] }) {
+const DECISION_LABELS: Record<TrainingArcDecision, string> = {
+  advance: 'ADVANCE',
+  continue: 'CONTINUE',
+  recalibrate: 'RECALIBRATE',
+  recovery: 'RECOVERY ENTRY',
+  hold: 'SYSTEM HOLD',
+};
+
+export function ProgressScreen({ profile, history }: { profile: UserProfile; history: WorkoutHistoryEntry[] }) {
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
   const totalSeconds = history.reduce((sum, workout) => sum + workout.durationSeconds, 0);
   const totalXp = history.reduce((sum, workout) => sum + workout.xpEarned, 0);
@@ -35,6 +43,18 @@ export function ProgressScreen({ history }: { history: WorkoutHistoryEntry[] }) 
             </View>
           );
         })}
+      </SystemPanel>
+      <SystemPanel eyebrow="TRAINING ARC ARCHIVE" title={profile.trainingArcReviews.length ? 'Reassessment reports' : 'Awaiting first cycle'} accent="purple">
+        {profile.trainingArcReviews.length === 0 ? <Text style={styles.explanation}>Complete a four-week Training Arc and Player re-scan to unlock the first evidence report.</Text> : profile.trainingArcReviews.map((review) => (
+          <View key={review.id} style={styles.arcRow}>
+            <View style={styles.arcCycle}><Text style={styles.arcCycleLabel}>ARC</Text><Text style={styles.arcCycleValue}>{String(review.cycleNumber).padStart(2, '0')}</Text></View>
+            <View style={styles.arcCopy}>
+              <Text style={styles.arcDecision}>{DECISION_LABELS[review.decision]}</Text>
+              <Text style={styles.arcMeta}>{Math.round(review.adherence.rate * 100)}% ADHERENCE · {review.movement.improved} UP · {review.movement.declined} DOWN</Text>
+            </View>
+            <Text style={styles.arcDate}>{review.dateKey.slice(5).replace('-', '.')}</Text>
+          </View>
+        ))}
       </SystemPanel>
       <SystemPanel eyebrow="HISTORY" title={history.length ? 'Cleared protocols' : 'No records yet'}>
         {history.length === 0 ? (
@@ -118,4 +138,12 @@ const styles = StyleSheet.create({
   resultValue: { color: colors.text, fontSize: 9, fontWeight: '900' },
   gainsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   gain: { color: colors.success, fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
+  arcRow: { minHeight: 65, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(147,164,195,0.1)' },
+  arcCycle: { width: 42, alignItems: 'center' },
+  arcCycleLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 1 },
+  arcCycleValue: { color: colors.purple, fontSize: 17, fontWeight: '900', marginTop: 2 },
+  arcCopy: { flex: 1, marginHorizontal: spacing.sm },
+  arcDecision: { color: colors.text, fontSize: 11, fontWeight: '900', letterSpacing: 0.7 },
+  arcMeta: { color: colors.textDim, fontSize: 8, fontWeight: '800', marginTop: 5 },
+  arcDate: { color: colors.textMuted, fontSize: 9, fontWeight: '900' },
 });

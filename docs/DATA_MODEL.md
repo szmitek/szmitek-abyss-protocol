@@ -14,7 +14,9 @@
 
 ## Training Arc and visual records
 
-`MovementAssessment` records the five submaximal movement checks. `TrainingArc` links a baseline assessment to a four-week cycle and its eventual reassessment.
+`MovementAssessment` records the five submaximal movement checks. `TrainingArc` links a baseline assessment to a four-week cycle, its eventual reassessment, the archived review, and the entry directive inherited by the next cycle.
+
+`TrainingArcReview` is the immutable end-of-cycle report. It stores planned/completed session counts, movement improvements/declines, perceived-difficulty totals, readiness-band totals, optional before/final visual checkpoint links, the deterministic decision, and human-readable reasons. Its decision can advance, continue, recalibrate, start the next cycle under protected recovery load, or hold unsupervised training. XP and photos cannot independently authorize progression.
 
 `PostureScan` stores the date, active Training Arc link, and metadata for exactly three `PosturePhoto` records: front, side, and back. Image bytes live in the app-private document directory; only their local URIs and dimensions are serialized into the snapshot. The app disables Android backup and performs no upload or automated posture diagnosis.
 
@@ -46,5 +48,6 @@ The MVP persists one `AppSnapshot`:
 - workout history
 - local Posture Archive metadata
 - rolling Daily Readiness history
+- archived Training Arc reviews and an optional pending report gate
 
 The schema is deliberately serializable and mirrors the future normalized Supabase model. Cloud sync will add stable UUIDs, `created_at`/`updated_at`, device mutation IDs, and soft-deletion metadata.

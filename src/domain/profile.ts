@@ -1,4 +1,5 @@
-import { EQUIPMENT, type AppSnapshot, type CorrectiveProfile, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile } from './types.ts';
+import { EQUIPMENT, type AppSnapshot, type CorrectiveProfile, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile, type WorkoutHistoryEntry } from './types.ts';
+import { createTrainingArcReview } from './arcReview.ts';
 import { toDateKey } from './date.ts';
 import { registerAssessmentWithTrainingArcs } from './trainingArc.ts';
 
@@ -19,7 +20,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
@@ -27,6 +28,7 @@ export const INITIAL_SNAPSHOT: AppSnapshot = {
   activeWorkout: null,
   history: [],
   lastCompletion: null,
+  pendingArcReviewId: null,
 };
 
 export function normalizeEquipment(availableEquipment: readonly Equipment[]): Equipment[] {
@@ -47,6 +49,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     correctiveProfile: { ...EMPTY_CORRECTIVE_PROFILE },
     movementAssessments: [],
     trainingArcs: [],
+    trainingArcReviews: [],
     postureScans: [],
     readinessLog: [],
     strength: 1,
@@ -106,8 +109,13 @@ export function updateHealthProfile(profile: UserProfile, healthProfile: PlayerH
   };
 }
 
-export function recordMovementAssessment(profile: UserProfile, results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind): UserProfile {
-  const now = new Date();
+export function recordMovementAssessment(
+  profile: UserProfile,
+  results: Record<MovementCheck, MovementRating>,
+  kind: MovementAssessmentKind,
+  history: readonly WorkoutHistoryEntry[] = [],
+  now = new Date(),
+): UserProfile {
   const assessment: MovementAssessment = {
     id: `movement-${now.getTime()}`,
     kind,
@@ -115,9 +123,11 @@ export function recordMovementAssessment(profile: UserProfile, results: Record<M
     dateKey: toDateKey(now),
     results,
   };
+  const review = createTrainingArcReview(profile, assessment, history);
   return {
     ...profile,
     movementAssessments: [assessment, ...profile.movementAssessments],
-    trainingArcs: registerAssessmentWithTrainingArcs(profile.trainingArcs, assessment),
+    trainingArcs: registerAssessmentWithTrainingArcs(profile.trainingArcs, assessment, review ? { id: review.id, decision: review.decision } : undefined),
+    trainingArcReviews: review ? [review, ...profile.trainingArcReviews] : profile.trainingArcReviews,
   };
 }

@@ -9,14 +9,19 @@ const EMPTY_STATS: StatBlock = { strength: 0, endurance: 0, agility: 0, vitality
 type StoredSnapshot = Omit<Partial<AppSnapshot>, 'schemaVersion'> & { schemaVersion?: number };
 
 function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): UserProfile {
-  const legacy = profile as UserProfile & { attributeXp?: StatBlock; activeTrainingWeeks?: string[]; healthProfile?: UserProfile['healthProfile']; correctiveProfile?: UserProfile['correctiveProfile']; movementAssessments?: UserProfile['movementAssessments']; trainingArcs?: UserProfile['trainingArcs']; postureScans?: UserProfile['postureScans']; readinessLog?: UserProfile['readinessLog'] };
+  const legacy = profile as UserProfile & { attributeXp?: StatBlock; activeTrainingWeeks?: string[]; healthProfile?: UserProfile['healthProfile']; correctiveProfile?: UserProfile['correctiveProfile']; movementAssessments?: UserProfile['movementAssessments']; trainingArcs?: UserProfile['trainingArcs']; trainingArcReviews?: UserProfile['trainingArcReviews']; postureScans?: UserProfile['postureScans']; readinessLog?: UserProfile['readinessLog'] };
   const attributeXp = legacy.attributeXp ?? { ...EMPTY_STATS };
   if (!legacy.attributeXp) {
     for (const key of STAT_KEYS) attributeXp[key] = totalAttributeXpForValue(profile[key]);
   }
   const activeTrainingWeeks = legacy.activeTrainingWeeks
     ?? [...new Set(history.filter((entry) => entry.completed).map((entry) => trainingWeekKey(entry.dateKey)))];
-  return { ...profile, attributeXp, activeTrainingWeeks, healthProfile: legacy.healthProfile ?? { ...EMPTY_HEALTH_PROFILE }, correctiveProfile: legacy.correctiveProfile ?? { ...EMPTY_CORRECTIVE_PROFILE }, movementAssessments: legacy.movementAssessments ?? [], trainingArcs: legacy.trainingArcs ?? [], postureScans: legacy.postureScans ?? [], readinessLog: legacy.readinessLog ?? [] };
+  const trainingArcs = (legacy.trainingArcs ?? []).map((arc) => ({
+    ...arc,
+    reviewId: arc.reviewId ?? null,
+    entryDecision: arc.entryDecision ?? null,
+  }));
+  return { ...profile, attributeXp, activeTrainingWeeks, healthProfile: legacy.healthProfile ?? { ...EMPTY_HEALTH_PROFILE }, correctiveProfile: legacy.correctiveProfile ?? { ...EMPTY_CORRECTIVE_PROFILE }, movementAssessments: legacy.movementAssessments ?? [], trainingArcs, trainingArcReviews: legacy.trainingArcReviews ?? [], postureScans: legacy.postureScans ?? [], readinessLog: legacy.readinessLog ?? [] };
 }
 
 function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
@@ -28,7 +33,7 @@ function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
   const lastCompletion = parsed.lastCompletion
     ? { ...parsed.lastCompletion, attributeXpEarned: parsed.lastCompletion.attributeXpEarned ?? { ...EMPTY_STATS } }
     : null;
-  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 8, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null };
+  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 9, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
 }
 
 export async function loadSnapshot(): Promise<AppSnapshot> {
@@ -36,7 +41,7 @@ export async function loadSnapshot(): Promise<AppSnapshot> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return INITIAL_SNAPSHOT;
     const parsed = JSON.parse(raw) as StoredSnapshot;
-    if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2 && parsed.schemaVersion !== 3 && parsed.schemaVersion !== 4 && parsed.schemaVersion !== 5 && parsed.schemaVersion !== 6 && parsed.schemaVersion !== 7 && parsed.schemaVersion !== 8) return INITIAL_SNAPSHOT;
+    if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2 && parsed.schemaVersion !== 3 && parsed.schemaVersion !== 4 && parsed.schemaVersion !== 5 && parsed.schemaVersion !== 6 && parsed.schemaVersion !== 7 && parsed.schemaVersion !== 8 && parsed.schemaVersion !== 9) return INITIAL_SNAPSHOT;
     return migrateSnapshot(parsed);
   } catch {
     return INITIAL_SNAPSHOT;

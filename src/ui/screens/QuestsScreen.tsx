@@ -15,10 +15,10 @@ interface QuestsScreenProps {
   onBeginDaily: () => void;
   onBeginRankTrial: () => void;
   onOpenReadiness: () => void;
-  onOpenMovementCalibration: () => void;
+  onOpenArcReassessment: () => void;
 }
 
-export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenReadiness, onOpenMovementCalibration }: QuestsScreenProps) {
+export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenReadiness, onOpenArcReassessment }: QuestsScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const trial = rankTrialEligibility(profile);
@@ -46,7 +46,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
         ) : reassessmentDue ? (
           <View style={[styles.recoveryMessage, styles.reassessmentMessage]}>
             <Text style={[styles.recoveryMark, styles.reassessmentMark]}>◇</Text>
-            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>NEW PLAYER SIGNAL REQUIRED</Text><Text style={styles.recoveryText}>Repeat Movement Analysis to compare the completed cycle and generate the next Training Arc.</Text></View>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>NEW PLAYER SIGNAL REQUIRED</Text><Text style={styles.recoveryText}>Capture final visual checkpoints, repeat Movement Analysis and receive the next Training Arc directive.</Text></View>
           </View>
         ) : recoveryDay ? (
           <View style={styles.recoveryMessage}>
@@ -63,7 +63,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
         <GlowButton
           label={readinessRequired ? 'SYNC DAILY READINESS' : readinessHold || readinessRecovery ? 'REVIEW DAILY READINESS' : safetyHold ? 'PROTOCOL SEALED' : reassessmentDue ? 'BEGIN PLAYER RE-SCAN' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
           disabled={!readinessRequired && !readinessHold && !readinessRecovery && quest?.status === 'complete' && !reassessmentDue}
-          onPress={readinessRequired || readinessHold || readinessRecovery ? onOpenReadiness : reassessmentDue ? onOpenMovementCalibration : onBeginDaily}
+          onPress={readinessRequired || readinessHold || readinessRecovery ? onOpenReadiness : reassessmentDue ? onOpenArcReassessment : onBeginDaily}
           style={styles.button}
         />
       </SystemPanel>

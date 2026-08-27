@@ -34,6 +34,8 @@ test('a visual record is linked to the active Training Arc', () => {
     durationWeeks: 4,
     baselineAssessmentId: 'movement-2',
     completionAssessmentId: null,
+    reviewId: null,
+    entryDecision: null,
   };
   const scan = createPostureScan({ ...base, trainingArcs: [arc] }, photos('cycle-2'), new Date('2026-08-26T10:00:00.000Z'), 'posture-cycle-2');
   assert.equal(scan.trainingArcId, arc.id);

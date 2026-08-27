@@ -20,6 +20,7 @@
 | `src/domain/correctiveProfile.ts` | Confirmed corrective targets, evidence fusion, scoring, and explanations |
 | `src/domain/weeklyProtocol.ts` | Persisted micro-cycle construction, session objectives, fingerprints, and volume ceilings |
 | `src/domain/trainingArc.ts` | Four-week phase and reassessment lifecycle |
+| `src/domain/arcReview.ts` | End-of-cycle evidence aggregation and deterministic next-cycle verdict |
 | `src/domain/postureArchive.ts` | Visual record lifecycle and comparison selection |
 | `src/domain/readiness.ts` | Daily signal scoring, one-per-day log, and workout gate |
 | `src/domain/recovery.ts` | 72-hour decaying muscle-load estimate |
@@ -42,6 +43,7 @@
 10. Select one safe variant per progression group, enforce the weekly volume contract, and attach human-readable selection reasons.
 11. Prescribe sets/reps from the latest two successful exposures and feedback, then validate equipment and health invariants again on the final plan.
 12. On the training day, Daily Readiness may preserve the locked session, remove working sets, replace it with recovery, or seal it; it never redraws or increases the planned session.
+13. At the end-of-arc gate, the app captures a final visual checkpoint, repeats Movement Analysis, and combines adherence, feedback, readiness, and movement deltas into an archived verdict. Photos are linked for manual comparison but never scored.
 
 Randomness is seeded from user, date, and completed-workout count. The complete week is persisted as one protocol and remains stable until its planning fingerprint or training window changes.
 
@@ -54,6 +56,6 @@ The exercise selection validator remains deterministic client-side and server-si
 ## Failure behavior
 
 - A missing or incompatible catalog returns an explicit generator error, never an unsafe fallback.
-- Legacy schema v1–v7 snapshots migrate to schema v8 without erasing existing progress.
+- Legacy schema v1–v8 snapshots migrate to schema v9 without erasing existing progress.
 - An interrupted active workout is persisted and resumes before normal navigation.
 - Reward application occurs once, only after all prescribed sets are cleared and feedback is selected.

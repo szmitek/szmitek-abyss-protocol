@@ -17,9 +17,11 @@ type Draft = Partial<PosturePhotoDraftMap>;
 
 interface PostureArchiveScreenProps {
   profile: UserProfile;
+  mode?: 'archive' | 'reassessment';
   onBack: () => void;
   onSave: (scan: PostureScan) => void;
   onDelete: (scanId: string) => void;
+  onCaptureComplete?: () => void;
 }
 
 function completeDraft(draft: Draft): draft is PosturePhotoDraftMap {
@@ -34,8 +36,8 @@ function scanDate(scan: PostureScan): string {
   return new Date(scan.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 }
 
-export function PostureArchiveScreen({ profile, onBack, onSave, onDelete }: PostureArchiveScreenProps) {
-  const [creating, setCreating] = useState(false);
+export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave, onDelete, onCaptureComplete }: PostureArchiveScreenProps) {
+  const [creating, setCreating] = useState(mode === 'reassessment');
   const [draft, setDraft] = useState<Draft>({});
   const [busy, setBusy] = useState(false);
   const comparison = useMemo(() => latestPostureComparison(profile.postureScans), [profile.postureScans]);
@@ -114,6 +116,7 @@ export function PostureArchiveScreen({ profile, onBack, onSave, onDelete }: Post
       onSave(createPostureScan(profile, photos, now, scanId));
       setDraft({});
       setCreating(false);
+      onCaptureComplete?.();
     } catch {
       Alert.alert('Visual record failed', 'The photos could not be stored. Your existing archive was not changed.');
     } finally {
@@ -150,8 +153,8 @@ export function PostureArchiveScreen({ profile, onBack, onSave, onDelete }: Post
   return (
     <Screen
       eyebrow="SYSTEM // VISUAL RECORD"
-      title={creating ? 'Record baseline' : 'Posture Archive'}
-      subtitle={creating ? 'Capture the same three views every cycle. Consistency matters more than posing.' : 'Private visual checkpoints for comparing Training Arc results.'}
+      title={creating ? mode === 'reassessment' ? 'Final visual checkpoint' : 'Record baseline' : 'Posture Archive'}
+      subtitle={creating ? mode === 'reassessment' ? 'Lock the end-of-cycle views before repeating Movement Analysis.' : 'Capture the same three views every cycle. Consistency matters more than posing.' : 'Private visual checkpoints for comparing Training Arc results.'}
       action={<Pressable accessibilityRole="button" onPress={close} style={styles.back}><Text style={styles.backLabel}>{creating ? 'CANCEL' : 'BACK'}</Text></Pressable>}
     >
       <SystemPanel eyebrow="LOCAL VAULT" title="Device-only record" accent="purple">
@@ -173,7 +176,7 @@ export function PostureArchiveScreen({ profile, onBack, onSave, onDelete }: Post
               onLibrary={() => { void chooseFromLibrary(view); }}
             />
           ))}
-          <GlowButton label={busy ? 'SEALING RECORD...' : 'SEAL VISUAL RECORD'} disabled={!completeDraft(draft) || busy} onPress={() => { void save(); }} />
+          <GlowButton label={busy ? 'SEALING RECORD...' : mode === 'reassessment' ? 'LOCK & CONTINUE TO MOVEMENT' : 'SEAL VISUAL RECORD'} disabled={!completeDraft(draft) || busy} onPress={() => { void save(); }} />
           <Text style={styles.footerNote}>All three views are required so later comparisons use the same evidence.</Text>
         </>
       ) : (

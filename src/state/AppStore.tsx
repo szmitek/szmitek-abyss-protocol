@@ -22,6 +22,7 @@ interface AppStoreValue {
   updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
   updateCorrectiveProfile: (correctiveProfile: CorrectiveProfile) => void;
   completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
+  acknowledgeArcReview: () => void;
   savePostureScan: (scan: PostureScan) => void;
   deletePostureScan: (scanId: string) => void;
   submitDailyReadiness: (input: DailyReadinessInput) => void;
@@ -108,10 +109,19 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   const completeMovementAssessment = useCallback((results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
-      const profile = recordMovementAssessment(current.profile, results, kind);
-      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile, weeklyProtocol: null };
-      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null });
+      const previousReviewId = current.profile.trainingArcReviews[0]?.id ?? null;
+      const profile = recordMovementAssessment(current.profile, results, kind, current.history);
+      const reviewId = profile.trainingArcReviews[0]?.id;
+      const pendingArcReviewId = reviewId && reviewId !== previousReviewId ? reviewId : current.pendingArcReviewId;
+      if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile, weeklyProtocol: null, pendingArcReviewId };
+      return freshQuest({ ...current, profile, weeklyProtocol: null, dailyQuest: null, pendingArcReviewId });
     });
+  }, [commit]);
+
+  const acknowledgeArcReview = useCallback(() => {
+    commit((current) => current.pendingArcReviewId
+      ? freshQuest({ ...current, pendingArcReviewId: null, weeklyProtocol: null, dailyQuest: null })
+      : current);
   }, [commit]);
 
   const saveCorrectiveProfile = useCallback((correctiveProfile: CorrectiveProfile) => {
@@ -285,6 +295,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     updateSystemScan,
     updateCorrectiveProfile: saveCorrectiveProfile,
     completeMovementAssessment,
+    acknowledgeArcReview,
     savePostureScan,
     deletePostureScan,
     submitDailyReadiness,
@@ -296,7 +307,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
