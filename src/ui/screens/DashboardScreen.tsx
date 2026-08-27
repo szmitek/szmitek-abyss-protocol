@@ -20,6 +20,7 @@ interface DashboardScreenProps {
   onOpenReadiness: () => void;
   onOpenSystemScan: () => void;
   onOpenMovementCalibration: () => void;
+  onOpenArcReassessment: () => void;
   onOpenCorrectiveProfile: () => void;
 }
 
@@ -31,7 +32,7 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenCorrectiveProfile }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenArcReassessment, onOpenCorrectiveProfile }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
@@ -75,7 +76,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
       {arcState ? (
         <SystemPanel eyebrow={`TRAINING ARC // CYCLE ${arcState.cycleNumber}`} title={arcState.reassessmentDue ? 'Re-scan gate reached' : `Week ${arcState.week} / 4 · ${arcState.phase.toUpperCase()}`} accent={arcState.reassessmentDue ? 'purple' : 'blue'} trailing={<Text style={styles.arcDays}>{arcState.reassessmentDue ? 'READY' : `${arcState.daysRemaining}D LEFT`}</Text>}>
           <ProgressBar progress={arcState.progress} />
-          <Text style={styles.arcCopy}>{arcState.reassessmentDue ? 'Complete Movement Analysis to compare your baseline and open the next four-week cycle.' : arcState.phase === 'calibration' ? 'Controlled volume establishes a reliable starting signal.' : arcState.phase === 'foundation' ? 'Stable technique and repeatable work build the base.' : arcState.phase === 'overload' ? 'Mastered movements may progress. Failed signals do not.' : 'Volume consolidates before the Player re-scan.'}</Text>
+          <Text style={styles.arcCopy}>{arcState.reassessmentDue ? 'Capture the final visual checkpoint, repeat Movement Analysis and receive the next-cycle directive.' : arcState.phase === 'calibration' ? 'Controlled volume establishes a reliable starting signal.' : arcState.phase === 'foundation' ? 'Stable technique and repeatable work build the base.' : arcState.phase === 'overload' ? 'Mastered movements may progress. Failed signals do not.' : 'Volume consolidates before the Player re-scan.'}</Text>
         </SystemPanel>
       ) : null}
 
@@ -128,8 +129,8 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
             <Text style={[styles.recoveryDirectiveMark, styles.reassessmentMark]}>◇</Text>
             <View style={styles.recoveryDirectiveCopy}>
               <Text style={styles.recoveryDirectiveTitle}>PLAYER RE-SCAN AVAILABLE</Text>
-              <Text style={styles.recoveryDirectiveText}>Repeat the five movement checks. The next cycle will start from the updated baseline.</Text>
-              <GlowButton label="BEGIN PLAYER RE-SCAN" variant="secondary" onPress={onOpenMovementCalibration} style={styles.scanButton} />
+              <Text style={styles.recoveryDirectiveText}>Lock front, side and back views, then repeat the five movement checks. The System will issue an evidence-based next-cycle directive.</Text>
+              <GlowButton label="BEGIN PLAYER RE-SCAN" variant="secondary" onPress={onOpenArcReassessment} style={styles.scanButton} />
             </View>
           </View>
         ) : recoveryDay ? (

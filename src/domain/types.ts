@@ -38,6 +38,7 @@ export type MovementCheck = (typeof MOVEMENT_CHECKS)[number];
 export type MovementRating = 'clear' | 'limited' | 'pain';
 export type MovementAssessmentKind = 'baseline' | 'reassessment';
 export type TrainingArcPhase = 'calibration' | 'foundation' | 'overload' | 'consolidation';
+export type TrainingArcDecision = 'advance' | 'continue' | 'recalibrate' | 'recovery' | 'hold';
 export type ReadinessEnergy = 'low' | 'stable' | 'high';
 export type ReadinessSleep = 'poor' | 'fair' | 'good';
 export type ReadinessSoreness = 'none' | 'mild' | 'high';
@@ -215,6 +216,8 @@ export interface TrainingArc {
   durationWeeks: 4;
   baselineAssessmentId: string;
   completionAssessmentId: string | null;
+  reviewId: string | null;
+  entryDecision: TrainingArcDecision | null;
 }
 
 export interface TrainingArcContext {
@@ -241,6 +244,41 @@ export interface PostureScan {
   trainingArcId: string | null;
   trainingArcCycle: number | null;
   photos: PosturePhotoMap;
+}
+
+export interface TrainingArcReview {
+  id: string;
+  trainingArcId: string;
+  cycleNumber: number;
+  date: string;
+  dateKey: string;
+  baselineAssessmentId: string;
+  completionAssessmentId: string;
+  baselinePostureScanId: string | null;
+  completionPostureScanId: string | null;
+  adherence: {
+    scheduledSessions: number;
+    completedSessions: number;
+    rate: number;
+  };
+  movement: {
+    improved: number;
+    declined: number;
+    unchanged: number;
+  };
+  difficulty: {
+    tooEasy: number;
+    perfect: number;
+    tooHard: number;
+  };
+  readiness: {
+    normal: number;
+    reduced: number;
+    recovery: number;
+    hold: number;
+  };
+  decision: TrainingArcDecision;
+  reasons: string[];
 }
 
 export interface DailyReadiness {
@@ -289,6 +327,7 @@ export interface UserProfile extends StatBlock {
   correctiveProfile: CorrectiveProfile;
   movementAssessments: MovementAssessment[];
   trainingArcs: TrainingArc[];
+  trainingArcReviews: TrainingArcReview[];
   postureScans: PostureScan[];
   readinessLog: DailyReadiness[];
   availableEquipment: Equipment[];
@@ -334,7 +373,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 8;
+  schemaVersion: 9;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;
@@ -342,6 +381,7 @@ export interface AppSnapshot {
   activeWorkout: ActiveWorkout | null;
   history: WorkoutHistoryEntry[];
   lastCompletion: CompletionSummary | null;
+  pendingArcReviewId: string | null;
 }
 
 export interface OnboardingAnswers {

@@ -1,4 +1,4 @@
-import type { MovementAssessment, TrainingArc, TrainingArcContext, TrainingArcPhase } from './types.ts';
+import type { MovementAssessment, TrainingArc, TrainingArcContext, TrainingArcDecision, TrainingArcPhase } from './types.ts';
 
 const DAY_MS = 86_400_000;
 export const TRAINING_ARC_WEEKS = 4 as const;
@@ -41,7 +41,11 @@ export function getTrainingArcState(arcs: readonly TrainingArc[], dateKey: strin
   };
 }
 
-export function registerAssessmentWithTrainingArcs(arcs: readonly TrainingArc[], assessment: MovementAssessment): TrainingArc[] {
+export function registerAssessmentWithTrainingArcs(
+  arcs: readonly TrainingArc[],
+  assessment: MovementAssessment,
+  review?: { id: string; decision: TrainingArcDecision },
+): TrainingArc[] {
   const current = activeTrainingArc(arcs);
   if (!current) {
     return [{
@@ -51,12 +55,14 @@ export function registerAssessmentWithTrainingArcs(arcs: readonly TrainingArc[],
       durationWeeks: TRAINING_ARC_WEEKS,
       baselineAssessmentId: assessment.id,
       completionAssessmentId: null,
+      reviewId: null,
+      entryDecision: null,
     }, ...arcs];
   }
 
   const state = getTrainingArcState(arcs, assessment.dateKey);
   if (assessment.kind !== 'reassessment' || !state?.reassessmentDue) return [...arcs];
-  const completed = arcs.map((arc) => arc.id === current.id ? { ...arc, completionAssessmentId: assessment.id } : arc);
+  const completed = arcs.map((arc) => arc.id === current.id ? { ...arc, completionAssessmentId: assessment.id, reviewId: review?.id ?? null } : arc);
   return [{
     id: `arc-${current.cycleNumber + 1}-${assessment.dateKey}`,
     cycleNumber: current.cycleNumber + 1,
@@ -64,6 +70,8 @@ export function registerAssessmentWithTrainingArcs(arcs: readonly TrainingArc[],
     durationWeeks: TRAINING_ARC_WEEKS,
     baselineAssessmentId: assessment.id,
     completionAssessmentId: null,
+    reviewId: null,
+    entryDecision: review?.decision ?? null,
   }, ...completed];
 }
 

@@ -19,6 +19,7 @@ import { MovementCalibrationScreen } from './src/ui/screens/MovementCalibrationS
 import { PostureArchiveScreen } from './src/ui/screens/PostureArchiveScreen.tsx';
 import { ReadinessScreen } from './src/ui/screens/ReadinessScreen.tsx';
 import { CorrectiveProfileScreen } from './src/ui/screens/CorrectiveProfileScreen.tsx';
+import { ArcReviewScreen } from './src/ui/screens/ArcReviewScreen.tsx';
 import { WorkoutScreen } from './src/ui/screens/WorkoutScreen.tsx';
 import { colors } from './src/ui/theme.ts';
 
@@ -34,13 +35,13 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, updateCorrectiveProfile, completeMovementAssessment, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
+  const { snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, updateCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
   const [systemScanEditing, setSystemScanEditing] = useState(false);
   const [movementCalibrationEditing, setMovementCalibrationEditing] = useState(false);
-  const [postureArchiveOpen, setPostureArchiveOpen] = useState(false);
+  const [postureMode, setPostureMode] = useState<'archive' | 'reassessment' | null>(null);
   const [readinessOpen, setReadinessOpen] = useState(false);
   const [correctiveProfileOpen, setCorrectiveProfileOpen] = useState(false);
 
@@ -58,6 +59,23 @@ function SystemRoot() {
 
   if (snapshot.lastCompletion) {
     return <CompletionReportScreen report={snapshot.lastCompletion} onContinue={dismissCompletion} />;
+  }
+
+  if (snapshot.pendingArcReviewId) {
+    const review = snapshot.profile.trainingArcReviews.find((item) => item.id === snapshot.pendingArcReviewId);
+    if (review) {
+      return (
+        <SystemBackground>
+          <ArcReviewScreen
+            review={review}
+            onContinue={() => {
+              acknowledgeArcReview();
+              if (review.decision === 'recalibrate') setCorrectiveProfileOpen(true);
+            }}
+          />
+        </SystemBackground>
+      );
+    }
   }
 
   if (profileEditing) {
@@ -121,14 +139,21 @@ function SystemRoot() {
     );
   }
 
-  if (postureArchiveOpen) {
+  if (postureMode) {
     return (
       <SystemBackground>
         <PostureArchiveScreen
           profile={snapshot.profile}
-          onBack={() => setPostureArchiveOpen(false)}
+          mode={postureMode}
+          onBack={() => setPostureMode(null)}
           onSave={savePostureScan}
           onDelete={deletePostureScan}
+          {...(postureMode === 'reassessment' ? {
+            onCaptureComplete: () => {
+              setPostureMode(null);
+              setMovementCalibrationEditing(true);
+            },
+          } : {})}
         />
       </SystemBackground>
     );
@@ -164,10 +189,10 @@ function SystemRoot() {
 
   return (
     <SystemBackground>
-      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={requestDailyQuest} onOpenReadiness={() => setReadinessOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
-      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={requestDailyQuest} onBeginRankTrial={beginRankTrial} onOpenReadiness={() => setReadinessOpen(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} /> : null}
-      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} onOpenPostureArchive={() => setPostureArchiveOpen(true)} onRestoreExercises={restoreExercises} /> : null}
-      {tab === 'progress' ? <ProgressScreen history={snapshot.history} /> : null}
+      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={requestDailyQuest} onOpenReadiness={() => setReadinessOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
+      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={requestDailyQuest} onBeginRankTrial={beginRankTrial} onOpenReadiness={() => setReadinessOpen(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} /> : null}
+      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => snapshot.dailyQuest?.plan.kind === 'reassessment' ? setPostureMode('reassessment') : setMovementCalibrationEditing(true)} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} onOpenPostureArchive={() => setPostureMode('archive')} onRestoreExercises={restoreExercises} /> : null}
+      {tab === 'progress' ? <ProgressScreen profile={snapshot.profile} history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
       <QuestBriefing
         onAccept={acceptDailyQuest}

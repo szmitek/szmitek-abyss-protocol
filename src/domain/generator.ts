@@ -6,7 +6,7 @@ import { calculateRecovery } from './recovery.ts';
 import { readinessForDate } from './readiness.ts';
 import { isScheduledTrainingDay } from './schedule.ts';
 import { getTrainingArcState } from './trainingArc.ts';
-import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type ExerciseSelectionReason, type MuscleGroup, type Rank, type ReadinessBand, type TrainingArcPhase, type UserProfile, type WeeklyProtocol, type WeeklySessionBlueprint, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
+import { GOALS, MUSCLE_GROUPS, type Exercise, type ExercisePrescription, type ExerciseSelectionReason, type MuscleGroup, type Rank, type ReadinessBand, type TrainingArcDecision, type TrainingArcPhase, type UserProfile, type WeeklyProtocol, type WeeklySessionBlueprint, type WorkoutHistoryEntry, type WorkoutPlan } from './types.ts';
 
 export interface WorkoutGenerationOptions {
   session?: WeeklySessionBlueprint;
@@ -40,13 +40,13 @@ function randomFactory(seed: string): () => number {
   };
 }
 
-function difficultyCap(profile: UserProfile, phase?: TrainingArcPhase, readinessBand?: ReadinessBand): 1 | 2 | 3 {
+function difficultyCap(profile: UserProfile, phase?: TrainingArcPhase, readinessBand?: ReadinessBand, entryDecision?: TrainingArcDecision | null): 1 | 2 | 3 {
   const base = profile.experienceLevel === 'beginner'
     ? profile.totalWorkouts >= 8 ? 2 : 1
     : profile.experienceLevel === 'intermediate'
       ? profile.totalWorkouts >= 12 ? 3 : 2
       : 3;
-  const arcCap = phase === 'calibration' ? Math.min(2, base) : base;
+  const arcCap = phase === 'calibration' ? Math.min(entryDecision === 'recovery' ? 1 : 2, base) : base;
   return (readinessBand === 'reduced' ? Math.min(2, arcCap) : arcCap) as 1 | 2 | 3;
 }
 
@@ -103,7 +103,7 @@ function selectionReasons(exercise: Exercise, profile: UserProfile, readinessBan
   return reasons.slice(0, 2);
 }
 
-function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHistoryEntry[], phase?: TrainingArcPhase, readinessBand?: ReadinessBand): ExercisePrescription {
+function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHistoryEntry[], phase?: TrainingArcPhase, readinessBand?: ReadinessBand, entryDecision?: TrainingArcDecision | null): ExercisePrescription {
   const previous = history.flatMap((workout) => workout.results.map((result) => ({ workout, result })))
     .filter(({ result }) => result.exerciseId === exercise.id)
     .sort((a, b) => b.workout.date.localeCompare(a.workout.date));
@@ -123,6 +123,7 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
     ? 1
     : profile.workoutDuration <= 15 ? 2 : profile.workoutDuration === 60 && profile.experienceLevel === 'advanced' ? 4 : 3;
   if (phase === 'calibration' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.min(2, sets);
+  if (phase === 'calibration' && entryDecision === 'recovery' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = 1;
   if (phase === 'consolidation' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
   if (readinessBand === 'reduced' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
   return { exercise, sets, target, restSeconds: exercise.defaultRest, selectionReasons: selectionReasons(exercise, profile, readinessBand) };
@@ -185,7 +186,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const arcState = getTrainingArcState(profile.trainingArcs, dateKey);
   const readiness = options.ignoreReadiness ? null : readinessForDate(profile, dateKey);
   const readinessBand = readiness?.band;
-  const cap = difficultyCap(profile, arcState?.phase, readinessBand);
+  const cap = difficultyCap(profile, arcState?.phase, readinessBand, arcState?.arc.entryDecision);
   const eligible = EXERCISES.filter((exercise) =>
     isEquipmentCompatible(exercise, profile.availableEquipment) &&
     isHealthCompatible(exercise, profile) &&
@@ -272,7 +273,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
 
   const weeklyVolume = { ...(options.weeklyVolumeUsed ?? {}) };
   const prescriptions = selected.slice(0, totalCount).flatMap((exercise) => {
-    const prescription = prescribe(exercise, profile, history, arcState?.phase, readinessBand);
+    const prescription = prescribe(exercise, profile, history, arcState?.phase, readinessBand, arcState?.arc.entryDecision);
     if (exercise.exerciseType === 'warmup' || exercise.exerciseType === 'mobility') return [prescription];
     const cap = options.weeklyVolumeCaps?.[exercise.primaryMuscle];
     if (cap === undefined) return [prescription];
