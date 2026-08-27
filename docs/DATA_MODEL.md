@@ -22,6 +22,12 @@
 
 `DailyReadiness` records one replaceable signal per date: energy, sleep quality, ordinary muscle soreness, affected muscle groups, and a separate pain/unusual-symptom flag. Its derived band is `normal`, `reduced`, `recovery`, or `hold`. The generator may preserve or lower planned load from this record; it never uses high readiness to exceed normal progression.
 
+## Weekly protocol
+
+`WeeklyProtocol` is the persisted training contract for the active seven-day window. It stores its planning fingerprint, Training Arc context, shared primary-muscle volume ceilings, and two to seven `WeeklyProtocolSession` records. Each session has a stable A–G code, date, objective, focus groups, and an embedded planned `WorkoutPlan`.
+
+Daily Readiness operates on the embedded plan. A reduced signal removes working sets without changing exercise identity or targets; recovery and hold signals replace the daily execution without rewriting the weekly contract.
+
 ## Workout plan and result
 
 A `WorkoutPlan` is an immutable prescription for a date. Each `ExercisePrescription` embeds the selected exercise snapshot plus sets, target, recovery time, and up to two human-readable selection reasons. A completed `WorkoutHistoryEntry` stores actual set/volume results, duration, user difficulty feedback, level XP, attribute AP, and any threshold-based visible stat gains.
@@ -34,6 +40,7 @@ The MVP persists one `AppSnapshot`:
 
 - `schemaVersion`
 - onboarding state and profile
+- current locked Weekly Protocol
 - current Daily Quest
 - resumable active workout
 - workout history

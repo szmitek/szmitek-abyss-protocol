@@ -7,6 +7,7 @@ import type { AppSnapshot } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
+import { WeeklyProtocolPanel } from '../components/WeeklyProtocolPanel.tsx';
 import { colors, spacing } from '../theme.ts';
 
 interface QuestsScreenProps {
@@ -66,6 +67,8 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
           style={styles.button}
         />
       </SystemPanel>
+
+      {snapshot.weeklyProtocol ? <WeeklyProtocolPanel protocol={snapshot.weeklyProtocol} history={snapshot.history} /> : null}
 
       <SystemPanel eyebrow="ASCENSION" title={trial.target ? `RANK ${profile.rank} → ${trial.target}` : 'MAXIMUM RANK'} accent="danger">
         <View style={styles.trialHero}>

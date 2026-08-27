@@ -28,7 +28,7 @@ function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
   const lastCompletion = parsed.lastCompletion
     ? { ...parsed.lastCompletion, attributeXpEarned: parsed.lastCompletion.attributeXpEarned ?? { ...EMPTY_STATS } }
     : null;
-  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 7, profile, history, lastCompletion };
+  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 8, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null };
 }
 
 export async function loadSnapshot(): Promise<AppSnapshot> {
@@ -36,7 +36,7 @@ export async function loadSnapshot(): Promise<AppSnapshot> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return INITIAL_SNAPSHOT;
     const parsed = JSON.parse(raw) as StoredSnapshot;
-    if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2 && parsed.schemaVersion !== 3 && parsed.schemaVersion !== 4 && parsed.schemaVersion !== 5 && parsed.schemaVersion !== 6 && parsed.schemaVersion !== 7) return INITIAL_SNAPSHOT;
+    if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2 && parsed.schemaVersion !== 3 && parsed.schemaVersion !== 4 && parsed.schemaVersion !== 5 && parsed.schemaVersion !== 6 && parsed.schemaVersion !== 7 && parsed.schemaVersion !== 8) return INITIAL_SNAPSHOT;
     return migrateSnapshot(parsed);
   } catch {
     return INITIAL_SNAPSHOT;

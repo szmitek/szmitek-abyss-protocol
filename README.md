@@ -15,6 +15,7 @@ The visual language is an original dark-fantasy “System” interface. It inten
 - Private Posture Archive with front/side/back capture, on-device storage, and before/current comparison.
 - Daily Readiness Scan for energy, sleep, muscle soreness, and pain/unusual warning signals.
 - Corrective Player Profile with confirmed primary/support targets, evidence sources, and generator explanations.
+- Locked weekly A/B/C+ protocols with session objectives, recovery spacing, corrective capacity, and muscle-volume ceilings.
 - Deterministic daily load adaptation: preserve, reduce, replace with recovery, or seal the protocol.
 - Deterministic health constraints and posture-calibrated exercise selection.
 - Recovery-aware rotation and same-session monotony protection.
@@ -92,4 +93,4 @@ Abyss Protocol does not diagnose injuries or replace a clinician. Player Scan ob
 
 ## Roadmap boundary
 
-Automatic posture analysis, cloud auth/sync, achievements, weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. Visual records deliberately do not diagnose posture yet; the next personal-trainer milestone is a structured, user-reviewable observation layer that can propose changes to the Corrective Player Profile without silently changing a plan.
+Automatic posture analysis, cloud auth/sync, achievements, themed weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. Visual records deliberately do not diagnose posture. The next personal-trainer milestone is a complete end-of-arc reassessment that combines movement re-tests, new visual checkpoints, adherence, and a reviewable next-cycle decision.

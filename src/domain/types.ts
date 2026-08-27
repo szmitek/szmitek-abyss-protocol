@@ -42,6 +42,7 @@ export type ReadinessEnergy = 'low' | 'stable' | 'high';
 export type ReadinessSleep = 'poor' | 'fair' | 'good';
 export type ReadinessSoreness = 'none' | 'mild' | 'high';
 export type ReadinessBand = 'normal' | 'reduced' | 'recovery' | 'hold';
+export type WeeklySessionCode = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
 
 export const CORRECTIVE_GOALS = [
   'pelvic-control',
@@ -126,6 +127,40 @@ export interface WorkoutPlan {
   trainingArc?: TrainingArcContext;
   readinessBand?: ReadinessBand;
   correctiveFocus?: CorrectiveGoal;
+  weeklySession?: WeeklySessionContext;
+}
+
+export interface WeeklySessionContext {
+  protocolId: string;
+  code: WeeklySessionCode;
+  sessionIndex: number;
+  sessionCount: number;
+  weekStartDateKey: string;
+  objective: string;
+}
+
+export interface WeeklySessionBlueprint {
+  code: WeeklySessionCode;
+  dateKey: string;
+  title: string;
+  objective: string;
+  focusMuscles: MuscleGroup[];
+}
+
+export interface WeeklyProtocolSession extends WeeklySessionBlueprint {
+  plan: WorkoutPlan;
+}
+
+export interface WeeklyProtocol {
+  id: string;
+  weekStartDateKey: string;
+  weekEndDateKey: string;
+  createdAt: string;
+  profileFingerprint: string;
+  trainingArcCycle: number | null;
+  trainingArcWeek: number | null;
+  volumeCaps: Partial<Record<MuscleGroup, number>>;
+  sessions: WeeklyProtocolSession[];
 }
 
 export interface ExerciseResult {
@@ -299,9 +334,10 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 7;
+  schemaVersion: 8;
   onboardingComplete: boolean;
   profile: UserProfile | null;
+  weeklyProtocol: WeeklyProtocol | null;
   dailyQuest: DailyQuest | null;
   activeWorkout: ActiveWorkout | null;
   history: WorkoutHistoryEntry[];
