@@ -3,6 +3,7 @@
     "name": "Abyss Protocol",
     "slug": "abyss-protocol",
     "version": "0.1.0",
+    "icon": "./assets/branding/app-icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#07090F",
@@ -23,7 +24,12 @@
     },
     "android": {
       "package": "app.abyssprotocol.mobile",
-      "versionCode": 5,
+      "versionCode": 6,
+      "icon": "./assets/branding/app-icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/branding/app-icon.png",
+        "backgroundColor": "#07090F"
+      },
       "allowBackup": false,
       "predictiveBackGestureEnabled": true,
       "edgeToEdgeEnabled": true
