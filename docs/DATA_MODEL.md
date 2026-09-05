@@ -12,9 +12,13 @@
 
 `CorrectiveProfile` stores confirmed primary/support training targets and their evidence sources. Suggested targets may be derived from Player Scan observations and limited Movement Analysis checks, but only the user-confirmed profile persists. Corrective targets raise selection priority; they never bypass equipment, pain, movement, readiness, or exclusion constraints.
 
+`correctiveHistory` stores independent snapshots on changed confirmations, including an explicit return to general training. Each revision links to the active arc. Migration imports only the last known profile with `legacy-current` provenance; it does not invent older changes.
+
 ## Training Arc and visual records
 
 `MovementAssessment` records the five submaximal movement checks. `TrainingArc` links a baseline assessment to a four-week cycle, its eventual reassessment, the archived review, and the entry directive inherited by the next cycle.
+
+`TrainingArc.planSnapshot` freezes weekly frequency at cycle entry. Adherence uses that original four-week target even when the Player changes weekly settings later. Schema v10 freezes missing historical targets at migration with `legacy-estimate` provenance; saved reports retain their numbers. A new arc captures current settings with `cycle-start` provenance.
 
 `TrainingArcReview` is the immutable end-of-cycle report. It stores planned/completed session counts, movement improvements/declines, perceived-difficulty totals, readiness-band totals, optional before/final visual checkpoint links, the deterministic decision, and human-readable reasons. Its decision can advance, continue, recalibrate, start the next cycle under protected recovery load, or hold unsupervised training. XP and photos cannot independently authorize progression.
 
@@ -51,3 +55,5 @@ The MVP persists one `AppSnapshot`:
 - archived Training Arc reviews and an optional pending report gate
 
 The schema is deliberately serializable and mirrors the future normalized Supabase model. Cloud sync will add stable UUIDs, `created_at`/`updated_at`, device mutation IDs, and soft-deletion metadata.
+
+Current schema: v10. Pure migration lives in `src/domain/migrations.ts`; the AsyncStorage adapter retains the original storage key. Progress aggregates are derived from completed history, preserve calendar weeks with no activity, and keep repetitions separate from timed exercise seconds. Targets are logged prescriptions, not measured strength. Retired exercise IDs remain inspectable with unknown units.

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { TrainingArcDecision, TrainingArcReview } from '../../domain/types.ts';
+import { MOVEMENT_CHECKS, type TrainingArcDecision, type TrainingArcReview, type UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
@@ -14,12 +14,17 @@ const DECISION: Record<TrainingArcDecision, { label: string; title: string; copy
   hold: { label: 'SYSTEM HOLD', title: 'Unsupervised training sealed', copy: 'Resolve the registered pain or warning signal before training resumes.' },
 };
 
-export function ArcReviewScreen({ review, onContinue }: { review: TrainingArcReview; onContinue: () => void }) {
+export function ArcReviewScreen({ review, onContinue, archived = false, profile }: { review: TrainingArcReview; onContinue: () => void; archived?: boolean; profile: UserProfile }) {
   const decision = DECISION[review.decision];
   const accent = review.decision === 'hold' ? 'danger' : ['recovery', 'recalibrate'].includes(review.decision) ? 'purple' : 'blue';
   const decisionColor = review.decision === 'hold' ? colors.danger : review.decision === 'advance' ? colors.success : review.decision === 'recovery' ? colors.warning : colors.primary;
+  const baseline = profile.movementAssessments.find((item) => item.id === review.baselineAssessmentId);
+  const completion = profile.movementAssessments.find((item) => item.id === review.completionAssessmentId);
+  const photosAvailable = profile.postureScans.some((scan) => scan.id === review.baselinePostureScanId)
+    && profile.postureScans.some((scan) => scan.id === review.completionPostureScanId);
   return (
     <Screen eyebrow={'SYSTEM // ARC ' + review.cycleNumber + ' REPORT'} title="Reassessment complete" subtitle="The next directive is based on execution, movement checks, difficulty and readiness — never on XP alone.">
+      {archived ? <><GlowButton label="BACK TO PROGRESS" variant="secondary" onPress={onContinue} /><Text style={styles.copy}>Archived on {review.dateKey}. This is the original verdict; viewing it does not change your current cycle.</Text></> : null}
       <SystemPanel eyebrow="SYSTEM VERDICT" title={decision.title} accent={accent} trailing={<Text style={[styles.verdict, { color: decisionColor }]}>{decision.label}</Text>}>
         <Text style={styles.copy}>{decision.copy}</Text>
       </SystemPanel>
@@ -32,17 +37,22 @@ export function ArcReviewScreen({ review, onContinue }: { review: TrainingArcRev
 
       <SystemPanel eyebrow="ARC SIGNALS" title="Evidence summary">
         <Signal label="CLEARED SESSIONS" value={review.adherence.completedSessions + ' / ' + review.adherence.scheduledSessions} />
+        <Text style={styles.copy}>{review.adherence.targetSource === 'cycle-start' ? 'Compared with the frequency saved at the start of this cycle. Later settings changes do not rewrite this target.' : 'Legacy target estimate: the original cycle frequency was not recorded. This saved report is preserved.'}</Text>
         <Signal label="MOVEMENT" value={review.movement.improved + ' UP · ' + review.movement.unchanged + ' STABLE · ' + review.movement.declined + ' DOWN'} />
-        <Signal label="SESSION LOAD" value={review.difficulty.perfect + ' MATCHED · ' + review.difficulty.tooHard + ' TOO HARD'} />
+        <Signal label="SESSION LOAD" value={review.difficulty.perfect + ' MATCHED · ' + review.difficulty.tooHard + ' TOO HARD · ' + review.difficulty.tooEasy + ' TOO EASY'} />
         <Signal label="READINESS" value={review.readiness.normal + ' NORMAL · ' + review.readiness.reduced + ' REDUCED · ' + (review.readiness.recovery + review.readiness.hold) + ' PROTECTED'} />
-        <Signal label="VISUAL CHECKPOINTS" value={review.baselinePostureScanId && review.completionPostureScanId ? 'MANUAL COMPARISON READY' : 'SECOND CHECKPOINT UNAVAILABLE'} />
+        <Signal label="VISUAL CHECKPOINTS" value={photosAvailable ? 'AVAILABLE IN POSTURE ARCHIVE' : 'CHECKPOINT MISSING OR REMOVED'} />
       </SystemPanel>
+
+      {baseline && completion ? <SystemPanel eyebrow="MOVEMENT CHECKS" title="Baseline → re-scan">
+        {MOVEMENT_CHECKS.map((check) => <Signal key={check} label={check.replaceAll('-', ' ').toUpperCase()} value={`${baseline.results[check].toUpperCase()} → ${completion.results[check].toUpperCase()}`} />)}
+      </SystemPanel> : null}
 
       <SystemPanel eyebrow="WHY THIS DIRECTIVE" title="System rationale" accent="purple">
         {review.reasons.map((reason, index) => <View key={reason} style={styles.reason}><Text style={styles.reasonIndex}>{String(index + 1).padStart(2, '0')}</Text><Text style={styles.reasonText}>{reason}</Text></View>)}
       </SystemPanel>
 
-      <GlowButton label={review.decision === 'recalibrate' ? 'REVIEW CORRECTIVE PROFILE' : review.decision === 'hold' ? 'ACKNOWLEDGE HOLD' : 'ENTER NEXT TRAINING ARC'} variant={review.decision === 'hold' ? 'danger' : 'primary'} onPress={onContinue} />
+      {!archived ? <GlowButton label={review.decision === 'recalibrate' ? 'REVIEW CORRECTIVE PROFILE' : review.decision === 'hold' ? 'ACKNOWLEDGE HOLD' : 'ENTER NEXT TRAINING ARC'} variant={review.decision === 'hold' ? 'danger' : 'primary'} onPress={onContinue} /> : null}
       <Text style={styles.note}>POSTURE PHOTOS ARE PRIVATE REFERENCE MATERIAL. THE SYSTEM DOES NOT DIAGNOSE OR SCORE THEM.</Text>
     </Screen>
   );
@@ -62,15 +72,14 @@ const styles = StyleSheet.create({
   metrics: { flexDirection: 'row', gap: spacing.sm },
   metric: { flex: 1, minHeight: 82, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.panel },
   metricValue: { color: colors.primary, fontSize: 21, fontWeight: '900' },
-  metricLabel: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 1, marginTop: 5 },
+  metricLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 0.5, marginTop: 5 },
   positive: { color: colors.success },
   danger: { color: colors.danger },
   signal: { minHeight: 47, borderTopWidth: 1, borderTopColor: 'rgba(147,164,195,0.1)', justifyContent: 'center' },
-  signalLabel: { color: colors.textDim, fontSize: 8, fontWeight: '900', letterSpacing: 1.1 },
-  signalValue: { color: colors.text, fontSize: 10, fontWeight: '800', marginTop: 4 },
+  signalLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  signalValue: { color: colors.text, fontSize: 12, fontWeight: '800', marginTop: 4, lineHeight: 19 },
   reason: { flexDirection: 'row', paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(147,164,195,0.1)' },
   reasonIndex: { color: colors.purple, fontSize: 9, fontWeight: '900', width: 30 },
   reasonText: { flex: 1, color: colors.textMuted, fontSize: 11, lineHeight: 17 },
   note: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 0.8, lineHeight: 14, textAlign: 'center', paddingHorizontal: spacing.md },
 });
-

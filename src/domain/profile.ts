@@ -1,7 +1,7 @@
 import { EQUIPMENT, type AppSnapshot, type CorrectiveProfile, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile, type WorkoutHistoryEntry } from './types.ts';
 import { createTrainingArcReview } from './arcReview.ts';
 import { toDateKey } from './date.ts';
-import { registerAssessmentWithTrainingArcs } from './trainingArc.ts';
+import { activeTrainingArc, registerAssessmentWithTrainingArcs } from './trainingArc.ts';
 
 export const EMPTY_HEALTH_PROFILE: PlayerHealthProfile = {
   scanCompleted: false,
@@ -20,7 +20,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 9,
+  schemaVersion: 10,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
@@ -47,6 +47,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     attributeXp: { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 },
     healthProfile: { ...EMPTY_HEALTH_PROFILE },
     correctiveProfile: { ...EMPTY_CORRECTIVE_PROFILE },
+    correctiveHistory: [],
     movementAssessments: [],
     trainingArcs: [],
     trainingArcReviews: [],
@@ -72,14 +73,26 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
   };
 }
 
-export function updateCorrectiveProfile(profile: UserProfile, correctiveProfile: CorrectiveProfile): UserProfile {
+export function updateCorrectiveProfile(profile: UserProfile, correctiveProfile: CorrectiveProfile, now = new Date()): UserProfile {
+  const targets = correctiveProfile.targets.map((target) => ({ ...target, sources: [...target.sources] }));
+  const changed = !profile.correctiveProfile.configured || JSON.stringify(profile.correctiveProfile.targets) !== JSON.stringify(targets);
+  if (!changed) return profile;
+  const date = now.toISOString();
   return {
     ...profile,
     correctiveProfile: {
       ...correctiveProfile,
       configured: true,
-      updatedAt: new Date().toISOString(),
+      targets,
+      updatedAt: date,
     },
+    correctiveHistory: [{
+      id: `directive-${now.getTime()}-${profile.correctiveHistory.length}`,
+      date,
+      trainingArcId: activeTrainingArc(profile.trainingArcs)?.id ?? null,
+      source: 'confirmed',
+      targets: targets.map((target) => ({ ...target, sources: [...target.sources] })),
+    }, ...profile.correctiveHistory],
   };
 }
 
@@ -127,7 +140,7 @@ export function recordMovementAssessment(
   return {
     ...profile,
     movementAssessments: [assessment, ...profile.movementAssessments],
-    trainingArcs: registerAssessmentWithTrainingArcs(profile.trainingArcs, assessment, review ? { id: review.id, decision: review.decision } : undefined),
+    trainingArcs: registerAssessmentWithTrainingArcs(profile.trainingArcs, assessment, review ? { id: review.id, decision: review.decision } : undefined, profile.workoutsPerWeek),
     trainingArcReviews: review ? [review, ...profile.trainingArcReviews] : profile.trainingArcReviews,
   };
 }
