@@ -67,6 +67,7 @@ function SystemRoot() {
       return (
         <SystemBackground>
           <ArcReviewScreen
+            profile={snapshot.profile}
             review={review}
             onContinue={() => {
               acknowledgeArcReview();

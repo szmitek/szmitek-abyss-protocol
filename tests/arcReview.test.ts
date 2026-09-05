@@ -30,6 +30,7 @@ const arc: TrainingArc = {
   completionAssessmentId: null,
   reviewId: null,
   entryDecision: null,
+  planSnapshot: { workoutsPerWeek: 2, source: 'cycle-start' },
 };
 
 function profile(overrides: Partial<UserProfile> = {}): UserProfile {
@@ -88,7 +89,7 @@ test('consistent execution and improved movement authorize controlled advance', 
   const user = profile({ postureScans: [scan('final-photo', '2026-09-29'), scan('baseline-photo', '2026-09-01')] });
   const review = createTrainingArcReview(user, reassessment, history(6));
   assert.equal(review?.decision, 'advance');
-  assert.deepEqual(review?.adherence, { scheduledSessions: 8, completedSessions: 6, rate: 0.75 });
+  assert.deepEqual(review?.adherence, { scheduledSessions: 8, completedSessions: 6, rate: 0.75, targetSource: 'cycle-start' });
   assert.deepEqual(review?.movement, { improved: 1, declined: 0, unchanged: 4 });
   assert.equal(review?.baselinePostureScanId, 'baseline-photo');
   assert.equal(review?.completionPostureScanId, 'final-photo');
@@ -98,6 +99,27 @@ test('consistent execution and improved movement authorize controlled advance', 
 test('stable movement defaults to another cycle at the current level', () => {
   const reassessment = movement('movement-final', '2026-09-29', 'reassessment', LIMITED_RESULTS);
   assert.equal(createTrainingArcReview(profile(), reassessment, history(6))?.decision, 'continue');
+});
+
+test('changing current frequency does not rewrite the completed arc target, but the next arc captures it', () => {
+  const updated = recordMovementAssessment(profile({ workoutsPerWeek: 7 }), CLEAR_RESULTS, 'reassessment', history(6), new Date('2026-09-29T10:00:00Z'));
+  assert.equal(updated.trainingArcReviews[0]?.adherence.scheduledSessions, 8);
+  assert.equal(updated.trainingArcReviews[0]?.adherence.rate, 0.75);
+  assert.equal(updated.trainingArcReviews[0]?.decision, 'advance');
+  assert.deepEqual(updated.trainingArcs[0]?.planSnapshot, { workoutsPerWeek: 7, source: 'cycle-start' });
+  assert.deepEqual(updated.trainingArcs[1]?.planSnapshot, { workoutsPerWeek: 2, source: 'cycle-start' });
+});
+
+test('a first assessment captures the original four-week frequency', () => {
+  const updated = recordMovementAssessment(profile({ trainingArcs: [], movementAssessments: [], workoutsPerWeek: 3 }), CLEAR_RESULTS, 'baseline', [], new Date('2026-09-01T10:00:00Z'));
+  assert.deepEqual(updated.trainingArcs[0]?.planSnapshot, { workoutsPerWeek: 3, source: 'cycle-start' });
+});
+
+test('excess sessions do not distort the share of too-hard sessions after adherence is capped', () => {
+  const reassessment = movement('movement-final', '2026-09-29', 'reassessment', LIMITED_RESULTS);
+  const review = createTrainingArcReview(profile(), reassessment, history(12, 4));
+  assert.equal(review?.adherence.rate, 1);
+  assert.equal(review?.decision, 'continue');
 });
 
 test('low adherence or declining movement requests recalibration', () => {
@@ -147,4 +169,3 @@ test('a recovery decision enforces minimum week-one load without weakening equip
   assert.ok(plan.exercises.filter((item) => !['warmup', 'mobility'].includes(item.exercise.exerciseType)).every((item) => item.sets === 1));
   assert.ok(plan.exercises.every((item) => item.exercise.requiredEquipment.length === 1 && item.exercise.requiredEquipment[0] === 'none'));
 });
-

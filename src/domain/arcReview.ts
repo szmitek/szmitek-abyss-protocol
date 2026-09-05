@@ -62,7 +62,7 @@ export function createTrainingArcReview(
     && !entry.planId.startsWith('rank-trial-')
     && inArc(entry.dateKey, arc.startDateKey, reassessment.dateKey)
   ));
-  const scheduledSessions = profile.workoutsPerWeek * arc.durationWeeks;
+  const scheduledSessions = (arc.planSnapshot?.workoutsPerWeek ?? profile.workoutsPerWeek) * arc.durationWeeks;
   const completedSessions = Math.min(scheduledSessions, completedWorkouts.length);
   const adherenceRate = scheduledSessions === 0 ? 0 : completedSessions / scheduledSessions;
   const movement = compareAssessments(reassessment, baseline);
@@ -83,9 +83,9 @@ export function createTrainingArcReview(
     .sort((a, b) => a.date.localeCompare(b.date));
   const baselinePostureScanId = scans.length >= 2 ? scans[0]!.id : null;
   const completionPostureScanId = scans[scans.length - 1]?.id ?? null;
-  const decision = chooseDecision(profile, reassessment, adherenceRate, completedSessions, movement, difficulty, readiness);
+  const decision = chooseDecision(profile, reassessment, adherenceRate, completedWorkouts.length, movement, difficulty, readiness);
   const partial = {
-    adherence: { scheduledSessions, completedSessions, rate: adherenceRate },
+    adherence: { scheduledSessions, completedSessions, rate: adherenceRate, targetSource: arc.planSnapshot?.source ?? 'legacy-estimate' as const },
     movement,
     difficulty,
     readiness,

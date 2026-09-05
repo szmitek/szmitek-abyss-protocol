@@ -201,6 +201,14 @@ export interface CorrectiveProfile {
   updatedAt: string | null;
 }
 
+export interface CorrectiveProfileRevision {
+  id: string;
+  date: string | null;
+  trainingArcId: string | null;
+  source: 'confirmed' | 'legacy-current';
+  targets: CorrectiveTarget[];
+}
+
 export interface MovementAssessment {
   id: string;
   kind: MovementAssessmentKind;
@@ -218,6 +226,10 @@ export interface TrainingArc {
   completionAssessmentId: string | null;
   reviewId: string | null;
   entryDecision: TrainingArcDecision | null;
+  planSnapshot: {
+    workoutsPerWeek: UserProfile['workoutsPerWeek'];
+    source: 'cycle-start' | 'legacy-estimate';
+  } | null;
 }
 
 export interface TrainingArcContext {
@@ -260,6 +272,7 @@ export interface TrainingArcReview {
     scheduledSessions: number;
     completedSessions: number;
     rate: number;
+    targetSource: 'cycle-start' | 'legacy-estimate';
   };
   movement: {
     improved: number;
@@ -325,6 +338,7 @@ export interface UserProfile extends StatBlock {
   attributeXp: StatBlock;
   healthProfile: PlayerHealthProfile;
   correctiveProfile: CorrectiveProfile;
+  correctiveHistory: CorrectiveProfileRevision[];
   movementAssessments: MovementAssessment[];
   trainingArcs: TrainingArc[];
   trainingArcReviews: TrainingArcReview[];
@@ -373,7 +387,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 9;
+  schemaVersion: 10;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

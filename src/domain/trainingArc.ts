@@ -45,7 +45,9 @@ export function registerAssessmentWithTrainingArcs(
   arcs: readonly TrainingArc[],
   assessment: MovementAssessment,
   review?: { id: string; decision: TrainingArcDecision },
+  workoutsPerWeek?: NonNullable<TrainingArc['planSnapshot']>['workoutsPerWeek'],
 ): TrainingArc[] {
+  const planSnapshot: TrainingArc['planSnapshot'] = workoutsPerWeek ? { workoutsPerWeek, source: 'cycle-start' } : null;
   const current = activeTrainingArc(arcs);
   if (!current) {
     return [{
@@ -57,6 +59,7 @@ export function registerAssessmentWithTrainingArcs(
       completionAssessmentId: null,
       reviewId: null,
       entryDecision: null,
+      planSnapshot,
     }, ...arcs];
   }
 
@@ -72,6 +75,7 @@ export function registerAssessmentWithTrainingArcs(
     completionAssessmentId: null,
     reviewId: null,
     entryDecision: review?.decision ?? null,
+    planSnapshot,
   }, ...completed];
 }
 
