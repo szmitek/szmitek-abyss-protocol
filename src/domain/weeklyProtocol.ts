@@ -34,6 +34,7 @@ function weeklyVolumeCaps(profile: UserProfile): Partial<Record<MuscleGroup, num
 export function weeklyProtocolFingerprint(profile: UserProfile, dateKey: string): string {
   const arc = getTrainingArcState(profile.trainingArcs, dateKey);
   return JSON.stringify({
+    planningVersion: 2,
     goal: profile.goal,
     experienceLevel: profile.experienceLevel,
     workoutDuration: profile.workoutDuration,
@@ -45,6 +46,8 @@ export function weeklyProtocolFingerprint(profile: UserProfile, dateKey: string)
     movementAssessmentId: profile.movementAssessments[0]?.id ?? null,
     trainingArcId: arc?.arc.id ?? null,
     trainingArcWeek: arc?.week ?? null,
+    entryDecision: arc?.arc.entryDecision ?? null,
+    directiveReviewedAt: arc?.arc.directiveReviewedAt ?? null,
   });
 }
 

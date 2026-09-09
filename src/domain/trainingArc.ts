@@ -59,6 +59,7 @@ export function registerAssessmentWithTrainingArcs(
       completionAssessmentId: null,
       reviewId: null,
       entryDecision: null,
+      directiveReviewedAt: null,
       planSnapshot,
     }, ...arcs];
   }
@@ -75,6 +76,7 @@ export function registerAssessmentWithTrainingArcs(
     completionAssessmentId: null,
     reviewId: null,
     entryDecision: review?.decision ?? null,
+    directiveReviewedAt: null,
     planSnapshot,
   }, ...completed];
 }

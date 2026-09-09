@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { buildCorrectiveProfile, CORRECTIVE_GOAL_DETAILS, suggestCorrectiveTargets } from '../../domain/correctiveProfile.ts';
+import { getArcDirective } from '../../domain/arcDirective.ts';
+import { toDateKey } from '../../domain/date.ts';
 import { CORRECTIVE_GOALS, type CorrectiveEvidenceSource, type CorrectiveGoal, type CorrectiveProfile, type UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
@@ -22,6 +24,7 @@ const SOURCE_LABELS: Record<CorrectiveEvidenceSource, string> = {
 };
 
 export function CorrectiveProfileScreen({ profile, onBack, onSave }: CorrectiveProfileScreenProps) {
+  const directive = getArcDirective(profile, toDateKey(new Date()));
   const suggestions = useMemo(() => suggestCorrectiveTargets(profile), [profile]);
   const suggestionMap = useMemo(() => new Map(suggestions.map((target) => [target.goal, target.sources])), [suggestions]);
   const initialGoals = profile.correctiveProfile.configured
@@ -53,6 +56,10 @@ export function CorrectiveProfileScreen({ profile, onBack, onSave }: CorrectiveP
           <Text style={styles.safeguardText}>Pain, warning signals and clinician restrictions can remove an exercise even when it matches your primary directive.</Text>
         </View>
       </View>
+
+      {directive.needsDirectiveReview ? <SystemPanel eyebrow="RECALIBRATION REQUIRED" title={`Confirm priorities for Arc ${directive.state?.cycleNumber}`} accent="purple">
+        <Text style={styles.info}>Your previous targets are retained below. Review the new movement suggestions, then confirm these targets or choose general training. Returning without saving leaves training sealed.</Text>
+      </SystemPanel> : null}
 
       {suggestions.length > 0 ? (
         <SystemPanel eyebrow="SIGNAL FUSION" title={`${suggestions.length} System suggestion${suggestions.length === 1 ? '' : 's'}`} accent="purple">

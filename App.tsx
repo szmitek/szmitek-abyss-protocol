@@ -176,6 +176,7 @@ function SystemRoot() {
 
   const requestDailyQuest = () => {
     const quest = snapshot.dailyQuest;
+    if (quest?.plan.kind === 'directive-review') { setCorrectiveProfileOpen(true); return; }
     if (quest && planRequiresDailyReadiness(quest.plan) && !readinessForDate(snapshot.profile!, quest.dateKey)) {
       setReadinessOpen(true);
       return;
@@ -191,7 +192,7 @@ function SystemRoot() {
   return (
     <SystemBackground>
       {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={requestDailyQuest} onOpenReadiness={() => setReadinessOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
-      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={requestDailyQuest} onBeginRankTrial={beginRankTrial} onOpenReadiness={() => setReadinessOpen(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} /> : null}
+      {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={requestDailyQuest} onBeginRankTrial={beginRankTrial} onOpenReadiness={() => setReadinessOpen(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
       {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => snapshot.dailyQuest?.plan.kind === 'reassessment' ? setPostureMode('reassessment') : setMovementCalibrationEditing(true)} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} onOpenPostureArchive={() => setPostureMode('archive')} onRestoreExercises={restoreExercises} /> : null}
       {tab === 'progress' ? <ProgressScreen profile={snapshot.profile} history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />

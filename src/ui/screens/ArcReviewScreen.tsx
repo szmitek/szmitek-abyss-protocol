@@ -1,17 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { MOVEMENT_CHECKS, type TrainingArcDecision, type TrainingArcReview, type UserProfile } from '../../domain/types.ts';
+import { ARC_DIRECTIVE_COPY } from '../../domain/arcDirective.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
 import { colors, radius, spacing } from '../theme.ts';
 
-const DECISION: Record<TrainingArcDecision, { label: string; title: string; copy: string }> = {
-  advance: { label: 'ADVANCE', title: 'Controlled progression authorized', copy: 'The next Training Arc may progress after its calibration week.' },
-  continue: { label: 'CONTINUE', title: 'Current path confirmed', copy: 'The next Training Arc will reinforce the current progression level.' },
-  recalibrate: { label: 'RECALIBRATE', title: 'Directive review required', copy: 'Review the Corrective Profile before the next cycle settles.' },
-  recovery: { label: 'RECOVERY ENTRY', title: 'Protected cycle entry', copy: 'Week one will use minimum difficulty and one work set per movement.' },
-  hold: { label: 'SYSTEM HOLD', title: 'Unsupervised training sealed', copy: 'Resolve the registered pain or warning signal before training resumes.' },
+const DECISION: Record<TrainingArcDecision, { label: string; title: string }> = {
+  advance: { label: 'ADVANCE', title: 'Controlled progression authorized' },
+  continue: { label: 'CONTINUE', title: 'Current path confirmed' },
+  recalibrate: { label: 'RECALIBRATE', title: 'Directive review required' },
+  recovery: { label: 'RECOVERY ENTRY', title: 'Protected cycle entry' },
+  hold: { label: 'SYSTEM HOLD', title: 'Unsupervised training sealed' },
 };
 
 export function ArcReviewScreen({ review, onContinue, archived = false, profile }: { review: TrainingArcReview; onContinue: () => void; archived?: boolean; profile: UserProfile }) {
@@ -26,7 +27,7 @@ export function ArcReviewScreen({ review, onContinue, archived = false, profile 
     <Screen eyebrow={'SYSTEM // ARC ' + review.cycleNumber + ' REPORT'} title="Reassessment complete" subtitle="The next directive is based on execution, movement checks, difficulty and readiness — never on XP alone.">
       {archived ? <><GlowButton label="BACK TO PROGRESS" variant="secondary" onPress={onContinue} /><Text style={styles.copy}>Archived on {review.dateKey}. This is the original verdict; viewing it does not change your current cycle.</Text></> : null}
       <SystemPanel eyebrow="SYSTEM VERDICT" title={decision.title} accent={accent} trailing={<Text style={[styles.verdict, { color: decisionColor }]}>{decision.label}</Text>}>
-        <Text style={styles.copy}>{decision.copy}</Text>
+        <Text style={styles.copy}>{ARC_DIRECTIVE_COPY[review.decision]}</Text>
       </SystemPanel>
 
       <View style={styles.metrics}>

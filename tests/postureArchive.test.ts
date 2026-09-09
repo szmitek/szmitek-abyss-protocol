@@ -36,6 +36,7 @@ test('a visual record is linked to the active Training Arc', () => {
     completionAssessmentId: null,
     reviewId: null,
     entryDecision: null,
+    directiveReviewedAt: null,
     planSnapshot: null,
   };
   const scan = createPostureScan({ ...base, trainingArcs: [arc] }, photos('cycle-2'), new Date('2026-08-26T10:00:00.000Z'), 'posture-cycle-2');

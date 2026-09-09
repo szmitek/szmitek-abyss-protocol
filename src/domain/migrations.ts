@@ -31,6 +31,7 @@ function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): U
       ...arc,
       reviewId: arc.reviewId ?? null,
       entryDecision: arc.entryDecision ?? null,
+      directiveReviewedAt: arc.directiveReviewedAt ?? null,
       planSnapshot: arc.planSnapshot ?? { workoutsPerWeek: profile.workoutsPerWeek, source: 'legacy-estimate' },
     })),
     trainingArcReviews: (profile.trainingArcReviews ?? []).map((review) => ({
@@ -51,5 +52,5 @@ export function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
   const lastCompletion = parsed.lastCompletion
     ? { ...parsed.lastCompletion, attributeXpEarned: parsed.lastCompletion.attributeXpEarned ?? { ...EMPTY_STATS } }
     : null;
-  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 10, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
+  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 11, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
 }

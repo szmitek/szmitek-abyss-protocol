@@ -24,7 +24,7 @@ test('v9 migration preserves workout state and progress, freezes estimated targe
   raw.history = [{ id: 'workout-legacy', date: '2026-09-01T12:00:00Z', dateKey: '2026-09-01', planId: 'old-plan', title: 'Earlier session', completed: true, durationSeconds: 1200, difficulty: 1, perceivedDifficulty: 'perfect', results: [{ exerciseId: 'wall-pushup', completedSets: 2, targetPerSet: 8, completedVolume: 16 }], xpEarned: 100, attributeXpEarned: { strength: 18, endurance: 0, agility: 0, vitality: 0, mobility: 0 }, statGains: { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 } }];
   const before = structuredClone(raw);
   const migrated = migrateSnapshot(raw as StoredSnapshot);
-  assert.equal(migrated.schemaVersion, 10);
+  assert.equal(migrated.schemaVersion, 11);
   assert.equal(migrated.profile?.xp, 1500);
   assert.equal(migrated.profile?.rank, 'D');
   assert.equal(migrated.profile?.attributeXp.strength, 240);
