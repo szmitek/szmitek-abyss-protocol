@@ -30,6 +30,7 @@ const arc: TrainingArc = {
   completionAssessmentId: null,
   reviewId: null,
   entryDecision: null,
+  directiveReviewedAt: null,
   planSnapshot: { workoutsPerWeek: 2, source: 'cycle-start' },
 };
 

@@ -3,15 +3,12 @@ import { AppState } from 'react-native';
 
 import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
 import { toDateKey } from '../domain/date.ts';
-import { generateDailyProtocol, generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { hasMovementPain } from '../domain/calibration.ts';
-import { hasSafetyHold } from '../domain/health.ts';
+import { generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
+import { acknowledgeTrainingArcReview, beginDailyWorkout, refreshDailyQuest as freshQuest } from '../domain/questState.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import { createDailyReadiness, planRequiresDailyReadiness, readinessForDate, recordDailyReadiness } from '../domain/readiness.ts';
-import { getTrainingArcState } from '../domain/trainingArc.ts';
-import { ensureWeeklyProtocol } from '../domain/weeklyProtocol.ts';
+import { createDailyReadiness, recordDailyReadiness } from '../domain/readiness.ts';
 import type { AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
@@ -37,19 +34,6 @@ interface AppStoreValue {
 }
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
-
-function freshQuest(snapshot: AppSnapshot, dateKey = toDateKey(new Date())): AppSnapshot {
-  if (!snapshot.profile || snapshot.activeWorkout) return snapshot;
-  const profile = snapshot.profile;
-  const hardHold = hasSafetyHold(profile.healthProfile) || hasMovementPain(profile) || Boolean(getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue);
-  const weeklyProtocol = hardHold ? snapshot.weeklyProtocol : ensureWeeklyProtocol(snapshot.weeklyProtocol, profile, snapshot.history, dateKey);
-  const withProtocol = weeklyProtocol === snapshot.weeklyProtocol ? snapshot : { ...snapshot, weeklyProtocol };
-  const currentQuest = withProtocol.dailyQuest;
-  const questUsesProtocol = Boolean(weeklyProtocol && currentQuest?.plan.weeklySession?.protocolId === weeklyProtocol.id);
-  if (currentQuest?.dateKey === dateKey && (currentQuest.status === 'complete' || questUsesProtocol)) return withProtocol;
-  const plan = generateDailyProtocol(profile, withProtocol.history, dateKey, weeklyProtocol);
-  return { ...withProtocol, dailyQuest: { id: `quest-${dateKey}`, dateKey, status: plan.kind === 'recovery' || plan.kind === 'safety-hold' || plan.kind === 'reassessment' ? 'complete' : 'available', plan } };
-}
 
 export function AppStoreProvider({ children }: PropsWithChildren) {
   const [snapshot, setSnapshot] = useState<AppSnapshot>(INITIAL_SNAPSHOT);
@@ -119,9 +103,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, [commit]);
 
   const acknowledgeArcReview = useCallback(() => {
-    commit((current) => current.pendingArcReviewId
-      ? freshQuest({ ...current, pendingArcReviewId: null, weeklyProtocol: null, dailyQuest: null })
-      : current);
+    commit((current) => acknowledgeTrainingArcReview(current));
   }, [commit]);
 
   const saveCorrectiveProfile = useCallback((correctiveProfile: CorrectiveProfile) => {
@@ -164,30 +146,16 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, [commit]);
 
   const beginDailyQuest = useCallback(() => {
-    commit((current) => {
-      const quest = current.dailyQuest;
-      if (!quest || quest.status === 'complete' || !current.profile) return current;
-      if (planRequiresDailyReadiness(quest.plan) && !readinessForDate(current.profile, quest.dateKey)) return current;
-      return {
-        ...current,
-        dailyQuest: { ...quest, status: 'active' },
-        activeWorkout: {
-          questId: quest.id,
-          plan: quest.plan,
-          exerciseIndex: 0,
-          completedSets: quest.plan.exercises.map(() => 0),
-          startedAt: new Date().toISOString(),
-        },
-      };
-    });
+    commit((current) => beginDailyWorkout(current));
   }, [commit]);
 
   const beginRankTrial = useCallback(() => {
     commit((current) => {
-      if (!current.profile || current.activeWorkout) return current;
-      const eligibility = rankTrialEligibility(current.profile);
+      if (!current.profile || current.activeWorkout || current.pendingArcReviewId) return current;
+      const eligibility = rankTrialEligibility(current.profile, toDateKey(new Date()), current.history);
       if (!eligibility.eligible || !eligibility.target) return current;
       const plan = generateRankTrial(current.profile, current.history, toDateKey(new Date()), eligibility.target);
+      if (plan.kind !== 'rank-trial') return current;
       return {
         ...current,
         activeWorkout: {
@@ -274,7 +242,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       };
       const rankTrial = active.questId.startsWith('rank-');
       let profile = applyCompletedWorkout(current.profile, entry);
-      if (rankTrial) profile = completeRankTrial(profile);
+      if (rankTrial) profile = completeRankTrial(profile, current.history);
       const dailyQuest = rankTrial
         ? current.dailyQuest
         : current.dailyQuest ? { ...current.dailyQuest, status: 'complete' as const } : null;

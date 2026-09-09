@@ -20,7 +20,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 10,
+  schemaVersion: 11,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
@@ -76,10 +76,13 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
 export function updateCorrectiveProfile(profile: UserProfile, correctiveProfile: CorrectiveProfile, now = new Date()): UserProfile {
   const targets = correctiveProfile.targets.map((target) => ({ ...target, sources: [...target.sources] }));
   const changed = !profile.correctiveProfile.configured || JSON.stringify(profile.correctiveProfile.targets) !== JSON.stringify(targets);
-  if (!changed) return profile;
+  const arc = activeTrainingArc(profile.trainingArcs);
+  const reviewRequired = arc?.entryDecision === 'recalibrate' && !arc.directiveReviewedAt;
+  if (!changed && !reviewRequired) return profile;
   const date = now.toISOString();
   return {
     ...profile,
+    trainingArcs: reviewRequired ? profile.trainingArcs.map((item) => item.id === arc.id ? { ...item, directiveReviewedAt: date } : item) : profile.trainingArcs,
     correctiveProfile: {
       ...correctiveProfile,
       configured: true,

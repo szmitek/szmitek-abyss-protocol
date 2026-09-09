@@ -117,7 +117,7 @@ export interface ExerciseSelectionReason {
 
 export interface WorkoutPlan {
   id: string;
-  kind?: 'training' | 'recovery' | 'safety-hold' | 'reassessment' | 'rank-trial';
+  kind?: 'training' | 'recovery' | 'safety-hold' | 'reassessment' | 'directive-review' | 'rank-trial';
   dateKey: string;
   title: string;
   focus: string;
@@ -226,6 +226,7 @@ export interface TrainingArc {
   completionAssessmentId: string | null;
   reviewId: string | null;
   entryDecision: TrainingArcDecision | null;
+  directiveReviewedAt: string | null;
   planSnapshot: {
     workoutsPerWeek: UserProfile['workoutsPerWeek'];
     source: 'cycle-start' | 'legacy-estimate';
@@ -236,6 +237,7 @@ export interface TrainingArcContext {
   cycleNumber: number;
   week: 1 | 2 | 3 | 4;
   phase: TrainingArcPhase;
+  entryDecision?: TrainingArcDecision | null;
 }
 
 export interface PosturePhoto {
@@ -387,7 +389,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 10;
+  schemaVersion: 11;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

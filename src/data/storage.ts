@@ -11,7 +11,7 @@ export async function loadSnapshot(): Promise<AppSnapshot> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return INITIAL_SNAPSHOT;
     const parsed = JSON.parse(raw) as StoredSnapshot;
-    if (!Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion! < 1 || parsed.schemaVersion! > 10) return INITIAL_SNAPSHOT;
+    if (!Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion! < 1 || parsed.schemaVersion! > 11) return INITIAL_SNAPSHOT;
     return migrateSnapshot(parsed);
   } catch {
     return INITIAL_SNAPSHOT;

@@ -2,6 +2,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EQUIPMENT, type WorkoutPlan } from '../../domain/types.ts';
+import { ARC_DIRECTIVE_COPY } from '../../domain/arcDirective.ts';
 import { GlowButton } from './GlowButton.tsx';
 import { colors, radius, spacing } from '../theme.ts';
 
@@ -59,6 +60,7 @@ export function QuestBriefing({ visible, plan, onAccept, onClose }: QuestBriefin
               <Text style={styles.rewardLabel}>CLEAR REWARD</Text>
               <Text style={styles.rewardValue}>+{plan.rewardXp} XP</Text>
             </View>
+            {plan.trainingArc?.entryDecision ? <View style={styles.safeguard}><Text style={styles.safeguardTitle}>ARC DIRECTIVE · {plan.trainingArc.entryDecision.toUpperCase()}</Text><Text style={styles.safeguardCopy}>{ARC_DIRECTIVE_COPY[plan.trainingArc.entryDecision]}</Text></View> : null}
 
             <View style={styles.safeguard}>
               <Text style={styles.safeguardTitle}>SYSTEM SAFEGUARD</Text>

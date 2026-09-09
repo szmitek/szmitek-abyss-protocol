@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { calculateRecovery } from '../../domain/recovery.ts';
 import { hasMovementPain, latestMovementAssessment, limitedMovementChecks } from '../../domain/calibration.ts';
 import { getTrainingArcState } from '../../domain/trainingArc.ts';
+import { getArcDirective } from '../../domain/arcDirective.ts';
+import { toDateKey } from '../../domain/date.ts';
 import { levelProgress } from '../../domain/progression.ts';
 import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
 import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
@@ -45,6 +47,8 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
   const readinessRecovery = quest?.plan.readinessBand === 'recovery';
   const reducedLoad = quest?.plan.readinessBand === 'reduced';
   const reassessmentDue = quest?.plan.kind === 'reassessment';
+  const directiveReview = quest?.plan.kind === 'directive-review';
+  const directive = getArcDirective(profile, quest?.dateKey ?? toDateKey(new Date()));
   const movementAssessment = latestMovementAssessment(profile);
   const movementPain = hasMovementPain(profile);
   const correctiveTarget = primaryCorrectiveTarget(profile);
@@ -56,7 +60,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
     <Screen
       eyebrow="SYSTEM ONLINE"
       title="Welcome, Player"
-      subtitle={readinessRequired ? 'Today\'s protocol awaits a Player signal.' : safetyHold ? 'Safeguard active. Training remains sealed.' : reassessmentDue ? 'Training Arc complete. A new Player signal is required.' : readinessRecovery ? 'Today\'s signal converted training into protected recovery.' : recoveryDay ? 'Scheduled recovery protects long-term progression.' : reducedLoad ? 'The System reduced today\'s load from your readiness signal.' : 'Your parameters are stable. One protocol awaits.'}
+      subtitle={directiveReview ? 'The next cycle awaits your confirmed priorities.' : readinessRequired ? 'Today\'s protocol awaits a Player signal.' : safetyHold ? 'Safeguard active. Training remains sealed.' : reassessmentDue ? 'Training Arc complete. A new Player signal is required.' : readinessRecovery ? 'Today\'s signal converted training into protected recovery.' : recoveryDay ? 'Scheduled recovery protects long-term progression.' : reducedLoad ? 'The System reduced today\'s load from your readiness signal.' : 'Your parameters are stable. One protocol awaits.'}
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >
       <SystemPanel>
@@ -76,7 +80,8 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
       {arcState ? (
         <SystemPanel eyebrow={`TRAINING ARC // CYCLE ${arcState.cycleNumber}`} title={arcState.reassessmentDue ? 'Re-scan gate reached' : `Week ${arcState.week} / 4 · ${arcState.phase.toUpperCase()}`} accent={arcState.reassessmentDue ? 'purple' : 'blue'} trailing={<Text style={styles.arcDays}>{arcState.reassessmentDue ? 'READY' : `${arcState.daysRemaining}D LEFT`}</Text>}>
           <ProgressBar progress={arcState.progress} />
-          <Text style={styles.arcCopy}>{arcState.reassessmentDue ? 'Capture the final visual checkpoint, repeat Movement Analysis and receive the next-cycle directive.' : arcState.phase === 'calibration' ? 'Controlled volume establishes a reliable starting signal.' : arcState.phase === 'foundation' ? 'Stable technique and repeatable work build the base.' : arcState.phase === 'overload' ? 'Mastered movements may progress. Failed signals do not.' : 'Volume consolidates before the Player re-scan.'}</Text>
+          <Text style={styles.arcCopy}>{arcState.reassessmentDue ? 'Capture the final visual checkpoint, repeat Movement Analysis and receive the next-cycle directive.' : directive.copy}</Text>
+          {directive.decision ? <Text style={styles.arcCopy}>ACTIVE DIRECTIVE · {directive.decision.toUpperCase()}</Text> : null}
         </SystemPanel>
       ) : null}
 
@@ -102,11 +107,19 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
       ) : null}
 
       <SystemPanel
-        eyebrow={readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
+        eyebrow={directiveReview ? 'DIRECTIVE CONFIRMATION' : readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'PLANNED RECOVERY' : quest?.status === 'complete' ? 'PROTOCOL CLEARED' : 'DAILY QUEST'}
         title={readinessRequired ? 'Sync Player status' : quest?.plan.title ?? 'SCANNING...'}
-        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete, safetyHold && styles.holdStatus]}>● {readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'RECOVERY' : reducedLoad ? 'REDUCED' : quest?.status.toUpperCase()}</Text>}
+        trailing={<Text style={[styles.questStatus, (quest?.status === 'complete' || recoveryDay) && styles.complete, safetyHold && styles.holdStatus]}>● {directiveReview ? 'REVIEW' : readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'RECOVERY' : reducedLoad ? 'REDUCED' : quest?.status.toUpperCase()}</Text>}
       >
-        {readinessRequired ? (
+        {directiveReview ? (
+          <View style={[styles.recoveryDirective, styles.reassessmentDirective]}>
+            <View style={styles.recoveryDirectiveCopy}>
+              <Text style={styles.recoveryDirectiveTitle}>CONFIRM THE NEXT DIRECTIVE</Text>
+              <Text style={styles.recoveryDirectiveText}>Review your retained priorities and new movement signals. Saving the Corrective Profile opens the rebuilding cycle.</Text>
+              <GlowButton label="REVIEW CORRECTIVE PROFILE" variant="secondary" onPress={onOpenCorrectiveProfile} style={styles.scanButton} />
+            </View>
+          </View>
+        ) : readinessRequired ? (
           <View style={[styles.recoveryDirective, styles.readinessDirective]}>
             <Text style={[styles.recoveryDirectiveMark, styles.readinessMark]}>◇</Text>
             <View style={styles.recoveryDirectiveCopy}>
@@ -122,6 +135,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
               <Text style={styles.recoveryDirectiveTitle}>PLAYER CLEARANCE REQUIRED</Text>
               <Text style={styles.recoveryDirectiveText}>{readinessHold ? 'A pain or unusual-symptom signal was logged today. The System will not issue an unsupervised workout from that signal.' : movementPain ? 'Pain was reported during Movement Analysis. Repeat the check only when comfortable or review the signal in Player Scan.' : 'Review unresolved warning signals in Player Scan before returning to unsupervised training.'}</Text>
               <GlowButton label={readinessHold ? 'REVIEW DAILY READINESS' : movementPain ? 'REVIEW MOVEMENT ANALYSIS' : 'REVIEW PLAYER SCAN'} variant="secondary" onPress={readinessHold ? onOpenReadiness : movementPain ? onOpenMovementCalibration : onOpenSystemScan} style={styles.scanButton} />
+              {directive.needsSafetyCheck && !movementPain ? <><Text style={styles.recoveryDirectiveText}>This arc also requires a new pain-free Movement Analysis before protected training can begin.</Text><GlowButton label="REPEAT MOVEMENT ANALYSIS" variant="secondary" onPress={onOpenMovementCalibration} style={styles.scanButton} /></> : null}
             </View>
           </View>
         ) : reassessmentDue ? (

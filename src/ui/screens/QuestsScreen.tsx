@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { rankTrialEligibility } from '../../domain/progression.ts';
+import { toDateKey } from '../../domain/date.ts';
 import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
 import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
 import type { AppSnapshot } from '../../domain/types.ts';
@@ -16,12 +17,13 @@ interface QuestsScreenProps {
   onBeginRankTrial: () => void;
   onOpenReadiness: () => void;
   onOpenArcReassessment: () => void;
+  onOpenCorrectiveProfile: () => void;
 }
 
-export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenReadiness, onOpenArcReassessment }: QuestsScreenProps) {
+export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenReadiness, onOpenArcReassessment, onOpenCorrectiveProfile }: QuestsScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
-  const trial = rankTrialEligibility(profile);
+  const trial = rankTrialEligibility(profile, toDateKey(new Date()), snapshot.history);
   const recoveryDay = quest?.plan.kind === 'recovery';
   const safetyHold = quest?.plan.kind === 'safety-hold';
   const readiness = quest ? readinessForDate(profile, quest.dateKey) : null;
@@ -29,11 +31,12 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
   const readinessHold = quest?.plan.readinessBand === 'hold';
   const readinessRecovery = quest?.plan.readinessBand === 'recovery';
   const reassessmentDue = quest?.plan.kind === 'reassessment';
+  const directiveReview = quest?.plan.kind === 'directive-review';
   const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
   return (
     <Screen eyebrow="MISSION REGISTRY" title="Quests" subtitle="Clear today's protocol or prepare for ascension.">
-      <SystemPanel eyebrow={readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'RECOVERY DAY' : 'DAILY QUEST'} title={readinessRequired ? 'Sync Player status' : quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : reassessmentDue ? 'purple' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
-        {readinessRequired ? (
+      <SystemPanel eyebrow={directiveReview ? 'DIRECTIVE CONFIRMATION' : readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'RECOVERY DAY' : 'DAILY QUEST'} title={readinessRequired ? 'Sync Player status' : quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : reassessmentDue || directiveReview ? 'purple' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{directiveReview ? 'REVIEW' : readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
+        {directiveReview ? <View style={[styles.recoveryMessage, styles.reassessmentMessage]}><View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>CORRECTIVE REVIEW REQUIRED</Text><Text style={styles.recoveryText}>Confirm the retained priorities or select general training before the rebuilding cycle opens.</Text></View></View> : readinessRequired ? (
           <View style={[styles.recoveryMessage, styles.readinessMessage]}>
             <Text style={[styles.recoveryMark, styles.readinessMark]}>◇</Text>
             <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>PLAYER SIGNAL NOT SYNCED</Text><Text style={styles.recoveryText}>Complete the short Daily Readiness Scan before the System reveals and opens today's protocol.</Text></View>
@@ -61,9 +64,9 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
           </View>
         ))}
         <GlowButton
-          label={readinessRequired ? 'SYNC DAILY READINESS' : readinessHold || readinessRecovery ? 'REVIEW DAILY READINESS' : safetyHold ? 'PROTOCOL SEALED' : reassessmentDue ? 'BEGIN PLAYER RE-SCAN' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
-          disabled={!readinessRequired && !readinessHold && !readinessRecovery && quest?.status === 'complete' && !reassessmentDue}
-          onPress={readinessRequired || readinessHold || readinessRecovery ? onOpenReadiness : reassessmentDue ? onOpenArcReassessment : onBeginDaily}
+          label={directiveReview ? 'REVIEW CORRECTIVE PROFILE' : readinessRequired ? 'SYNC DAILY READINESS' : readinessHold || readinessRecovery ? 'REVIEW DAILY READINESS' : safetyHold ? 'PROTOCOL SEALED' : reassessmentDue ? 'BEGIN PLAYER RE-SCAN' : recoveryDay ? 'RECOVERY ACTIVE' : quest?.status === 'complete' ? 'CLEARED' : snapshot.activeWorkout ? 'RESUME QUEST' : 'BEGIN QUEST'}
+          disabled={!directiveReview && !readinessRequired && !readinessHold && !readinessRecovery && quest?.status === 'complete' && !reassessmentDue}
+          onPress={directiveReview ? onOpenCorrectiveProfile : readinessRequired || readinessHold || readinessRecovery ? onOpenReadiness : reassessmentDue ? onOpenArcReassessment : onBeginDaily}
           style={styles.button}
         />
       </SystemPanel>

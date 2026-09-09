@@ -12,7 +12,7 @@
 
 `CorrectiveProfile` stores confirmed primary/support training targets and their evidence sources. Suggested targets may be derived from Player Scan observations and limited Movement Analysis checks, but only the user-confirmed profile persists. Corrective targets raise selection priority; they never bypass equipment, pain, movement, readiness, or exclusion constraints.
 
-`correctiveHistory` stores independent snapshots on changed confirmations, including an explicit return to general training. Each revision links to the active arc. Migration imports only the last known profile with `legacy-current` provenance; it does not invent older changes.
+`correctiveHistory` stores independent snapshots on changed confirmations, including an explicit return to general training. A required recalibration confirmation also creates a revision when targets remain unchanged. Each revision links to the active arc. Migration imports only the last known profile with `legacy-current` provenance; it does not invent older changes.
 
 ## Training Arc and visual records
 
@@ -56,4 +56,22 @@ The MVP persists one `AppSnapshot`:
 
 The schema is deliberately serializable and mirrors the future normalized Supabase model. Cloud sync will add stable UUIDs, `created_at`/`updated_at`, device mutation IDs, and soft-deletion metadata.
 
-Current schema: v10. Pure migration lives in `src/domain/migrations.ts`; the AsyncStorage adapter retains the original storage key. Progress aggregates are derived from completed history, preserve calendar weeks with no activity, and keep repetitions separate from timed exercise seconds. Targets are logged prescriptions, not measured strength. Retired exercise IDs remain inspectable with unknown units.
+Current schema: v11. Pure migration lives in `src/domain/migrations.ts`; the AsyncStorage adapter retains the original storage key. Progress aggregates are derived from completed history, preserve calendar weeks with no activity, and keep repetitions separate from timed exercise seconds. Targets are logged prescriptions, not measured strength. Retired exercise IDs remain inspectable with unknown units.
+
+## Cycle directive execution
+
+`arcDirective.ts` derives shared generator policy and UI explanations from the active arc. Equipment, exclusions, pain, movement and readiness rules remain stronger than a cycle verdict.
+
+| Entry decision | Next-cycle behavior |
+| --- | --- |
+| `advance` | Week-three target or variant progression requires two successful exposures to that exercise on distinct earlier days in the current cycle. |
+| `continue` | Retain current targets and variants; difficult sessions may reduce targets. No automatic overload this cycle. |
+| `recalibrate` | Require a saved Corrective Profile confirmation, including confirmation of unchanged targets or general training. Rebuild without previous-cycle load, with difficulty at most 2 and at most two work sets. No automatic overload. |
+| `recovery` | First seven days use difficulty 1, minimum targets and one work set. Then difficulty at most 2 and at most two work sets; no automatic overload. |
+| `hold` | Require clear Player Scan warnings and a later pain-free Movement Analysis, then use a protected recovery block from that check's date. |
+
+`TrainingArc.directiveReviewedAt` records the explicit recalibration confirmation. Migration defaults it to null; closing the report or canceling the profile screen cannot clear this gate. Existing history and reports remain intact.
+
+Mastery excludes rank trials, incomplete sessions, duplicate records, same-day and future sessions. Zero-set or partial-volume results cannot authorize overload. Rebuilding starts with current-cycle evidence; a cleared hold starts with evidence after the new movement check. Rank Trials additionally require an authorized overload week, two successful current-cycle training days and normal readiness from today.
+
+Weekly planning fingerprint version 2 includes the entry decision and confirmation timestamp. `questState.ts` refreshes cached quests against the rebuilt protocol, revalidates start conditions and preserves a cleared day's status after report acknowledgement. Gates take precedence over cached completed quests.

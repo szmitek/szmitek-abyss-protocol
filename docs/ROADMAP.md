@@ -11,7 +11,7 @@
 - App language stays English. Polish translation is removed from the roadmap.
 - Exercise animations are a required later milestone, not canceled.
 
-## Current batch: Progress 2.0
+## Completed: Progress 2.0 (PR #32)
 
 - Eight-week activity and completed-set charts with separate repetition/seconds totals.
 - Searchable exercise archive with every recorded exposure, targets and volume.
@@ -22,7 +22,7 @@
 
 ## Next batches, in order
 
-1. Trainer follow-through: make each cycle verdict's next-program behavior explicit and verifiable; improve corrective-target continuity and retest follow-up.
+1. Current batch — trainer follow-through: distinct execution rules for every cycle verdict, persistent corrective confirmation, current-cycle mastery evidence, protected recovery and Rank Trial gates. See `docs/HANDOFF.md` for delivery status.
 2. Data Vault: export/import, optional private photo backup, validation and visible save failures.
 3. UX: prefilled readiness editing, phone ergonomics, larger text and touch areas, proper splash screen using the approved Player identity.
 4. Android stabilization: upgrade with preserved data, interrupted workout, midnight, offline use and camera permissions.

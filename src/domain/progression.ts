@@ -3,6 +3,7 @@ import { STAT_KEYS, type CompletionSummary, type Rank, type StatBlock, type User
 import { hasMovementPain } from './calibration.ts';
 import { readinessForDate } from './readiness.ts';
 import { getTrainingArcState } from './trainingArc.ts';
+import { getArcDirective, hasArcTrialEvidence } from './arcDirective.ts';
 
 export function xpRequiredForLevel(level: number): number {
   return 120 + level * 80;
@@ -123,7 +124,7 @@ export function nextRank(rank: Rank): Rank | null {
   return RANK_ORDER[RANK_ORDER.indexOf(rank) + 1] ?? null;
 }
 
-export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(new Date())): { eligible: boolean; target: Rank | null; reasons: string[] } {
+export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(new Date()), history: readonly WorkoutHistoryEntry[] = []): { eligible: boolean; target: Rank | null; reasons: string[] } {
   const target = nextRank(profile.rank);
   if (!target || target === 'E') return { eligible: false, target: null, reasons: ['Maximum rank reached'] };
   const requirement = RANK_REQUIREMENTS[target];
@@ -134,6 +135,11 @@ export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(n
   if (profile.activeTrainingWeeks.length < requirement.activeWeeks) reasons.push(`Train across ${requirement.activeWeeks} active weeks`);
   if (profile.healthProfile.safetySignals.length > 0) reasons.push('Resolve the Player Scan safety hold');
   if (hasMovementPain(profile)) reasons.push('Resolve the Movement Analysis pain hold');
+  const directive = getArcDirective(profile, dateKey);
+  if (directive.needsDirectiveReview) reasons.push('Confirm the Corrective Profile for this Training Arc');
+  if (directive.needsSafetyCheck) reasons.push('Resolve the arc hold with a new pain-free Movement Analysis and clear Player Scan');
+  if (!directive.rankTrialAllowed) reasons.push('Rank Trials require an authorized overload week');
+  if (!hasArcTrialEvidence(profile, history, dateKey)) reasons.push('Complete two successful training days in this cycle before the Rank Trial');
   if (getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue) reasons.push('Complete the Training Arc re-scan');
   const readiness = readinessForDate(profile, dateKey);
   if (!readiness) reasons.push('Complete today\'s Daily Readiness Scan');
@@ -141,8 +147,8 @@ export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(n
   return { eligible: reasons.length === 0, target, reasons };
 }
 
-export function completeRankTrial(profile: UserProfile): UserProfile {
-  const eligibility = rankTrialEligibility(profile);
+export function completeRankTrial(profile: UserProfile, history: readonly WorkoutHistoryEntry[] = []): UserProfile {
+  const eligibility = rankTrialEligibility(profile, toDateKey(new Date()), history);
   if (!eligibility.eligible || !eligibility.target) return profile;
   return {
     ...profile,
