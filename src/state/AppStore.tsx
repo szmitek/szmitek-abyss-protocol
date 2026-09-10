@@ -1,7 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { AppState } from 'react-native';
 
-import { loadSnapshot, saveSnapshot } from '../data/storage.ts';
+import { snapshotRepository } from '../data/storage.ts';
+import { stageVaultRestore } from '../data/vaultFiles.ts';
+import type { BackupFile } from '../domain/backup.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
 import { acknowledgeTrainingArcReview, beginDailyWorkout, refreshDailyQuest as freshQuest } from '../domain/questState.ts';
@@ -14,14 +16,22 @@ import type { AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAsses
 interface AppStoreValue {
   snapshot: AppSnapshot;
   hydrated: boolean;
+  loadError: string | null;
+  saveError: string | null;
+  saving: boolean;
+  restoring: boolean;
+  retrySave: () => void;
+  reloadStorage: () => Promise<void>;
+  restoreBackup: (backup: BackupFile) => Promise<void>;
+  restoreLocalRecovery: () => Promise<void>;
   completeOnboarding: (answers: OnboardingAnswers) => void;
   updateProfile: (answers: OnboardingAnswers) => void;
   updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
   updateCorrectiveProfile: (correctiveProfile: CorrectiveProfile) => void;
   completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
   acknowledgeArcReview: () => void;
-  savePostureScan: (scan: PostureScan) => void;
-  deletePostureScan: (scanId: string) => void;
+  savePostureScan: (scan: PostureScan) => Promise<void>;
+  deletePostureScan: (scanId: string) => Promise<void>;
   submitDailyReadiness: (input: DailyReadinessInput) => void;
   restoreExercises: () => void;
   beginDailyQuest: () => void;
@@ -38,26 +48,115 @@ const AppStoreContext = createContext<AppStoreValue | null>(null);
 export function AppStoreProvider({ children }: PropsWithChildren) {
   const [snapshot, setSnapshot] = useState<AppSnapshot>(INITIAL_SNAPSHOT);
   const [hydrated, setHydrated] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const currentRef = useRef(snapshot);
+  const readyRef = useRef(false);
+  const busyRef = useRef(false);
+  const dirtyRef = useRef(false);
+  const mountedRef = useRef(true);
+  const saveSequence = useRef(0);
+  const loadSequence = useRef(0);
+
+  const persist = useCallback((next: AppSnapshot) => {
+    const sequence = ++saveSequence.current;
+    dirtyRef.current = true; setSaving(true);
+    void snapshotRepository.save(next).then(() => {
+      if (!mountedRef.current || sequence !== saveSequence.current) return;
+      dirtyRef.current = false; setSaveError(null); setSaving(false);
+    }).catch(() => {
+      if (!mountedRef.current || sequence !== saveSequence.current) return;
+      setSaveError('Progress is only in memory. Keep the app open and retry saving.'); setSaving(false);
+    });
+  }, []);
 
   const commit = useCallback((update: (current: AppSnapshot) => AppSnapshot) => {
-    setSnapshot((current) => {
-      const next = update(current);
-      void saveSnapshot(next);
-      return next;
-    });
-  }, []);
+    if (!readyRef.current || busyRef.current) return;
+    const next = update(currentRef.current);
+    if (next === currentRef.current) return;
+    currentRef.current = next; setSnapshot(next); persist(next);
+  }, [persist]);
+
+  const reloadStorage = useCallback(async () => {
+    if (busyRef.current || dirtyRef.current) return;
+    const sequence = ++loadSequence.current;
+    readyRef.current = false;
+    try {
+      const stored = await snapshotRepository.load();
+      const ready = freshQuest(stored);
+      if (!mountedRef.current || sequence !== loadSequence.current) return;
+      currentRef.current = ready; setSnapshot(ready); readyRef.current = true;
+      setLoadError(null); setHydrated(true);
+      if (ready !== stored) persist(ready);
+    } catch {
+      if (!mountedRef.current || sequence !== loadSequence.current) return;
+      setLoadError('The saved Player could not be read. The original record has been left untouched. Retry loading or restore a Data Vault backup.');
+      setHydrated(true);
+    }
+  }, [persist]);
 
   useEffect(() => {
-    let mounted = true;
-    void loadSnapshot().then((stored) => {
-      if (!mounted) return;
-      const ready = freshQuest(stored);
-      setSnapshot(ready);
-      void saveSnapshot(ready);
-      setHydrated(true);
-    });
-    return () => { mounted = false; };
+    mountedRef.current = true;
+    void reloadStorage();
+    return () => { mountedRef.current = false; loadSequence.current += 1; };
+  }, [reloadStorage]);
+
+  const retrySave = useCallback(() => { if (readyRef.current && !busyRef.current) persist(currentRef.current); }, [persist]);
+
+  const commitPhotoChange = useCallback(async (update: (current: AppSnapshot) => AppSnapshot) => {
+    if (!readyRef.current || busyRef.current) throw new Error('Storage is busy. Try again.');
+    busyRef.current = true; setSaving(true); saveSequence.current += 1;
+    try {
+      const next = update(currentRef.current);
+      await snapshotRepository.save(next);
+      currentRef.current = next; setSnapshot(next); dirtyRef.current = false; setSaveError(null);
+    } catch (error) {
+      if (dirtyRef.current) setSaveError('Progress is only in memory. Keep the app open and retry saving.');
+      throw error;
+    } finally { busyRef.current = false; setSaving(false); }
   }, []);
+
+  const restoreBackup = useCallback(async (backup: BackupFile) => {
+    if (busyRef.current || currentRef.current.activeWorkout) throw new Error('Finish or exit the active workout before restoring data.');
+    busyRef.current = true; setRestoring(true); saveSequence.current += 1;
+    let staged: Awaited<ReturnType<typeof stageVaultRestore>> | null = null;
+    let replacementAttempted = false;
+    try {
+      if (readyRef.current) {
+        // The recovery slot must include the latest in-memory edits, even after a failed autosave.
+        await snapshotRepository.save(currentRef.current);
+        dirtyRef.current = false; setSaveError(null);
+      }
+      staged = await stageVaultRestore(backup);
+      const next = freshQuest(staged.snapshot);
+      replacementAttempted = true;
+      await snapshotRepository.replace(next);
+      currentRef.current = next; setSnapshot(next); readyRef.current = true;
+      dirtyRef.current = false; setLoadError(null); setSaveError(null); setHydrated(true);
+    } catch (error) {
+      // A storage error can have an ambiguous write result; retain staged files after
+      // replacement starts so a persisted snapshot can never reference deleted photos.
+      if (!replacementAttempted) staged?.rollback();
+      if (dirtyRef.current) setSaveError('The current Player could not be saved. Retry saving before importing.');
+      throw error;
+    } finally { busyRef.current = false; setRestoring(false); setSaving(false); }
+  }, []);
+
+  const restoreLocalRecovery = useCallback(async () => {
+    if (busyRef.current || currentRef.current.activeWorkout) throw new Error('Finish or exit the active workout before restoring data.');
+    busyRef.current = true; setRestoring(true); saveSequence.current += 1;
+    let published = false;
+    try {
+      const recovered = await snapshotRepository.restoreRecovery();
+      const next = freshQuest(recovered);
+      currentRef.current = next; setSnapshot(next); readyRef.current = true;
+      published = true;
+      dirtyRef.current = false; setLoadError(null); setSaveError(null); setHydrated(true);
+      if (next !== recovered) persist(next);
+    } finally { busyRef.current = false; setRestoring(false); if (!published) setSaving(false); }
+  }, [persist]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (status) => {
@@ -116,16 +215,16 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, [commit]);
 
   const savePostureScan = useCallback((scan: PostureScan) => {
-    commit((current) => current.profile
+    return commitPhotoChange((current) => current.profile
       ? { ...current, profile: recordPostureScan(current.profile, scan) }
       : current);
-  }, [commit]);
+  }, [commitPhotoChange]);
 
   const deletePostureScan = useCallback((scanId: string) => {
-    commit((current) => current.profile
+    return commitPhotoChange((current) => current.profile
       ? { ...current, profile: removePostureScan(current.profile, scanId) }
       : current);
-  }, [commit]);
+  }, [commitPhotoChange]);
 
   const submitDailyReadiness = useCallback((input: DailyReadinessInput) => {
     commit((current) => {
@@ -258,6 +357,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   const value = useMemo<AppStoreValue>(() => ({
     snapshot,
     hydrated,
+    loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery,
     completeOnboarding,
     updateProfile,
     updateSystemScan,
@@ -275,7 +375,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

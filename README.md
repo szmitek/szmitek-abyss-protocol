@@ -26,6 +26,7 @@ The visual language is an original dark-fantasy “System” interface. It inten
 - XP, levels, threshold-based STR / END / AGI / VIT / MOB development, safe streak handling, and E–S ranks gated by active training weeks.
 - Rank Trial eligibility and playable rank-up protocol.
 - Persistent local profile and workout history through AsyncStorage; posture photos remain in app-private document storage.
+- Data Vault export/import with optional photos, validation, a preview before replacement, one local pre-import recovery save, and visible load/save failures with retry.
 - Quality workflow for typecheck, lint, and domain tests.
 
 ## Run locally
@@ -95,4 +96,4 @@ Abyss Protocol does not diagnose injuries or replace a clinician. Player Scan ob
 
 ## Roadmap boundary
 
-Automatic posture analysis, cloud auth/sync, achievements, themed weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. Visual records deliberately do not diagnose posture. The next product work can focus on richer progress trends, data export/backup, localization, and phone-test ergonomics without weakening the completed trainer loop.
+Automatic posture analysis, cloud auth/sync, achievements, themed weekly quests, dungeons, boss fights, health integrations, avatars, and social systems remain outside this slice. Visual records deliberately do not diagnose posture. The accepted next steps are UX and Android stabilization, followed by the required exercise-animation milestone. App language stays English; Polish translation is not planned. See `docs/ROADMAP.md` and `docs/HANDOFF.md` for the current batch and delivery status.
