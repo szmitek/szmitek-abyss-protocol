@@ -24,7 +24,7 @@
     },
     "android": {
       "package": "app.abyssprotocol.mobile",
-      "versionCode": 8,
+      "versionCode": 9,
       "icon": "./assets/branding/app-icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/app-icon.png",

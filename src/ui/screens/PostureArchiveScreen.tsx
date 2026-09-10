@@ -19,8 +19,8 @@ interface PostureArchiveScreenProps {
   profile: UserProfile;
   mode?: 'archive' | 'reassessment';
   onBack: () => void;
-  onSave: (scan: PostureScan) => void;
-  onDelete: (scanId: string) => void;
+  onSave: (scan: PostureScan) => Promise<void>;
+  onDelete: (scanId: string) => Promise<void>;
   onCaptureComplete?: () => void;
 }
 
@@ -113,11 +113,12 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
     const scanId = `posture-${now.getTime()}`;
     try {
       const photos = await persistPosturePhotos(scanId, draft, now.toISOString());
-      onSave(createPostureScan(profile, photos, now, scanId));
+      await onSave(createPostureScan(profile, photos, now, scanId));
       setDraft({});
       setCreating(false);
       onCaptureComplete?.();
     } catch {
+      await deletePosturePhotos(scanId).catch(() => undefined);
       Alert.alert('Visual record failed', 'The photos could not be stored. Your existing archive was not changed.');
     } finally {
       setBusy(false);
@@ -134,9 +135,11 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            void deletePosturePhotos(scan.id).then(() => onDelete(scan.id)).catch(() => {
-              Alert.alert('Delete failed', 'The visual record could not be removed.');
-            });
+            setBusy(true);
+            void onDelete(scan.id).then(async () => {
+              try { await deletePosturePhotos(scan.id); }
+              catch { Alert.alert('Photo cleanup failed', 'The record was removed, but its private files could not be deleted.'); }
+            }).catch(() => { Alert.alert('Delete failed', 'The saved record and its photos were left unchanged.'); }).finally(() => setBusy(false));
           },
         },
       ],
@@ -144,6 +147,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
   };
 
   const close = () => {
+    if (busy) return;
     if (creating) {
       setDraft({});
       setCreating(false);
@@ -158,7 +162,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
       action={<Pressable accessibilityRole="button" onPress={close} style={styles.back}><Text style={styles.backLabel}>{creating ? 'CANCEL' : 'BACK'}</Text></Pressable>}
     >
       <SystemPanel eyebrow="LOCAL VAULT" title="Device-only record" accent="purple">
-        <Text style={styles.copy}>The app does not upload or analyze these photos. Records stay inside this installation and are removed when the app is uninstalled.</Text>
+        <Text style={styles.copy}>The app does not automatically upload or analyze these photos. Records stay inside this installation unless you explicitly include them in a Data Vault export. Uninstalling removes the local files.</Text>
         <View style={styles.verified}><Text style={styles.verifiedDot}>●</Text><Text style={styles.verifiedLabel}>CLOUD SYNC DISABLED</Text></View>
       </SystemPanel>
 

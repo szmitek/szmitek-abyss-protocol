@@ -8,7 +8,7 @@
 
 `UserProfile` stores level, cumulative XP, rank, five visible attributes, per-attribute AP totals, active training weeks, normalized equipment capabilities, exclusions, goal, experience, duration, weekly frequency, streak state, workout count, cleared rank trials, the local Player Scan, Corrective Player Profile, Movement Analysis history, Training Arcs, Posture Archive metadata, and a rolling Daily Readiness log.
 
-`PlayerHealthProfile` stores structured current pain areas, posture priorities, unresolved safety signals, user-entered conditions, and professional restrictions. It is a screening and generator-calibration record, not a diagnosis. In the current private MVP it remains on-device.
+`PlayerHealthProfile` stores structured current pain areas, posture priorities, unresolved safety signals, user-entered conditions, and professional restrictions. It is a screening and generator-calibration record, not a diagnosis. It remains on-device unless the Player explicitly exports a Data Vault file.
 
 `CorrectiveProfile` stores confirmed primary/support training targets and their evidence sources. Suggested targets may be derived from Player Scan observations and limited Movement Analysis checks, but only the user-confirmed profile persists. Corrective targets raise selection priority; they never bypass equipment, pain, movement, readiness, or exclusion constraints.
 
@@ -22,7 +22,7 @@
 
 `TrainingArcReview` is the immutable end-of-cycle report. It stores planned/completed session counts, movement improvements/declines, perceived-difficulty totals, readiness-band totals, optional before/final visual checkpoint links, the deterministic decision, and human-readable reasons. Its decision can advance, continue, recalibrate, start the next cycle under protected recovery load, or hold unsupervised training. XP and photos cannot independently authorize progression.
 
-`PostureScan` stores the date, active Training Arc link, and metadata for exactly three `PosturePhoto` records: front, side, and back. Image bytes live in the app-private document directory; only their local URIs and dimensions are serialized into the snapshot. The app disables Android backup and performs no upload or automated posture diagnosis.
+`PostureScan` stores the date, active Training Arc link, and metadata for exactly three `PosturePhoto` records: front, side, and back. Image bytes live in the app-private document directory; only their local URIs and dimensions are serialized into the snapshot. Android automatic backup is disabled. The app performs no automatic upload or posture diagnosis; the Player can explicitly include photos in a Data Vault export.
 
 ## Daily readiness
 
@@ -75,3 +75,17 @@ Current schema: v11. Pure migration lives in `src/domain/migrations.ts`; the Asy
 Mastery excludes rank trials, incomplete sessions, duplicate records, same-day and future sessions. Zero-set or partial-volume results cannot authorize overload. Rebuilding starts with current-cycle evidence; a cleared hold starts with evidence after the new movement check. Rank Trials additionally require an authorized overload week, two successful current-cycle training days and normal readiness from today.
 
 Weekly planning fingerprint version 2 includes the entry decision and confirmation timestamp. `questState.ts` refreshes cached quests against the rebuilt protocol, revalidates start conditions and preserves a cleared day's status after report acknowledgement. Gates take precedence over cached completed quests.
+
+## Data Vault and persistence
+
+Backup format 1 is a JSON envelope identified by `abyss-protocol-vault`, containing a creation timestamp, schema-v11 snapshot, optional photo blobs and a deterministic corruption checksum. The checksum is not an authenticity signature; the file is not encrypted. The UI describes the private health/photo contents before the Player chooses a share destination. There is no background upload.
+
+Exports preserve profile, history, signals, arc reviews and pending directive gates. Transient daily/weekly plans and completion overlays are excluded; an active workout blocks export/import. Data-only export removes photo records and visual report links. Optional JPEG/PNG/WebP/HEIC bytes use numbered keys, never local paths. Import validates format/version, checksum, nested types, enum values, bounds, key references, duplicate IDs and readiness consistency before staging files. Limits: 24 MB total and 6 MB per photo.
+
+Restoring photos assigns fresh scan IDs and private directories, rewriting archived visual links. Existing photo files remain available for the pre-import recovery snapshot. Staging failures clean only new directories. If the result of a storage write is uncertain, staged files are retained to avoid deleting files that a persisted snapshot might reference. Repeated imports can therefore leave older private files; automatic orphan cleanup is deferred.
+
+`persistence.ts` serializes writes so an older autosave cannot finish after a newer import. Local schemas 1–11 migrate through the existing migration function and are validated before use. Invalid JSON, unsupported versions or read failures throw; they cannot trigger onboarding and an automatic empty save. Load failure opens recovery controls; save failure keeps the current in-memory Player and offers retry. The app must stay open until that save succeeds.
+
+Import preserves the exact previous record under `@abyss-protocol/pre-restore-v1` before replacing the main storage key. One local recovery slot can undo the last import and is not consumed by rollback. It disappears on uninstall; a portable export is needed for device replacement. Photo metadata changes await durable storage before reporting success or deleting old files.
+
+Native integration follows [Expo DocumentPicker](https://docs.expo.dev/versions/latest/sdk/document-picker/) with `copyToCacheDirectory`, [Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) and the [FileSystem API](https://docs.expo.dev/versions/latest/sdk/filesystem/). Share-sheet completion does not prove a destination file was saved; the UI asks the Player to verify the chosen destination.
