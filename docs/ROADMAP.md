@@ -23,8 +23,8 @@
 ## Next batches, in order
 
 1. Completed — trainer follow-through (PR #33): distinct execution rules for every cycle verdict, persistent corrective confirmation, current-cycle mastery evidence, protected recovery and Rank Trial gates. APK verified at `8eaf875`.
-2. Current batch — Data Vault: export/import, optional private photo backup, validation, pre-import recovery and visible save failures. See `docs/HANDOFF.md` for delivery status.
-3. UX: prefilled readiness editing, phone ergonomics, larger text and touch areas, proper splash screen using the approved Player identity.
+2. Completed — Data Vault (PR #34): export/import, optional private photo backup, validation, pre-import recovery and visible save failures. APK verified at `690e915` against the workflow artifact digest.
+3. Current batch — Player UX: same-day prefilled readiness editing, discard protection, readable controls and navigation, adaptive text layout, and native splash using the approved Player icon. See `docs/HANDOFF.md` for delivery status.
 4. Android stabilization: upgrade with preserved data, interrupted workout, midnight, offline use and camera permissions.
 5. Exercise animations: choose and validate a durable approach using squat, lunge, push-up, plank and mobility examples, then cover the full catalog. Verify teaching value, body positions and Android performance.
 6. RPG depth: Player card, titles and achievements rewarding real adherence, including planned recovery.

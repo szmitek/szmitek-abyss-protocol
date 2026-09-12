@@ -10,6 +10,15 @@
     "primaryColor": "#29B6FF",
     "plugins": [
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/branding/app-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#07090F"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Abyss Protocol accesses selected posture photos to store them privately on this device.",
@@ -24,7 +33,7 @@
     },
     "android": {
       "package": "app.abyssprotocol.mobile",
-      "versionCode": 9,
+      "versionCode": 10,
       "icon": "./assets/branding/app-icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/app-icon.png",

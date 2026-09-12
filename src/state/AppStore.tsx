@@ -6,11 +6,10 @@ import { stageVaultRestore } from '../data/vaultFiles.ts';
 import type { BackupFile } from '../domain/backup.ts';
 import { toDateKey } from '../domain/date.ts';
 import { generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { acknowledgeTrainingArcReview, beginDailyWorkout, refreshDailyQuest as freshQuest } from '../domain/questState.ts';
+import { acknowledgeTrainingArcReview, beginDailyWorkout, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import { createDailyReadiness, recordDailyReadiness } from '../domain/readiness.ts';
 import type { AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
@@ -32,7 +31,7 @@ interface AppStoreValue {
   acknowledgeArcReview: () => void;
   savePostureScan: (scan: PostureScan) => Promise<void>;
   deletePostureScan: (scanId: string) => Promise<void>;
-  submitDailyReadiness: (input: DailyReadinessInput) => void;
+  submitDailyReadiness: (input: DailyReadinessInput, dateKey: string) => void;
   restoreExercises: () => void;
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
@@ -226,13 +225,9 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       : current);
   }, [commitPhotoChange]);
 
-  const submitDailyReadiness = useCallback((input: DailyReadinessInput) => {
-    commit((current) => {
-      if (!current.profile || current.activeWorkout) return current;
-      const readiness = createDailyReadiness(input);
-      const profile = recordDailyReadiness(current.profile, readiness);
-      return freshQuest({ ...current, profile, dailyQuest: null }, readiness.dateKey);
-    });
+  const submitDailyReadiness = useCallback((input: DailyReadinessInput, dateKey: string) => {
+    if (!readyRef.current || busyRef.current) throw new Error('Storage is busy. Keep this scan open and try again.');
+    commit((current) => updateDailyReadiness(current, input, dateKey));
   }, [commit]);
 
   const restoreExercises = useCallback(() => {

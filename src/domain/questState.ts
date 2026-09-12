@@ -1,8 +1,16 @@
 import { toDateKey } from './date.ts';
 import { generateDailyProtocol, trainingGate } from './generator.ts';
 import { ensureWeeklyProtocol } from './weeklyProtocol.ts';
-import { readinessForDate } from './readiness.ts';
-import type { AppSnapshot } from './types.ts';
+import { createDailyReadiness, readinessForDate, recordDailyReadiness } from './readiness.ts';
+import type { AppSnapshot, DailyReadinessInput } from './types.ts';
+
+export function updateDailyReadiness(snapshot: AppSnapshot, input: DailyReadinessInput, expectedDateKey: string, now = new Date()): AppSnapshot {
+  if (expectedDateKey !== toDateKey(now)) throw new Error('A new day has started. Return to the System and open a fresh readiness scan.');
+  if (!snapshot.profile || snapshot.activeWorkout) throw new Error('Finish or exit your workout before editing readiness.');
+  const readiness = createDailyReadiness(input, now);
+  const profile = recordDailyReadiness(snapshot.profile, readiness);
+  return refreshDailyQuest({ ...snapshot, profile, dailyQuest: null }, readiness.dateKey);
+}
 
 export function refreshDailyQuest(snapshot: AppSnapshot, dateKey = toDateKey(new Date())): AppSnapshot {
   if (!snapshot.profile || snapshot.activeWorkout) return snapshot;

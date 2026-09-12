@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.primary,
     borderWidth: 1,
@@ -51,6 +52,6 @@ const styles = StyleSheet.create({
   danger: { backgroundColor: colors.danger, borderColor: '#FF7287', shadowColor: colors.danger },
   disabled: { opacity: 0.38 },
   pressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
-  label: { color: '#03101A', fontWeight: '900', fontSize: 14, letterSpacing: 1.6 },
+  label: { color: '#03101A', fontWeight: '900', fontSize: 14, letterSpacing: 1, textAlign: 'center', flexShrink: 1 },
   secondaryLabel: { color: colors.primary },
 });

@@ -182,6 +182,11 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
         ) : null}
       </SystemPanel>
 
+      <SystemPanel eyebrow="PLAYER SYNC" title={readiness ? 'Today’s signal' : 'Daily readiness'}>
+        <Text style={styles.readinessCopy}>{readiness ? `Energy: ${readiness.energy} · Sleep: ${readiness.sleep} · Soreness: ${readiness.soreness}. You can correct this signal before your next session.` : 'Log your current energy, sleep and soreness before training.'}</Text>
+        <GlowButton label={readiness ? 'EDIT DAILY READINESS' : 'SYNC DAILY READINESS'} variant="secondary" onPress={onOpenReadiness} style={styles.scanButton} />
+      </SystemPanel>
+
       {movementAssessment && !movementPain ? (
         <SystemPanel eyebrow="MOVEMENT ANALYSIS" title="Calibration linked" accent="purple" trailing={<Text style={styles.questStatus}>{limitedMovementChecks(profile).length} LIMITS</Text>}>
           <Text style={styles.scanCopy}>{limitedMovementChecks(profile).length > 0 ? 'Limited checks are actively reducing conflicting difficulty and prioritizing foundation movements.' : 'All five baseline checks are clear. The System can progress within your current level and recovery limits.'}</Text>
@@ -221,6 +226,7 @@ function Meta({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  readinessCopy: { color: colors.textMuted, fontSize: 14, lineHeight: 21 },
   rankBadge: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.lineStrong, backgroundColor: 'rgba(41, 182, 255, 0.08)', shadowColor: colors.primary, shadowOpacity: 0.25, shadowRadius: 14 },
   rankLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.5 },
   rank: { color: colors.primary, fontSize: 28, fontWeight: '900', lineHeight: 31 },
