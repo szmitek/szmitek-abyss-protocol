@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../theme.ts';
@@ -14,6 +14,7 @@ interface ScreenProps extends PropsWithChildren {
 
 export function Screen({ eyebrow = 'SYSTEM', title, subtitle, action, scroll = true, children }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
   const body = (
     <>
       <View style={styles.header}>
@@ -31,7 +32,7 @@ export function Screen({ eyebrow = 'SYSTEM', title, subtitle, action, scroll = t
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 104 + insets.bottom }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 * Math.max(1, fontScale) + 32 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {body}
@@ -47,6 +48,6 @@ const styles = StyleSheet.create({
   copy: { flex: 1 },
   eyebrow: { color: colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 3, marginBottom: spacing.sm },
   title: { color: colors.text, fontSize: 30, fontWeight: '900', letterSpacing: -0.6 },
-  subtitle: { color: colors.textMuted, fontSize: 13, lineHeight: 20, marginTop: spacing.sm },
+  subtitle: { color: colors.textMuted, fontSize: 14, lineHeight: 21, marginTop: spacing.sm },
   content: { paddingHorizontal: spacing.lg, gap: spacing.lg },
 });

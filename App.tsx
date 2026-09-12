@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppStoreProvider, useAppStore } from './src/state/AppStore.tsx';
 import { planRequiresDailyReadiness, readinessForDate } from './src/domain/readiness.ts';
+import { toDateKey } from './src/domain/date.ts';
 import { BottomNav, type AppTab } from './src/ui/components/BottomNav.tsx';
 import { QuestBriefing } from './src/ui/components/QuestBriefing.tsx';
 import { SystemBackground } from './src/ui/components/SystemBackground.tsx';
@@ -25,6 +26,10 @@ import { CorrectiveProfileScreen } from './src/ui/screens/CorrectiveProfileScree
 import { ArcReviewScreen } from './src/ui/screens/ArcReviewScreen.tsx';
 import { WorkoutScreen } from './src/ui/screens/WorkoutScreen.tsx';
 import { colors } from './src/ui/theme.ts';
+
+// Metro resolves bundled images through a static require, including offline launches.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PLAYER_ICON = require('./assets/branding/app-icon.png');
 
 export default function App() {
   return (
@@ -50,7 +55,7 @@ function SystemRoot() {
   const [vaultOpen, setVaultOpen] = useState(false);
 
   if (!hydrated) {
-    return <View style={styles.loading}><ActivityIndicator color={colors.primary} size="large" /><Text style={styles.loadingText}>INITIALIZING SYSTEM</Text></View>;
+    return <View style={styles.loading}><Image source={PLAYER_ICON} style={styles.loadingIcon} accessible={false} /><Text style={styles.loadingTitle}>WELCOME, PLAYER</Text><ActivityIndicator color={colors.primary} size="large" /><Text style={styles.loadingText}>RESTORING YOUR SYSTEM</Text></View>;
   }
 
   if (loadError || vaultOpen) {
@@ -172,9 +177,10 @@ function SystemRoot() {
     return (
       <SystemBackground>
         <ReadinessScreen
+          initialReadiness={readinessForDate(snapshot.profile, toDateKey(new Date()))}
           onBack={() => setReadinessOpen(false)}
-          onSubmit={(input) => {
-            submitDailyReadiness(input);
+          onSubmit={(input, dateKey) => {
+            submitDailyReadiness(input, dateKey);
             setReadinessOpen(false);
           }}
         />
@@ -218,5 +224,7 @@ const styles = StyleSheet.create({
   app: { flex: 1, backgroundColor: colors.background },
   importButton: { padding: 16, paddingBottom: 32 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  loadingText: { color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 2.5, marginTop: 18 },
+  loadingIcon: { width: 180, height: 180, marginBottom: 24 },
+  loadingTitle: { color: colors.text, fontSize: 20, fontWeight: '900', letterSpacing: 2, marginBottom: 24, textAlign: 'center' },
+  loadingText: { color: colors.primary, fontSize: 12, fontWeight: '900', letterSpacing: 1.5, marginTop: 18, textAlign: 'center' },
 });
