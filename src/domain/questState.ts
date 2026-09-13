@@ -55,3 +55,11 @@ export function beginDailyWorkout(snapshot: AppSnapshot, now = new Date()): AppS
     },
   };
 }
+
+export function closeActiveWorkout(snapshot: AppSnapshot, now = new Date()): AppSnapshot {
+  if (!snapshot.activeWorkout) return snapshot;
+  const dailyQuest = snapshot.dailyQuest?.id === snapshot.activeWorkout.questId
+    ? { ...snapshot.dailyQuest, status: 'available' as const }
+    : snapshot.dailyQuest;
+  return refreshDailyQuest({ ...snapshot, dailyQuest, activeWorkout: null }, toDateKey(now));
+}

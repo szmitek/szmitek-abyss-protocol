@@ -5,8 +5,9 @@ import { snapshotRepository } from '../data/storage.ts';
 import { stageVaultRestore } from '../data/vaultFiles.ts';
 import type { BackupFile } from '../domain/backup.ts';
 import { toDateKey } from '../domain/date.ts';
+import { completeWorkoutSet, millisecondsUntilNextDay, workoutReadyToFinish, workoutResumeBlock } from '../domain/workoutLifecycle.ts';
 import { generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { acknowledgeTrainingArcReview, beginDailyWorkout, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
+import { acknowledgeTrainingArcReview, beginDailyWorkout, closeActiveWorkout, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
@@ -19,6 +20,10 @@ interface AppStoreValue {
   saveError: string | null;
   saving: boolean;
   restoring: boolean;
+  workoutResumeRequired: boolean;
+  calendarDay: string;
+  resumeWorkout: () => void;
+  interruptWorkout: () => void;
   retrySave: () => void;
   reloadStorage: () => Promise<void>;
   restoreBackup: (backup: BackupFile) => Promise<void>;
@@ -36,7 +41,7 @@ interface AppStoreValue {
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
   replaceCurrentExercise: (permanentlyExclude: boolean) => void;
-  completeCurrentSet: () => void;
+  completeCurrentSet: (expectedStep: string) => void;
   abandonWorkout: () => void;
   finishWorkout: (difficulty: PerceivedDifficulty) => void;
   dismissCompletion: () => void;
@@ -51,6 +56,13 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [workoutResumeRequired, setWorkoutResumeRequired] = useState(false);
+  const [calendarDay, setCalendarDay] = useState(() => toDateKey(new Date()));
+  const resumeRequiredRef = useRef(false);
+  const pauseWorkout = useCallback((required: boolean) => {
+    resumeRequiredRef.current = required;
+    setWorkoutResumeRequired(required);
+  }, []);
   const currentRef = useRef(snapshot);
   const readyRef = useRef(false);
   const busyRef = useRef(false);
@@ -87,6 +99,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       const ready = freshQuest(stored);
       if (!mountedRef.current || sequence !== loadSequence.current) return;
       currentRef.current = ready; setSnapshot(ready); readyRef.current = true;
+      pauseWorkout(Boolean(ready.activeWorkout));
       setLoadError(null); setHydrated(true);
       if (ready !== stored) persist(ready);
     } catch {
@@ -94,7 +107,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       setLoadError('The saved Player could not be read. The original record has been left untouched. Retry loading or restore a Data Vault backup.');
       setHydrated(true);
     }
-  }, [persist]);
+  }, [persist, pauseWorkout]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -133,6 +146,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       replacementAttempted = true;
       await snapshotRepository.replace(next);
       currentRef.current = next; setSnapshot(next); readyRef.current = true;
+      pauseWorkout(Boolean(next.activeWorkout));
       dirtyRef.current = false; setLoadError(null); setSaveError(null); setHydrated(true);
     } catch (error) {
       // A storage error can have an ambiguous write result; retain staged files after
@@ -141,7 +155,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       if (dirtyRef.current) setSaveError('The current Player could not be saved. Retry saving before importing.');
       throw error;
     } finally { busyRef.current = false; setRestoring(false); setSaving(false); }
-  }, []);
+  }, [pauseWorkout]);
 
   const restoreLocalRecovery = useCallback(async () => {
     if (busyRef.current || currentRef.current.activeWorkout) throw new Error('Finish or exit the active workout before restoring data.');
@@ -151,18 +165,58 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       const recovered = await snapshotRepository.restoreRecovery();
       const next = freshQuest(recovered);
       currentRef.current = next; setSnapshot(next); readyRef.current = true;
+      pauseWorkout(Boolean(next.activeWorkout));
       published = true;
       dirtyRef.current = false; setLoadError(null); setSaveError(null); setHydrated(true);
       if (next !== recovered) persist(next);
     } finally { busyRef.current = false; setRestoring(false); if (!published) setSaving(false); }
-  }, [persist]);
+  }, [persist, pauseWorkout]);
 
   useEffect(() => {
+    let lastDay = toDateKey(new Date());
+    let timer: ReturnType<typeof setTimeout>;
+    const refreshCalendar = (force = false) => {
+      if (!readyRef.current || busyRef.current || AppState.currentState !== 'active') return;
+      const today = toDateKey(new Date());
+      if (today !== lastDay) {
+        lastDay = today;
+        setCalendarDay(today);
+        if (currentRef.current.activeWorkout) pauseWorkout(true);
+        commit((current) => freshQuest(current, today));
+      } else if (force) commit((current) => freshQuest(current, today));
+    };
+    const schedule = () => {
+      timer = setTimeout(() => { refreshCalendar(); schedule(); }, Math.min(millisecondsUntilNextDay(), 30_000));
+    };
+    schedule();
     const subscription = AppState.addEventListener('change', (status) => {
-      if (status === 'active') commit((current) => freshQuest(current));
+      if (status === 'active') refreshCalendar(true);
+      else if (currentRef.current.activeWorkout) pauseWorkout(true);
     });
-    return () => subscription.remove();
-  }, [commit]);
+    const blur = AppState.addEventListener('blur', () => {
+      if (currentRef.current.activeWorkout) pauseWorkout(true);
+    });
+    return () => { clearTimeout(timer); subscription.remove(); blur.remove(); };
+  }, [commit, pauseWorkout]);
+
+  const resumeWorkout = useCallback(() => {
+    if (!readyRef.current || busyRef.current || AppState.currentState !== 'active') return;
+    if (workoutResumeBlock(currentRef.current)) { pauseWorkout(true); return; }
+    pauseWorkout(false);
+  }, [pauseWorkout]);
+
+  const interruptWorkout = useCallback(() => {
+    if (currentRef.current.activeWorkout) pauseWorkout(true);
+  }, [pauseWorkout]);
+
+  const workoutActionAllowed = useCallback(() => {
+    if (resumeRequiredRef.current) return false;
+    if (AppState.currentState !== 'active' || workoutResumeBlock(currentRef.current)) {
+      if (currentRef.current.activeWorkout) pauseWorkout(true);
+      return false;
+    }
+    return true;
+  }, [pauseWorkout]);
 
   const completeOnboarding = useCallback((answers: OnboardingAnswers) => {
     const profile = createProfile(answers);
@@ -240,8 +294,12 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, [commit]);
 
   const beginDailyQuest = useCallback(() => {
-    commit((current) => beginDailyWorkout(current));
-  }, [commit]);
+    commit((current) => {
+      const next = beginDailyWorkout(current);
+      if (!current.activeWorkout && next.activeWorkout) pauseWorkout(false);
+      return next;
+    });
+  }, [commit, pauseWorkout]);
 
   const beginRankTrial = useCallback(() => {
     commit((current) => {
@@ -250,6 +308,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       if (!eligibility.eligible || !eligibility.target) return current;
       const plan = generateRankTrial(current.profile, current.history, toDateKey(new Date()), eligibility.target);
       if (plan.kind !== 'rank-trial') return current;
+      pauseWorkout(false);
       return {
         ...current,
         activeWorkout: {
@@ -261,9 +320,10 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         },
       };
     });
-  }, [commit]);
+  }, [commit, pauseWorkout]);
 
   const replaceCurrentExercise = useCallback((permanentlyExclude: boolean) => {
+    if (!workoutActionAllowed()) return;
     commit((current) => {
       const active = current.activeWorkout;
       const profile = current.profile;
@@ -281,37 +341,26 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         : current.dailyQuest;
       return { ...current, profile: nextProfile, weeklyProtocol: permanentlyExclude ? null : current.weeklyProtocol, dailyQuest, activeWorkout: { ...active, plan } };
     });
-  }, [commit]);
+  }, [commit, workoutActionAllowed]);
 
-  const completeCurrentSet = useCallback(() => {
-    commit((current) => {
-      const active = current.activeWorkout;
-      if (!active || active.exerciseIndex >= active.plan.exercises.length) return current;
-      const prescription = active.plan.exercises[active.exerciseIndex];
-      if (!prescription) return current;
-      const completedSets = [...active.completedSets];
-      const nextSetCount = (completedSets[active.exerciseIndex] ?? 0) + 1;
-      completedSets[active.exerciseIndex] = Math.min(nextSetCount, prescription.sets);
-      const exerciseIndex = nextSetCount >= prescription.sets ? active.exerciseIndex + 1 : active.exerciseIndex;
-      return { ...current, activeWorkout: { ...active, completedSets, exerciseIndex } };
-    });
-  }, [commit]);
+  const completeCurrentSet = useCallback((expectedStep: string) => {
+    if (workoutActionAllowed()) commit((current) => completeWorkoutSet(current, expectedStep));
+  }, [commit, workoutActionAllowed]);
 
   const abandonWorkout = useCallback(() => {
     commit((current) => {
       const active = current.activeWorkout;
       if (!active) return current;
-      const dailyQuest = current.dailyQuest?.id === active.questId
-        ? { ...current.dailyQuest, status: 'available' as const }
-        : current.dailyQuest;
-      return { ...current, dailyQuest, activeWorkout: null };
+      pauseWorkout(false);
+      return closeActiveWorkout(current);
     });
-  }, [commit]);
+  }, [commit, pauseWorkout]);
 
   const finishWorkout = useCallback((difficulty: PerceivedDifficulty) => {
+    if (!workoutActionAllowed()) return;
     commit((current) => {
       const active = current.activeWorkout;
-      if (!active || !current.profile || active.exerciseIndex < active.plan.exercises.length) return current;
+      if (!active || !current.profile || !workoutReadyToFinish(current)) return current;
       const now = new Date();
       const development = calculateAttributeDevelopment(current.profile, active.plan);
       const entry: WorkoutHistoryEntry = {
@@ -343,7 +392,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       const lastCompletion = createCompletionSummary(current.profile, profile, entry, rankTrial);
       return { ...current, profile, history: [entry, ...current.history], dailyQuest, activeWorkout: null, lastCompletion };
     });
-  }, [commit]);
+  }, [commit, workoutActionAllowed]);
 
   const dismissCompletion = useCallback(() => {
     commit((current) => current.lastCompletion ? freshQuest({ ...current, lastCompletion: null }) : current);
@@ -353,6 +402,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     snapshot,
     hydrated,
     loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery,
+    workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout,
     completeOnboarding,
     updateProfile,
     updateSystemScan,
@@ -370,7 +420,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ActiveWorkout, PerceivedDifficulty } from '../../domain/types.ts';
+import { timerSecondsRemaining, workoutStepKey } from '../../domain/workoutLifecycle.ts';
 import { ExerciseGuide } from '../components/ExerciseGuide.tsx';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
@@ -13,7 +14,8 @@ import { colors, radius, spacing } from '../theme.ts';
 interface WorkoutScreenProps {
   active: ActiveWorkout;
   onReplaceExercise: (permanentlyExclude: boolean) => void;
-  onCompleteSet: () => void;
+  onCompleteSet: (expectedStep: string) => void;
+  onPause: () => void;
   onExit: () => void;
   onFinish: (difficulty: PerceivedDifficulty) => void;
 }
@@ -22,7 +24,7 @@ type TimerPhase = 'idle' | 'countdown' | 'running' | 'paused' | 'complete';
 
 const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}`.padStart(2, '0') + ':' + `${seconds % 60}`.padStart(2, '0');
 
-export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit, onFinish }: WorkoutScreenProps) {
+export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onPause, onExit, onFinish }: WorkoutScreenProps) {
   useKeepAwake('active-workout');
   const insets = useSafeAreaInsets();
   const prescription = active.plan.exercises[active.exerciseIndex];
@@ -39,6 +41,11 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
   const completedSets = active.completedSets.reduce((sum, count) => sum + count, 0);
 
   useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => { onPause(); return true; });
+    return () => subscription.remove();
+  }, [onPause]);
+
+  useEffect(() => {
     timerDeadlineRef.current = null;
     setTimerPhase('idle');
     setPrepRemaining(0);
@@ -49,6 +56,7 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
     if (timerPhase !== 'countdown') return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     const timeout = setTimeout(() => {
+      if (AppState.currentState !== 'active') return;
       if (prepRemaining <= 1) {
         timerDeadlineRef.current = Date.now() + timerRemaining * 1000;
         setPrepRemaining(0);
@@ -63,9 +71,10 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
   useEffect(() => {
     if (timerPhase !== 'running') return;
     const tick = () => {
+      if (AppState.currentState !== 'active') return;
       const deadline = timerDeadlineRef.current;
       if (!deadline) return;
-      const next = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const next = timerSecondsRemaining(deadline);
       setTimerRemaining(next);
       if (next === 0) {
         timerDeadlineRef.current = null;
@@ -82,9 +91,10 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
   useEffect(() => {
     if (!restActive) return;
     const tick = () => {
+      if (AppState.currentState !== 'active') return;
       const deadline = restDeadlineRef.current;
       if (!deadline) return;
-      const next = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const next = timerSecondsRemaining(deadline);
       setRestRemaining(next);
       if (next === 0) {
         restDeadlineRef.current = null;
@@ -110,7 +120,7 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
       setRestRemaining(prescription.restSeconds);
     }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    onCompleteSet();
+    onCompleteSet(workoutStepKey(active));
   };
 
   const startCountdown = () => {
@@ -120,7 +130,7 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
 
   const pauseTimer = () => {
     const deadline = timerDeadlineRef.current;
-    if (deadline) setTimerRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    if (deadline) setTimerRemaining(timerSecondsRemaining(deadline));
     timerDeadlineRef.current = null;
     setTimerPhase('paused');
   };
@@ -195,6 +205,7 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onExit
           <View style={styles.headerCopy}><Text style={styles.eyebrow}>ACTIVE PROTOCOL</Text><Text style={styles.planTitle}>{active.plan.title}</Text></View>
           <View style={styles.headerActions}>
             <Text style={styles.progressCopy}>{completedSets} / {totalSets} SETS</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Pause workout" onPress={onPause} style={styles.exitButton}><Text style={styles.exitText}>PAUSE</Text></Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="End workout" onPress={confirmExit} style={styles.exitButton}><Text style={styles.exitText}>EXIT</Text></Pressable>
           </View>
         </View>
@@ -283,8 +294,8 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 2.3 },
   planTitle: { color: colors.text, fontSize: 17, fontWeight: '900', marginTop: 5 },
   progressCopy: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  exitButton: { minWidth: 46, minHeight: 26, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(226,61,87,0.35)', backgroundColor: 'rgba(226,61,87,0.08)' },
-  exitText: { color: colors.danger, fontSize: 8, fontWeight: '900', letterSpacing: 1.2 },
+  exitButton: { minWidth: 58, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(226,61,87,0.35)', backgroundColor: 'rgba(226,61,87,0.08)' },
+  exitText: { color: colors.danger, fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   exerciseHeader: { alignItems: 'center', marginTop: spacing.xl },
   sequence: { color: colors.purple, fontSize: 9, fontWeight: '900', letterSpacing: 2 },
   exerciseName: { color: colors.text, fontSize: 29, fontWeight: '900', textAlign: 'center', marginTop: spacing.sm, letterSpacing: -0.5 },
