@@ -25,6 +25,7 @@ import { ReadinessScreen } from './src/ui/screens/ReadinessScreen.tsx';
 import { CorrectiveProfileScreen } from './src/ui/screens/CorrectiveProfileScreen.tsx';
 import { ArcReviewScreen } from './src/ui/screens/ArcReviewScreen.tsx';
 import { WorkoutScreen } from './src/ui/screens/WorkoutScreen.tsx';
+import { WorkoutResumeScreen } from './src/ui/screens/WorkoutResumeScreen.tsx';
 import { colors } from './src/ui/theme.ts';
 
 // Metro resolves bundled images through a static require, including offline launches.
@@ -43,7 +44,7 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, loadError, reloadStorage, restoreBackup, restoreLocalRecovery, completeOnboarding, updateProfile, updateSystemScan, updateCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
+  const { snapshot, hydrated, loadError, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, updateSystemScan, updateCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
@@ -67,7 +68,8 @@ function SystemRoot() {
   }
 
   if (snapshot.activeWorkout) {
-    return <WorkoutScreen active={snapshot.activeWorkout} onReplaceExercise={replaceCurrentExercise} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
+    if (workoutResumeRequired) return <SystemBackground><WorkoutResumeScreen snapshot={snapshot} onResume={resumeWorkout} onExit={abandonWorkout} /></SystemBackground>;
+    return <WorkoutScreen active={snapshot.activeWorkout} onPause={interruptWorkout} onReplaceExercise={replaceCurrentExercise} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
   }
 
   if (snapshot.lastCompletion) {

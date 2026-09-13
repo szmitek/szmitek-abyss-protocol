@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, BackHandler, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { deletePosturePhotos, persistPosturePhotos, type PosturePhotoDraft, type PosturePhotoDraftMap } from '../../data/posturePhotos.ts';
 import { createPostureScan, latestPostureComparison } from '../../domain/postureArchive.ts';
+import { parsePendingPosturePhoto } from '../../domain/pendingPosturePhoto.ts';
 import { POSTURE_VIEWS, type PosturePhotoSource, type PostureScan, type PostureView, type UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
@@ -28,10 +29,6 @@ function completeDraft(draft: Draft): draft is PosturePhotoDraftMap {
   return POSTURE_VIEWS.every((view) => Boolean(draft[view]));
 }
 
-function isPostureView(value: string): value is PostureView {
-  return POSTURE_VIEWS.some((view) => view === value);
-}
-
 function scanDate(scan: PostureScan): string {
   return new Date(scan.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 }
@@ -39,11 +36,19 @@ function scanDate(scan: PostureScan): string {
 export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave, onDelete, onCaptureComplete }: PostureArchiveScreenProps) {
   const [creating, setCreating] = useState(mode === 'reassessment');
   const [draft, setDraft] = useState<Draft>({});
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
+  const busyRef = useRef(true);
+  const mountedRef = useRef(true);
+  const acquire = () => {
+    if (busyRef.current) return false;
+    busyRef.current = true; setBusy(true); return true;
+  };
+  const release = useCallback(() => { busyRef.current = false; if (mountedRef.current) setBusy(false); }, []);
   const comparison = useMemo(() => latestPostureComparison(profile.postureScans), [profile.postureScans]);
   const latest = profile.postureScans[0] ?? null;
 
   const applyAsset = useCallback((view: PostureView, asset: ImagePicker.ImagePickerAsset, source: PosturePhotoSource) => {
+    if (!mountedRef.current) return;
     setDraft((current) => ({
       ...current,
       [view]: { uri: asset.uri, width: asset.width, height: asset.height, source },
@@ -52,63 +57,54 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
 
   useEffect(() => {
     let mounted = true;
+    mountedRef.current = true;
     void Promise.all([AsyncStorage.getItem(PENDING_VIEW_KEY), ImagePicker.getPendingResultAsync()]).then(([pendingView, result]) => {
       if (!mounted) return;
-      if (pendingView && isPostureView(pendingView) && result && 'canceled' in result && !result.canceled && result.assets?.[0]) {
+      const pending = parsePendingPosturePhoto(pendingView, profile.id);
+      if (pending && result && 'canceled' in result && !result.canceled && result.assets?.[0]) {
         setCreating(true);
-        applyAsset(pendingView, result.assets[0], 'camera');
+        applyAsset(pending.view, result.assets[0], pending.source);
       }
-      void AsyncStorage.removeItem(PENDING_VIEW_KEY);
+      if (pending && result && 'code' in result) Alert.alert('Photo recovery failed', 'The interrupted picker did not return a usable photo. Please capture or select this view again.');
     }).catch(() => {
-      void AsyncStorage.removeItem(PENDING_VIEW_KEY);
+      if (mounted) Alert.alert('Photo recovery unavailable', 'An interrupted photo could not be recovered. Your saved archive remains available.');
+    }).finally(async () => {
+      if (!mounted) return;
+      await AsyncStorage.removeItem(PENDING_VIEW_KEY).catch(() => undefined);
+      release();
     });
-    return () => { mounted = false; };
-  }, [applyAsset]);
+    return () => { mounted = false; mountedRef.current = false; };
+  }, [applyAsset, profile.id, release]);
 
-  const capture = async (view: PostureView) => {
+  const pickPhoto = async (view: PostureView, source: PosturePhotoSource) => {
+    if (!acquire()) return;
     try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Camera access required', 'Allow camera access to record this local posture view. You can still choose an existing photo.');
-        return;
+      if (source === 'camera') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert('Camera access required', permission.canAskAgain ? 'Allow camera access when asked, or choose an existing photo with Library.' : 'Camera access is blocked. Enable it in app settings, or choose an existing photo with Library.', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open settings', onPress: () => { void Linking.openSettings().catch(() => Alert.alert('Settings unavailable', 'Open your device settings and find Abyss Protocol permissions.')); } },
+          ]);
+          return;
+        }
       }
-      await AsyncStorage.setItem(PENDING_VIEW_KEY, view);
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        cameraType: ImagePicker.CameraType.back,
-        allowsEditing: false,
-        quality: 0.82,
-      });
-      if (!result.canceled && result.assets[0]) applyAsset(view, result.assets[0], 'camera');
+      await AsyncStorage.setItem(PENDING_VIEW_KEY, JSON.stringify({ view, source, profileId: profile.id, requestedAt: new Date().toISOString() }));
+      const options = { mediaTypes: ['images'] as ImagePicker.MediaType[], allowsEditing: false, quality: 0.82 };
+      const result = source === 'camera'
+        ? await ImagePicker.launchCameraAsync({ ...options, cameraType: ImagePicker.CameraType.back })
+        : await ImagePicker.launchImageLibraryAsync({ ...options, allowsMultipleSelection: false });
+      if (!result.canceled && result.assets[0]) applyAsset(view, result.assets[0], source);
     } catch {
-      Alert.alert('Camera unavailable', 'The camera could not be opened. You can choose a photo from the library instead.');
+      if (mountedRef.current) Alert.alert('Photo unavailable', 'The photo could not be acquired. Try again or choose the other photo source. Your saved archive was not changed.');
     } finally {
-      await AsyncStorage.removeItem(PENDING_VIEW_KEY);
-    }
-  };
-
-  const chooseFromLibrary = async (view: PostureView) => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Photo access required', 'Allow photo access to choose this posture view.');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        allowsMultipleSelection: false,
-        quality: 0.82,
-      });
-      if (!result.canceled && result.assets[0]) applyAsset(view, result.assets[0], 'library');
-    } catch {
-      Alert.alert('Library unavailable', 'The photo library could not be opened.');
+      await AsyncStorage.removeItem(PENDING_VIEW_KEY).catch(() => undefined);
+      release();
     }
   };
 
   const save = async () => {
-    if (!completeDraft(draft) || busy) return;
-    setBusy(true);
+    if (!completeDraft(draft) || !acquire()) return;
     const now = new Date();
     const scanId = `posture-${now.getTime()}`;
     try {
@@ -121,7 +117,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
       await deletePosturePhotos(scanId).catch(() => undefined);
       Alert.alert('Visual record failed', 'The photos could not be stored. Your existing archive was not changed.');
     } finally {
-      setBusy(false);
+      release();
     }
   };
 
@@ -135,24 +131,30 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setBusy(true);
+            if (!acquire()) return;
             void onDelete(scan.id).then(async () => {
               try { await deletePosturePhotos(scan.id); }
               catch { Alert.alert('Photo cleanup failed', 'The record was removed, but its private files could not be deleted.'); }
-            }).catch(() => { Alert.alert('Delete failed', 'The saved record and its photos were left unchanged.'); }).finally(() => setBusy(false));
+            }).catch(() => { Alert.alert('Delete failed', 'The saved record and its photos were left unchanged.'); }).finally(release);
           },
         },
       ],
     );
   };
 
-  const close = () => {
-    if (busy) return;
+  const close = useCallback(() => {
+    if (busyRef.current) return;
     if (creating) {
-      setDraft({});
-      setCreating(false);
+      const discard = () => { setDraft({}); setCreating(false); };
+      if (Object.keys(draft).length) Alert.alert('Discard photo draft?', 'These unsealed photos will not be added to your archive.', [{ text: 'Keep editing', style: 'cancel' }, { text: 'Discard', style: 'destructive', onPress: discard }]);
+      else discard();
     } else onBack();
-  };
+  }, [creating, draft, onBack]);
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => { close(); return true; });
+    return () => subscription.remove();
+  }, [close]);
 
   return (
     <Screen
@@ -176,8 +178,9 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
               key={view}
               view={view}
               draft={draft[view]}
-              onCamera={() => { void capture(view); }}
-              onLibrary={() => { void chooseFromLibrary(view); }}
+              disabled={busy}
+              onCamera={() => { void pickPhoto(view, 'camera'); }}
+              onLibrary={() => { void pickPhoto(view, 'library'); }}
             />
           ))}
           <GlowButton label={busy ? 'SEALING RECORD...' : mode === 'reassessment' ? 'LOCK & CONTINUE TO MOVEMENT' : 'SEAL VISUAL RECORD'} disabled={!completeDraft(draft) || busy} onPress={() => { void save(); }} />
@@ -191,7 +194,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
             trailing={<Text style={styles.count}>{String(profile.postureScans.length).padStart(2, '0')}</Text>}
           >
             <Text style={styles.copy}>{latest ? `Latest checkpoint: ${scanDate(latest)}${latest.trainingArcCycle ? ` · Training Arc ${latest.trainingArcCycle}` : ''}.` : 'Create a front, side and back baseline before judging physical changes.'}</Text>
-            <GlowButton label="NEW VISUAL SCAN" onPress={() => setCreating(true)} style={styles.primaryAction} />
+            <GlowButton label="NEW VISUAL SCAN" disabled={busy} onPress={() => setCreating(true)} style={styles.primaryAction} />
           </SystemPanel>
 
           {comparison ? (
@@ -208,22 +211,22 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
             </SystemPanel>
           ) : null}
 
-          {latest ? <GlowButton label="DELETE LATEST RECORD" variant="danger" onPress={() => confirmDelete(latest)} /> : null}
+          {latest ? <GlowButton label="DELETE LATEST RECORD" disabled={busy} variant="danger" onPress={() => confirmDelete(latest)} /> : null}
         </>
       )}
     </Screen>
   );
 }
 
-function CaptureSlot({ view, draft, onCamera, onLibrary }: { view: PostureView; draft: PosturePhotoDraft | undefined; onCamera: () => void; onLibrary: () => void }) {
+function CaptureSlot({ view, draft, disabled, onCamera, onLibrary }: { view: PostureView; draft: PosturePhotoDraft | undefined; disabled: boolean; onCamera: () => void; onLibrary: () => void }) {
   return (
     <SystemPanel eyebrow={`VIEW // ${VIEW_LABELS[view]}`} title={draft ? 'Image acquired' : 'Awaiting image'}>
       <View style={styles.captureFrame}>
         {draft ? <Image source={{ uri: draft.uri }} resizeMode="contain" style={styles.captureImage} /> : <View style={styles.placeholder}><Text style={styles.placeholderGlyph}>◇</Text><Text style={styles.placeholderText}>FULL BODY · {VIEW_LABELS[view]}</Text></View>}
       </View>
       <View style={styles.actionRow}>
-        <GlowButton label={draft?.source === 'camera' ? 'RETAKE' : 'CAMERA'} variant="secondary" onPress={onCamera} style={styles.slotButton} />
-        <GlowButton label={draft?.source === 'library' ? 'RESELECT' : 'LIBRARY'} variant="secondary" onPress={onLibrary} style={styles.slotButton} />
+        <GlowButton label={draft?.source === 'camera' ? 'RETAKE' : 'CAMERA'} disabled={disabled} variant="secondary" onPress={onCamera} style={styles.slotButton} />
+        <GlowButton label={draft?.source === 'library' ? 'RESELECT' : 'LIBRARY'} disabled={disabled} variant="secondary" onPress={onLibrary} style={styles.slotButton} />
       </View>
     </SystemPanel>
   );
