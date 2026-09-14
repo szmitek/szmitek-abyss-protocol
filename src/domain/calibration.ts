@@ -48,6 +48,8 @@ function conflictsWithLimitation(exercise: Exercise, check: MovementCheck): bool
 }
 
 export function isCalibrationCompatible(exercise: Exercise, profile: UserProfile): boolean {
+  const assessment = latestMovementAssessment(profile);
+  if (exercise.requiredClearChecks?.some((check) => assessment?.results[check] !== 'clear')) return false;
   return limitedMovementChecks(profile).every((check) => !conflictsWithLimitation(exercise, check));
 }
 

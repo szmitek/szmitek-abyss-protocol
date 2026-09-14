@@ -43,7 +43,7 @@ export function hasSafetyHold(healthProfile: PlayerHealthProfile): boolean {
 }
 
 export function isHealthCompatible(exercise: Exercise, profile: UserProfile): boolean {
-  return profile.healthProfile.painAreas.every((painArea) => !conflictsWithPain(exercise, painArea));
+  return profile.healthProfile.painAreas.every((painArea) => !exercise.blockedPainAreas?.includes(painArea) && !conflictsWithPain(exercise, painArea));
 }
 
 export function healthPriorityScore(exercise: Exercise, profile: UserProfile): number {

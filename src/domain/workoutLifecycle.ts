@@ -1,7 +1,8 @@
 import { toDateKey } from './date.ts';
 import { trainingGate } from './generator.ts';
 import { readinessForDate } from './readiness.ts';
-import type { ActiveWorkout, AppSnapshot } from './types.ts';
+import type { ActiveWorkout, AppSnapshot, SetPerformance } from './types.ts';
+import { isValidSetPerformance } from './setPerformance.ts';
 
 export function workoutStepKey(active: ActiveWorkout): string {
   return `${active.startedAt}:${active.exerciseIndex}:${active.plan.exercises[active.exerciseIndex]?.exercise.id ?? 'complete'}:${active.completedSets[active.exerciseIndex] ?? 0}`;
@@ -23,15 +24,18 @@ export function workoutResumeBlock(snapshot: AppSnapshot, now = new Date()): str
   return null;
 }
 
-export function completeWorkoutSet(snapshot: AppSnapshot, expectedStep: string, now = new Date()): AppSnapshot {
+export function completeWorkoutSet(snapshot: AppSnapshot, expectedStep: string, now = new Date(), performance?: SetPerformance): AppSnapshot {
   const active = snapshot.activeWorkout;
   if (!active || workoutResumeBlock(snapshot, now) || workoutStepKey(active) !== expectedStep) return snapshot;
   const prescription = active.plan.exercises[active.exerciseIndex];
   if (!prescription) return snapshot;
+  if ((prescription.exercise.loading && !performance) || (performance && !isValidSetPerformance(performance, prescription.exercise))) return snapshot;
   const completedSets = [...active.completedSets];
   const count = Math.min((completedSets[active.exerciseIndex] ?? 0) + 1, prescription.sets);
   completedSets[active.exerciseIndex] = count;
-  return { ...snapshot, activeWorkout: { ...active, completedSets, exerciseIndex: count >= prescription.sets ? active.exerciseIndex + 1 : active.exerciseIndex } };
+  const recordedSets = active.plan.exercises.map((_, index) => [...(active.recordedSets?.[index] ?? Array.from({ length: active.completedSets[index] ?? 0 }, () => null))]);
+  recordedSets[active.exerciseIndex]!.push(performance ?? null);
+  return { ...snapshot, activeWorkout: { ...active, completedSets, recordedSets, exerciseIndex: count >= prescription.sets ? active.exerciseIndex + 1 : active.exerciseIndex } };
 }
 
 export function workoutReadyToFinish(snapshot: AppSnapshot, now = new Date()): boolean {

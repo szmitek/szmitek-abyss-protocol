@@ -208,7 +208,7 @@ test('v10 migration preserves archives and pending confirmation; confirmed v11 r
   old.schemaVersion = 10;
   delete old.profile.trainingArcs[0].directiveReviewedAt;
   const migrated = migrateSnapshot(old as StoredSnapshot);
-  assert.equal(migrated.schemaVersion, 11);
+  assert.equal(migrated.schemaVersion, 12);
   assert.equal(migrated.profile?.trainingArcs[0]?.directiveReviewedAt, null);
   assert.deepEqual(migrated.history, old.history);
   const profile = updateCorrectiveProfile(migrated.profile!, migrated.profile!.correctiveProfile, new Date(`${weekThree}T10:00:00Z`));

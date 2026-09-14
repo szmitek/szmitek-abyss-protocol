@@ -6,6 +6,12 @@ export const EQUIPMENT = {
   PULL_UP_BAR: 'pull-up-bar',
   BENCH: 'bench',
   KETTLEBELL: 'kettlebell',
+  BARBELL: 'barbell',
+  RACK: 'rack-with-safeties',
+  CABLE: 'cable-station',
+  CHEST_PRESS: 'chest-press-machine',
+  LEG_PRESS: 'leg-press-machine',
+  LAT_PULLDOWN: 'lat-pulldown-machine',
 } as const;
 
 export type Equipment = (typeof EQUIPMENT)[keyof typeof EQUIPMENT];
@@ -100,6 +106,9 @@ export interface Exercise {
   defaultRest: number;
   statImpact: Partial<Record<StatKey, number>>;
   muscleLoad: Partial<Record<MuscleGroup, number>>;
+  loading?: 'per-hand' | 'total' | 'stack';
+  blockedPainAreas?: readonly PainArea[];
+  requiredClearChecks?: readonly MovementCheck[];
 }
 
 export interface ExercisePrescription {
@@ -169,6 +178,13 @@ export interface ExerciseResult {
   completedSets: number;
   targetPerSet: number;
   completedVolume: number;
+  recordedSets?: (SetPerformance | null)[];
+}
+
+export interface SetPerformance {
+  actual: number;
+  loadKg: number | null;
+  effort: PerceivedDifficulty | null;
 }
 
 export interface StatBlock {
@@ -385,11 +401,12 @@ export interface ActiveWorkout {
   plan: WorkoutPlan;
   exerciseIndex: number;
   completedSets: number[];
+  recordedSets?: (SetPerformance | null)[][];
   startedAt: string;
 }
 
 export interface AppSnapshot {
-  schemaVersion: 11;
+  schemaVersion: 12;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

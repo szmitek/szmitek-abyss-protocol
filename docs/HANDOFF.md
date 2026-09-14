@@ -1,27 +1,12 @@
 # Batch checkpoint
 
-Base: `841b6f2daba67b1b050bab7d39f9e044578c3c79` (Player UX, PR #35, APK published and digest verified).
-Branch: `fix/android-lifecycle`.
-Scope: interrupted workout checkpoint, calendar refresh, duplicate action guards, camera permission and pending picker handling.
+Base main: `197b56b0cf43a9ac502e71b289ee4c6eea6d0bde` (Android lifecycle, PR #36, APK verified in previous batch).
+Branch: `feature/strength-log`.
 
-Implementation complete. Local checks: 122 tests, TypeScript, ESLint, Android export, diff checks and React component review. Physical-device interactions were not tested in this environment. See `docs/ANDROID_VERIFICATION.md` for exact behavior, limitations and remaining device checks.
+Accepted roadmap now includes photo/test AI analysis and adaptive coaching; animations are LAST. See `docs/ROADMAP.md` for the full scope and remaining stages.
 
-Delivered:
-- Explicit Resume after load/recovery, background, Android focus loss and Back.
-- Confirmed sets survive storage reload; incomplete timers restart. No background set is auto-completed.
-- Foreground midnight refresh and day/safety gates on resume, set completion, substitution and final completion.
-- Duplicate/stale set callbacks rejected; completion requires all sets.
-- Camera denial opens settings; image library no longer requires upfront broad permission.
-- Shared busy guard, draft-discard protection, scoped camera/library result recovery and handled cleanup errors.
+Current package: 12 loaded exercises with strict equipment/check filters, actual set logs (reps/seconds, kg, effort), conservative load review, Progress history, v12 storage and backward-compatible v11 Data Vault import. Android versionCode 12. No new dependencies, photo uploads or purchased assets.
 
-Snapshot schema stays v11; backup format stays v1; Android versionCode is 11. No new dependencies. Session duration is still elapsed wall-clock time including same-day pauses. A prior-day session must be closed; it cannot earn rewards after midnight. Unsealed photo drafts are not fully persisted across process death.
+Implementation complete. Local checks: TypeScript, ESLint, 132 domain tests, Android export, diff check and React checklist (keyed form state, memoized history guidance, accessible labels/selection, duplicate/stale action guards). No physical-device verification. Delivery sequence: publish feature branch/PR; require green checks on exact head; merge and verify main APK asset against the workflow artifact. User already authorized commit, PR, merge and APK publication. Do not repeat permission requests.
 
-## Resume / delivery verification
-
-1. Inspect git and the PR whose head is `fix/android-lifecycle` in `szmitek/szmitek-abyss-protocol`. PR/Actions are the source of publication status.
-2. If open, require green checks on the exact head, then merge. User already authorized commits, PRs, merge and APK publication.
-3. If merged, inspect Quality and Android Preview APK runs for the merge SHA. Do not duplicate the PR.
-4. Verify release `v0.1.0-preview.4`: target commit, new APK timestamp, size and SHA-256 against its workflow artifact.
-5. After delivery, retain the unperformed device checklist and move to the required exercise-animation milestone.
-
-Next bounded package: animation approach/prototype for squat, lunge, push-up, plank and mobility. Validate movement teaching value and Android performance before expanding the catalog. English UI and approved Player identity remain required; Polish translation is canceled.
+Remaining device tests and scope limitations are recorded in `docs/STRENGTH_LOG.md` and `docs/ANDROID_VERIFICATION.md`. Do not claim physical-device testing or the rest of the roadmap is complete.

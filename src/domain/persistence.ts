@@ -10,7 +10,7 @@ export interface SnapshotStorage { getItem: (key: string) => Promise<string | nu
 export function decodeSnapshot(raw: string | null): AppSnapshot {
   if (raw === null) return INITIAL_SNAPSHOT;
   const parsed = JSON.parse(raw) as StoredSnapshot;
-  if (!parsed || !Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion! < 1 || parsed.schemaVersion! > 11) throw new Error('Unsupported saved data version.');
+  if (!parsed || !Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion! < 1 || parsed.schemaVersion! > 12) throw new Error('Unsupported saved data version.');
   const snapshot = migrateSnapshot(parsed);
   assertValidSnapshot(snapshot);
   return snapshot;

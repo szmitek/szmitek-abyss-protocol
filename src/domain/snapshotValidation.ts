@@ -1,3 +1,5 @@
+import { EXERCISE_BY_ID } from '../data/exercises.ts';
+import { isValidSetPerformance } from './setPerformance.ts';
 import { calculateReadinessBand } from './readiness.ts';
 import { CORRECTIVE_GOALS, EQUIPMENT, GOALS, MOVEMENT_CHECKS, MUSCLE_GROUPS, PAIN_AREAS, POSTURE_PRIORITIES, POSTURE_VIEWS, SAFETY_SIGNALS, STAT_KEYS, type AppSnapshot } from './types.ts';
 
@@ -27,12 +29,13 @@ const band = choice(['normal', 'reduced', 'recovery', 'hold']);
 const targetSource = choice(['cycle-start', 'legacy-estimate']);
 const targets = list(shape({ goal: choice(CORRECTIVE_GOALS), priority: choice(['primary', 'support']), sources: list(choice(['self-observation', 'player-scan', 'movement-analysis', 'posture-archive']), 4) }), 7);
 const photo = shape({ view: choice(POSTURE_VIEWS), uri: str, width: integer(1, 32768), height: integer(1, 32768), source: choice(['camera', 'library']), capturedAt: date });
-const result = shape({ exerciseId: id, completedSets: integer(0, 10000), targetPerSet: number(0, 100000), completedVolume: number() });
+const setPerformance = shape({ actual: integer(0, 3600), loadKg: nullable(number(0, 1000)), effort: nullable(choice(['too-easy', 'perfect', 'too-hard'])) });
+const result = shape({ recordedSets: optional(list(nullable(setPerformance), 100)), exerciseId: id, completedSets: integer(0, 10000), targetPerSet: number(0, 100000), completedVolume: number() });
 const history = list(shape({ id, date, dateKey: day, planId: id, title: str, completed: bool, durationSeconds: integer(), difficulty: choice([1, 2, 3]), perceivedDifficulty: choice(['too-easy', 'perfect', 'too-hard']), results: list(result, 200), xpEarned: integer(), attributeXpEarned: stats, statGains: stats }));
 const profile = shape({
   id, ...Object.fromEntries(STAT_KEYS.map((key) => [key, integer(0, 100000)])), level: integer(1, 100000), xp: integer(), rank, attributeXp: stats,
   goal: choice(Object.values(GOALS)), experienceLevel: choice(['beginner', 'intermediate', 'advanced']), workoutDuration: choice([10, 15, 20, 30, 45, 60]), workoutsPerWeek: choice([2, 3, 4, 5, 6, 7]),
-  availableEquipment: list(choice(Object.values(EQUIPMENT)), 7), excludedExercises: list(id, 1000), streak: integer(), longestStreak: integer(), totalWorkouts: integer(), lastWorkoutDateKey: nullable(day), activeTrainingWeeks: list(id), rankTrialCompleted: list(rank, 6),
+  availableEquipment: list(choice(Object.values(EQUIPMENT)), Object.keys(EQUIPMENT).length), excludedExercises: list(id, 1000), streak: integer(), longestStreak: integer(), totalWorkouts: integer(), lastWorkoutDateKey: nullable(day), activeTrainingWeeks: list(id), rankTrialCompleted: list(rank, 6),
   healthProfile: shape({ scanCompleted: bool, painAreas: list(choice(PAIN_AREAS), 7), posturePriorities: list(choice(POSTURE_PRIORITIES), 5), safetySignals: list(choice(SAFETY_SIGNALS), 5), knownConditions: str, clinicianRestrictions: str, updatedAt: nullable(date) }),
   correctiveProfile: shape({ configured: bool, targets, updatedAt: nullable(date) }),
   correctiveHistory: list(shape({ id, date: nullable(date), trainingArcId: nullable(id), source: choice(['confirmed', 'legacy-current']), targets })),
@@ -43,7 +46,7 @@ const profile = shape({
   readinessLog: list(shape({ id, date, dateKey: day, energy: choice(['low', 'stable', 'high']), sleep: choice(['poor', 'fair', 'good']), soreness: choice(['none', 'mild', 'high']), soreMuscles: list(choice(MUSCLE_GROUPS), 11), painOrWarning: bool, band }), 90),
 });
 const numericMap = (keys: readonly string[]) => shape(Object.fromEntries(keys.map((key) => [key, optional(number())])));
-const exercise = shape({ id, name: str, description: str, muscleGroups: list(choice(MUSCLE_GROUPS), 11), primaryMuscle: choice(MUSCLE_GROUPS), requiredEquipment: list(choice(Object.values(EQUIPMENT)), 7), difficulty: choice([1, 2, 3]), progressionGroup: id, progressionLevel: integer(), exerciseType: choice(['warmup', 'strength', 'cardio', 'core', 'mobility']), repType: choice(['reps', 'seconds']), minReps: number(), maxReps: number(), defaultRest: number(), statImpact: numericMap(STAT_KEYS), muscleLoad: numericMap(MUSCLE_GROUPS) });
+const exercise = shape({ loading: optional(choice(['per-hand', 'total', 'stack'])), blockedPainAreas: optional(list(choice(PAIN_AREAS), 7)), requiredClearChecks: optional(list(choice(MOVEMENT_CHECKS), 5)), id, name: str, description: str, muscleGroups: list(choice(MUSCLE_GROUPS), 11), primaryMuscle: choice(MUSCLE_GROUPS), requiredEquipment: list(choice(Object.values(EQUIPMENT)), Object.keys(EQUIPMENT).length), difficulty: choice([1, 2, 3]), progressionGroup: id, progressionLevel: integer(), exerciseType: choice(['warmup', 'strength', 'cardio', 'core', 'mobility']), repType: choice(['reps', 'seconds']), minReps: number(), maxReps: number(), defaultRest: number(), statImpact: numericMap(STAT_KEYS), muscleLoad: numericMap(MUSCLE_GROUPS) });
 const plan = shape({ id, dateKey: day, kind: optional(choice(['training', 'rank-trial', 'recovery', 'safety-hold', 'reassessment', 'directive-review'])), title: str, focus: str, estimatedMinutes: number(), difficulty: choice([1, 2, 3]), rewardXp: integer(),
   exercises: list(shape({ exercise, sets: integer(1, 100), target: number(), restSeconds: number(), selectionReasons: optional(list(shape({ code: choice(['prepare', 'training-goal', 'corrective', 'player-scan', 'movement-analysis', 'recovery', 'mobility']), label: str }), 10)) }), 200),
   trainingArc: optional(shape({ cycleNumber: integer(1), week: choice([1, 2, 3, 4]), phase, entryDecision: optional(nullable(decision)) })), readinessBand: optional(band), correctiveFocus: optional(choice(CORRECTIVE_GOALS)),
@@ -51,9 +54,9 @@ const plan = shape({ id, dateKey: day, kind: optional(choice(['training', 'rank-
 });
 
 export function assertValidSnapshot(value: unknown): asserts value is AppSnapshot {
-  shape({ schemaVersion: choice([11]), onboardingComplete: bool, profile: nullable(profile), history, pendingArcReviewId: nullable(id),
+  shape({ schemaVersion: choice([12]), onboardingComplete: bool, profile: nullable(profile), history, pendingArcReviewId: nullable(id),
     dailyQuest: nullable(shape({ id, dateKey: day, status: choice(['available', 'active', 'complete']), plan })),
-    activeWorkout: nullable(shape({ questId: id, plan, exerciseIndex: integer(0, 200), completedSets: list(integer(0, 100), 200), startedAt: date })),
+    activeWorkout: nullable(shape({ questId: id, plan, recordedSets: optional(list(list(nullable(setPerformance), 100), 200)), exerciseIndex: integer(0, 200), completedSets: list(integer(0, 100), 200), startedAt: date })),
     weeklyProtocol: nullable(shape({ id, weekStartDateKey: day, weekEndDateKey: day, createdAt: date, profileFingerprint: str, trainingArcCycle: nullable(integer(1)), trainingArcWeek: nullable(integer(1, 4)), volumeCaps: numericMap(MUSCLE_GROUPS), sessions: list(shape({ code: choice(['A', 'B', 'C', 'D', 'E', 'F', 'G']), dateKey: day, title: str, objective: str, focusMuscles: list(choice(MUSCLE_GROUPS), 11), plan }), 7) })),
     lastCompletion: nullable(shape({ id, planTitle: str, xpEarned: integer(), attributeXpEarned: stats, statGains: stats, levelBefore: integer(1), levelAfter: integer(1), rankBefore: rank, rankAfter: rank, rankTrial: bool })),
   })(value, 'snapshot');
@@ -72,6 +75,15 @@ export function assertValidSnapshot(value: unknown): asserts value is AppSnapsho
     for (const scan of p.postureScans) for (const view of POSTURE_VIEWS) if (scan.photos[view].view !== view) fail('photo view');
   }
   if (snapshot.pendingArcReviewId && !p?.trainingArcReviews.some((review) => review.id === snapshot.pendingArcReviewId)) fail('pending report');
+  for (const workout of snapshot.history) for (const result of workout.results) {
+    const known = EXERCISE_BY_ID.get(result.exerciseId);
+    if (known && result.recordedSets?.some((set) => set !== null && !isValidSetPerformance(set, known))) fail('recorded set performance');
+    if (result.recordedSets && (result.recordedSets.length !== result.completedSets
+      || result.recordedSets.reduce((sum, set) => sum + (set?.actual ?? result.targetPerSet), 0) !== result.completedVolume)) fail('recorded workout sets');
+  }
   const active = snapshot.activeWorkout;
+  if (active?.recordedSets && (active.recordedSets.length !== active.plan.exercises.length
+    || active.recordedSets.some((sets, index) => sets.length !== active.completedSets[index]
+      || sets.some((set) => set !== null && !isValidSetPerformance(set, active.plan.exercises[index]!.exercise))))) fail('recorded active sets');
   if (active && (!p || active.exerciseIndex > active.plan.exercises.length || active.completedSets.length !== active.plan.exercises.length || active.completedSets.some((sets, index) => sets > active.plan.exercises[index]!.sets))) fail('active workout');
 }

@@ -1,3 +1,4 @@
+import { uniformRecordedLoad } from './setPerformance.ts';
 import { EXERCISES } from '../data/exercises.ts';
 import { calibrationPriorityScore, hasMovementPain, isCalibrationCompatible, preferredCalibrationExercises } from './calibration.ts';
 import { hasSafetyHold, healthPriorityScore, isHealthCompatible, preferredHealthExercises } from './health.ts';
@@ -112,9 +113,12 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
 
   if (previous[0]) {
     target = previous[0].result.targetPerSet;
+    if (exercise.loading && previous[0].result.recordedSets && (!previous[1] || uniformRecordedLoad(previous[0].result) !== uniformRecordedLoad(previous[1].result))) {
+      target = Math.min(target, ...previous[0].result.recordedSets.map((set) => set?.actual ?? target));
+    }
     if (previous[0].workout.perceivedDifficulty === 'too-hard') target = Math.max(exercise.minReps, target - (exercise.repType === 'seconds' ? 5 : 2));
     const lastTwoMastered = masteredTwice(history, exercise.id, directive.evidenceStart);
-    if (lastTwoMastered && readinessBand !== 'reduced' && directive.progressionAllowed) target += exercise.repType === 'seconds' ? 5 : 2;
+    if (lastTwoMastered && exercise.loading !== 'stack' && readinessBand !== 'reduced' && directive.progressionAllowed) target += exercise.repType === 'seconds' ? 5 : 2;
   }
   target = Math.max(exercise.minReps, Math.min(exercise.maxReps, target));
 
@@ -255,15 +259,18 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
     const focusScore = focusIndex < 0 ? 0 : 48 - focusIndex * 8;
     const varietyScore = variants.some((exercise) => recent.has(exercise.id)) ? -18 : 8;
     const jitter = random() * 10;
+    const equipmentScore = representative.loading && profile.goal !== GOALS.MOBILITY ? 20 : 0;
     const calibrationScore = Math.max(...variants.map((exercise) => healthPriorityScore(exercise, profile) + calibrationPriorityScore(exercise, profile) + correctivePriorityScore(exercise, profile)));
     const weeklyCorrectivePenalty = options.session && variants.some((exercise) => correctivePriorityScore(exercise, profile) > 0) ? -180 : 0;
     const sorenessPenalty = readiness?.soreMuscles.some((muscle) => representative.muscleGroups.includes(muscle)) ? -120 : 0;
-    return { variants, score: focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + calibrationScore + weeklyCorrectivePenalty + sorenessPenalty + jitter };
+    return { variants, score: equipmentScore + focusScore + recovery[representative.primaryMuscle] * 0.35 + varietyScore + calibrationScore + weeklyCorrectivePenalty + sorenessPenalty + jitter };
   }).sort((a, b) => b.score - a.score);
 
   for (const candidate of scoredGroups) {
     if (selected.length >= totalCount - 1) break;
     if (candidate.variants.some((exercise) => selected.some((item) => item.progressionGroup === exercise.progressionGroup))) continue;
+    // Multiple implements are alternatives, not an invitation to stack four chest presses.
+    if (candidate.variants.some((exercise) => exercise.loading && selected.some((item) => item.loading && item.primaryMuscle === exercise.primaryMuscle))) continue;
     if (options.session) {
       const primary = candidate.variants[0]?.primaryMuscle;
       const existingPrimaryCount = selected.filter((item) => item.exerciseType !== 'warmup' && item.exerciseType !== 'mobility' && item.primaryMuscle === primary).length;

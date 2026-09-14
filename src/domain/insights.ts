@@ -1,5 +1,5 @@
 import { EXERCISE_BY_ID } from '../data/exercises.ts';
-import type { PerceivedDifficulty, RepType, WorkoutHistoryEntry } from './types.ts';
+import type { SetPerformance, PerceivedDifficulty, RepType, WorkoutHistoryEntry } from './types.ts';
 
 export interface ExerciseSample {
   id: string;
@@ -9,6 +9,7 @@ export interface ExerciseSample {
   sets: number;
   volume: number;
   difficulty: PerceivedDifficulty;
+  recordedSets?: (SetPerformance | null)[];
 }
 
 export interface ExerciseInsight {
@@ -37,6 +38,7 @@ export function buildExerciseInsights(history: readonly WorkoutHistoryEntry[]): 
         id: `${workout.id}-${index}`, workoutId: workout.id, dateKey: workout.dateKey,
         target: result.targetPerSet, sets: result.completedSets, volume: result.completedVolume,
         difficulty: workout.perceivedDifficulty,
+        ...(result.recordedSets ? { recordedSets: result.recordedSets } : {}),
       };
       const current = insights.get(result.exerciseId);
       if (!current) {

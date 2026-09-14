@@ -69,7 +69,7 @@ function SystemRoot() {
 
   if (snapshot.activeWorkout) {
     if (workoutResumeRequired) return <SystemBackground><WorkoutResumeScreen snapshot={snapshot} onResume={resumeWorkout} onExit={abandonWorkout} /></SystemBackground>;
-    return <WorkoutScreen active={snapshot.activeWorkout} onPause={interruptWorkout} onReplaceExercise={replaceCurrentExercise} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
+    return <WorkoutScreen active={snapshot.activeWorkout} profile={snapshot.profile!} history={snapshot.history} onPause={interruptWorkout} onReplaceExercise={replaceCurrentExercise} onCompleteSet={completeCurrentSet} onExit={abandonWorkout} onFinish={finishWorkout} />;
   }
 
   if (snapshot.lastCompletion) {
