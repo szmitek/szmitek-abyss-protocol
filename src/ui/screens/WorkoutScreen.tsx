@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { SetLogForm } from '../components/SetLogForm.tsx';
+import { loadGuidance } from '../../domain/loadGuidance.ts';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { ActiveWorkout, PerceivedDifficulty } from '../../domain/types.ts';
+import type { ActiveWorkout, PerceivedDifficulty, SetPerformance, UserProfile, WorkoutHistoryEntry } from '../../domain/types.ts';
 import { timerSecondsRemaining, workoutStepKey } from '../../domain/workoutLifecycle.ts';
 import { ExerciseGuide } from '../components/ExerciseGuide.tsx';
 import { GlowButton } from '../components/GlowButton.tsx';
@@ -13,8 +15,10 @@ import { colors, radius, spacing } from '../theme.ts';
 
 interface WorkoutScreenProps {
   active: ActiveWorkout;
+  profile: UserProfile;
+  history: WorkoutHistoryEntry[];
   onReplaceExercise: (permanentlyExclude: boolean) => void;
-  onCompleteSet: (expectedStep: string) => void;
+  onCompleteSet: (expectedStep: string, performance: SetPerformance) => void;
   onPause: () => void;
   onExit: () => void;
   onFinish: (difficulty: PerceivedDifficulty) => void;
@@ -24,11 +28,12 @@ type TimerPhase = 'idle' | 'countdown' | 'running' | 'paused' | 'complete';
 
 const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}`.padStart(2, '0') + ':' + `${seconds % 60}`.padStart(2, '0');
 
-export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onPause, onExit, onFinish }: WorkoutScreenProps) {
+export function WorkoutScreen({ active, profile, history, onReplaceExercise, onCompleteSet, onPause, onExit, onFinish }: WorkoutScreenProps) {
   useKeepAwake('active-workout');
   const insets = useSafeAreaInsets();
   const prescription = active.plan.exercises[active.exerciseIndex];
   const completedForCurrent = active.completedSets[active.exerciseIndex] ?? 0;
+  const guidance = useMemo(() => prescription ? loadGuidance(prescription.exercise, profile, history, active.plan.dateKey, active.plan.readinessBand === 'reduced') : null, [prescription, profile, history, active.plan.dateKey, active.plan.readinessBand]);
   const initialTarget = prescription?.exercise.repType === 'seconds' ? prescription.target : 0;
   const [restRemaining, setRestRemaining] = useState(0);
   const [timerRemaining, setTimerRemaining] = useState(initialTarget);
@@ -113,14 +118,16 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onPaus
   const isFinalSequence = isLastSetOfExercise && active.exerciseIndex === active.plan.exercises.length - 1;
   const next = isLastSetOfExercise ? active.plan.exercises[active.exerciseIndex + 1] : prescription;
 
-  const finishSet = () => {
+  const finishSet = (performance?: SetPerformance) => {
+    const remaining = timerDeadlineRef.current ? timerSecondsRemaining(timerDeadlineRef.current) : timerRemaining;
+    const logged = performance ?? { actual: Math.max(0, prescription.target - remaining), loadKg: null, effort: null };
     timerDeadlineRef.current = null;
     if (!isFinalSequence) {
       restDeadlineRef.current = Date.now() + prescription.restSeconds * 1000;
       setRestRemaining(prescription.restSeconds);
     }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    onCompleteSet(workoutStepKey(active));
+    onCompleteSet(workoutStepKey(active), logged);
   };
 
   const startCountdown = () => {
@@ -200,7 +207,7 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onPaus
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.root}>
       <View style={styles.aura} />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <View style={styles.headerCopy}><Text style={styles.eyebrow}>ACTIVE PROTOCOL</Text><Text style={styles.planTitle}>{active.plan.title}</Text></View>
           <View style={styles.headerActions}>
@@ -243,9 +250,12 @@ export function WorkoutScreen({ active, onReplaceExercise, onCompleteSet, onPaus
         <View style={styles.nextPanel}><Text style={styles.nextLabel}>NEXT SEQUENCE</Text><Text style={styles.nextName}>{next?.exercise.name ?? 'QUEST COMPLETE'}</Text><Text style={styles.nextTarget}>{next ? `${isLastSetOfExercise ? 1 : completedForCurrent + 2} / ${next.sets} · ${next.target}${next.exercise.repType === 'seconds' ? ' sec' : ' reps'}` : `+${active.plan.rewardXp} XP`}</Text></View>
 
         <View style={styles.footer}>
-          <GlowButton label={primaryLabel} onPress={primaryAction} disabled={restActive || timerPhase === 'countdown'} />
+          {isTimed ? <GlowButton label={primaryLabel} onPress={primaryAction} disabled={restActive || timerPhase === 'countdown'} /> : <>
+            {guidance?.message ? <Text style={styles.cueText}>{guidance.message}{guidance.previousKg !== null ? ` Last recorded: ${guidance.previousKg} kg${prescription.exercise.loading === 'per-hand' ? ' each' : ' total'}.` : ''}</Text> : null}
+            <SetLogForm key={workoutStepKey(active)} exercise={prescription.exercise} target={prescription.target} lastSetLoad={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.loadKg ?? null} label={primaryLabel} disabled={restActive} onComplete={finishSet} />
+          </>}
           {restActive ? <Pressable accessibilityRole="button" onPress={skipRecovery} style={styles.skip}><Text style={styles.skipText}>SKIP RECOVERY</Text></Pressable> : null}
-          {isTimed && (timerPhase === 'running' || timerPhase === 'paused') ? <Pressable accessibilityRole="button" onPress={finishSet} style={styles.skip}><Text style={styles.skipText}>COMPLETE SET NOW</Text></Pressable> : null}
+          {isTimed && (timerPhase === 'running' || timerPhase === 'paused') ? <Pressable accessibilityRole="button" onPress={() => finishSet()} style={styles.skip}><Text style={styles.skipText}>COMPLETE SET NOW</Text></Pressable> : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -265,7 +275,7 @@ function QuestComplete({ planTitle, rewardXp, onFinish }: { planTitle: string; r
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.completeRoot}>
       <View style={styles.completeAura} />
-      <ScrollView contentContainerStyle={styles.completeScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.completeScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Animated.View style={[styles.completeContent, { opacity, transform: [{ scale }] }]}>
           <Text style={styles.completeSystem}>SYSTEM</Text>
           <Text style={styles.completeRune}>◇</Text>

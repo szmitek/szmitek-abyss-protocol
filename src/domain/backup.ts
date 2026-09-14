@@ -82,6 +82,11 @@ export function parseBackup(text: string): BackupFile {
   if (!p || file.checksum !== backupChecksum(JSON.stringify(p))) throw new Error('The backup integrity check failed. Select an intact copy.');
   if (typeof p.createdAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(p.createdAt) || !Number.isFinite(Date.parse(p.createdAt))
     || typeof p.includesPhotos !== 'boolean' || !Array.isArray(p.photos) || p.photos.length > 3000) throw new Error('Invalid backup metadata.');
+  // Verify the original checksum before upgrading a v11 backup; do not invent set measurements.
+  if ((p.snapshot as { schemaVersion?: number })?.schemaVersion === 11) {
+    p.snapshot = { ...p.snapshot, schemaVersion: 12 };
+    file.checksum = backupChecksum(JSON.stringify(p));
+  }
   assertValidSnapshot(p.snapshot);
   if (!p.snapshot.profile || !p.snapshot.onboardingComplete || p.snapshot.activeWorkout || p.snapshot.dailyQuest || p.snapshot.weeklyProtocol || p.snapshot.lastCompletion) throw new Error('The backup contains unsupported session state.');
   p.photos.forEach(validatePhoto);

@@ -1,3 +1,4 @@
+import { STRENGTH_EXERCISES } from './strengthExercises.ts';
 import { EQUIPMENT, type Exercise, type ExerciseType, type MuscleGroup, type RepType, type StatKey } from '../domain/types.ts';
 
 interface ExerciseSeed {
@@ -37,6 +38,7 @@ const bodyweight = (seed: ExerciseSeed): Exercise => ({
 });
 
 export const EXERCISES: Exercise[] = [
+  ...STRENGTH_EXERCISES,
   bodyweight({ id: 'march-place', name: 'March in Place', cue: 'Stand tall and drive opposite arm and knee with control.', primary: 'full-body', difficulty: 1, group: 'warmup-march', level: 1, type: 'warmup', repType: 'seconds', range: [30, 60], stats: { endurance: 1, agility: 1 }, load: { 'full-body': 1 } }),
   bodyweight({ id: 'run-place', name: 'Running in Place', cue: 'Stay light on the feet and keep the torso relaxed.', primary: 'full-body', difficulty: 2, group: 'warmup-march', level: 2, type: 'cardio', repType: 'seconds', range: [20, 60], stats: { endurance: 2, agility: 1 }, load: { 'full-body': 2, calves: 1 } }),
   bodyweight({ id: 'arm-circles', name: 'Arm Circles', cue: 'Draw smooth circles without shrugging the shoulders.', primary: 'shoulders', difficulty: 1, group: 'shoulder-warmup', level: 1, type: 'warmup', repType: 'seconds', range: [20, 40], stats: { mobility: 2 }, load: { shoulders: 1 } }),

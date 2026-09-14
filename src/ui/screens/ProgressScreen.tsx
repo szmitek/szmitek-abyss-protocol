@@ -1,3 +1,4 @@
+import { formatRecordedSet } from '../../domain/setPerformance.ts';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -112,6 +113,7 @@ function ExerciseHistoryScreen({ insight, onBack }: { insight: ExerciseInsight; 
       {[...insight.samples].reverse().slice(0, limit).map((sample) => <View key={sample.id} style={styles.sample}>
         <Text style={styles.insightName}>{sample.dateKey} · {sample.sets} × {sample.target} {unit}</Text>
         <Text style={styles.explanation}>{sample.volume} {unit} logged · {sample.difficulty.replaceAll('-', ' ')}</Text>
+        {sample.recordedSets ? sample.recordedSets.map((set, index) => <Text key={index} style={styles.explanation}>{formatRecordedSet(set, index, unit, EXERCISE_BY_ID.get(insight.exerciseId)?.loading)}</Text>) : <Text style={styles.explanation}>Legacy record: totals based on prescribed targets; actual sets were not measured.</Text>}
       </View>)}
       {insight.samples.length > limit ? <GlowButton label="OLDER RECORDS" variant="secondary" onPress={() => setLimit((value) => value + 12)} /> : null}
     </SystemPanel>
@@ -138,7 +140,7 @@ function HistoryRow({ workout, expanded, onToggle }: { workout: WorkoutHistoryEn
             return (
               <View key={`${result.exerciseId}-${index}`} style={styles.resultRow}>
                 <Text style={styles.resultName}>{exercise?.name ?? result.exerciseId}</Text>
-                <Text style={styles.resultValue}>{result.completedSets} × {result.targetPerSet}{exercise?.repType === 'seconds' ? ' SEC' : ''}</Text>
+                <Text style={styles.resultValue}>{result.completedVolume} {exercise?.repType === 'seconds' ? 'SEC' : 'REPS'} · {result.completedSets} SETS</Text>
               </View>
             );
           })}

@@ -1,3 +1,4 @@
+import { buildWorkoutResults, resultMeetsTarget } from '../domain/setPerformance.ts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { AppState } from 'react-native';
 
@@ -11,7 +12,7 @@ import { acknowledgeTrainingArcReview, beginDailyWorkout, closeActiveWorkout, re
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import type { AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
+import type { SetPerformance, AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
@@ -41,7 +42,7 @@ interface AppStoreValue {
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
   replaceCurrentExercise: (permanentlyExclude: boolean) => void;
-  completeCurrentSet: (expectedStep: string) => void;
+  completeCurrentSet: (expectedStep: string, performance?: SetPerformance) => void;
   abandonWorkout: () => void;
   finishWorkout: (difficulty: PerceivedDifficulty) => void;
   dismissCompletion: () => void;
@@ -343,8 +344,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     });
   }, [commit, workoutActionAllowed]);
 
-  const completeCurrentSet = useCallback((expectedStep: string) => {
-    if (workoutActionAllowed()) commit((current) => completeWorkoutSet(current, expectedStep));
+  const completeCurrentSet = useCallback((expectedStep: string, performance?: SetPerformance) => {
+    if (workoutActionAllowed()) commit((current) => completeWorkoutSet(current, expectedStep, new Date(), performance));
   }, [commit, workoutActionAllowed]);
 
   const abandonWorkout = useCallback(() => {
@@ -373,19 +374,14 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         durationSeconds: Math.max(60, Math.round((now.getTime() - new Date(active.startedAt).getTime()) / 1000)),
         difficulty: active.plan.difficulty,
         perceivedDifficulty: difficulty,
-        results: active.plan.exercises.map((item, index) => ({
-          exerciseId: item.exercise.id,
-          completedSets: active.completedSets[index] ?? 0,
-          targetPerSet: item.target,
-          completedVolume: (active.completedSets[index] ?? 0) * item.target,
-        })),
+        results: buildWorkoutResults(active),
         xpEarned: active.plan.rewardXp,
         attributeXpEarned: development.attributeXpEarned,
         statGains: development.statGains,
       };
       const rankTrial = active.questId.startsWith('rank-');
       let profile = applyCompletedWorkout(current.profile, entry);
-      if (rankTrial) profile = completeRankTrial(profile, current.history);
+      if (rankTrial && entry.results.every(resultMeetsTarget)) profile = completeRankTrial(profile, current.history);
       const dailyQuest = rankTrial
         ? current.dailyQuest
         : current.dailyQuest ? { ...current.dailyQuest, status: 'complete' as const } : null;

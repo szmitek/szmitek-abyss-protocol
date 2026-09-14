@@ -2,6 +2,7 @@ import { latestMovementAssessment } from './calibration.ts';
 import { dayDifference } from './date.ts';
 import { hasSafetyHold } from './health.ts';
 import { getTrainingArcState } from './trainingArc.ts';
+import { resultMeetsTarget, uniformRecordedLoad } from './setPerformance.ts';
 import type { TrainingArcDecision, UserProfile, WorkoutHistoryEntry } from './types.ts';
 
 export const ARC_DIRECTIVE_COPY: Record<TrainingArcDecision, string> = {
@@ -54,7 +55,9 @@ export function masteredTwice(history: readonly WorkoutHistoryEntry[], exerciseI
   }).slice(0, 2);
   return samples.length === 2 && samples[0]!.workout.dateKey !== samples[1]!.workout.dateKey
     && samples.every(({ workout, result }) => workout.perceivedDifficulty !== 'too-hard'
-      && result.completedSets > 0 && result.targetPerSet > 0 && result.completedVolume >= result.completedSets * result.targetPerSet);
+      && resultMeetsTarget(result))
+    && (!samples.some(({ result }) => result.recordedSets?.some((set) => set?.loadKg !== null && set?.loadKg !== undefined))
+      || (uniformRecordedLoad(samples[0]!.result) !== null && uniformRecordedLoad(samples[0]!.result) === uniformRecordedLoad(samples[1]!.result)));
 }
 
 export function hasArcTrialEvidence(profile: UserProfile, history: readonly WorkoutHistoryEntry[], dateKey: string): boolean {
@@ -62,7 +65,7 @@ export function hasArcTrialEvidence(profile: UserProfile, history: readonly Work
   if (!directive.state) return true;
   const successful = trainingHistoryBefore(history, dateKey, directive.evidenceStart).filter((entry) =>
     entry.perceivedDifficulty !== 'too-hard' && entry.results.length > 0
-    && entry.results.every((result) => result.completedSets > 0 && result.targetPerSet > 0 && result.completedVolume >= result.completedSets * result.targetPerSet),
+    && entry.results.every(resultMeetsTarget),
   );
   return new Set(successful.map((entry) => entry.dateKey)).size >= 2;
 }
