@@ -1,3 +1,4 @@
+import { EQUIPMENT_OPTIONS } from '../../data/equipmentOptions.ts';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,21 +31,7 @@ const EXPERIENCE_OPTIONS: { value: ExperienceLevel; label: string; detail: strin
 
 const DURATION_OPTIONS: UserProfile['workoutDuration'][] = [10, 15, 20, 30, 45, 60];
 const FREQUENCY_OPTIONS: UserProfile['workoutsPerWeek'][] = [2, 3, 4, 5, 6, 7];
-const EQUIPMENT_OPTIONS: { value: Equipment; label: string }[] = [
-  { value: EQUIPMENT.NONE, label: 'NO EQUIPMENT' },
-  { value: EQUIPMENT.MAT, label: 'MAT' },
-  { value: EQUIPMENT.DUMBBELLS, label: 'DUMBBELLS' },
-  { value: EQUIPMENT.BANDS, label: 'BANDS' },
-  { value: EQUIPMENT.PULL_UP_BAR, label: 'PULL-UP BAR' },
-  { value: EQUIPMENT.BENCH, label: 'BENCH' },
-  { value: EQUIPMENT.KETTLEBELL, label: 'KETTLEBELL' },
-  { value: EQUIPMENT.BARBELL, label: 'BARBELL + PLATES' },
-  { value: EQUIPMENT.RACK, label: 'RACK WITH SAFETIES' },
-  { value: EQUIPMENT.CABLE, label: 'CABLE STATION + HANDLE' },
-  { value: EQUIPMENT.CHEST_PRESS, label: 'CHEST PRESS MACHINE' },
-  { value: EQUIPMENT.LEG_PRESS, label: 'LEG PRESS MACHINE' },
-  { value: EQUIPMENT.LAT_PULLDOWN, label: 'LAT PULLDOWN MACHINE' },
-];
+
 
 const STEP_META = [
   { code: 'DIRECTIVE 01', title: 'Choose your objective', subtitle: 'The System will tune load, exercise mix, and progression.' },

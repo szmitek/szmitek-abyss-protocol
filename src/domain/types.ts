@@ -125,6 +125,7 @@ export interface ExerciseSelectionReason {
 }
 
 export interface WorkoutPlan {
+  location?: TrainingLocation;
   id: string;
   kind?: 'training' | 'recovery' | 'safety-hold' | 'reassessment' | 'directive-review' | 'rank-trial';
   dateKey: string;
@@ -181,7 +182,21 @@ export interface ExerciseResult {
   recordedSets?: (SetPerformance | null)[];
 }
 
+export type TrainingLocation = 'home' | 'gym';
+export interface TrainingLoadouts {
+  active: TrainingLocation;
+  home: Equipment[];
+  gym: Equipment[];
+}
+export interface MachineSetup {
+  id: string;
+  exerciseId: string;
+  location: TrainingLocation;
+  label: string;
+}
+
 export interface SetPerformance {
+  machineSetup?: MachineSetup;
   actual: number;
   loadKg: number | null;
   effort: PerceivedDifficulty | null;
@@ -333,6 +348,7 @@ export interface DailyReadinessInput {
 }
 
 export interface WorkoutHistoryEntry {
+  location?: TrainingLocation;
   id: string;
   date: string;
   dateKey: string;
@@ -363,6 +379,8 @@ export interface UserProfile extends StatBlock {
   postureScans: PostureScan[];
   readinessLog: DailyReadiness[];
   availableEquipment: Equipment[];
+  loadouts?: TrainingLoadouts;
+  machineSetups?: MachineSetup[];
   excludedExercises: string[];
   goal: Goal;
   experienceLevel: ExperienceLevel;
@@ -406,7 +424,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 12;
+  schemaVersion: 13;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

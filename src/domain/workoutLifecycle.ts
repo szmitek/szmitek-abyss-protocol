@@ -30,6 +30,10 @@ export function completeWorkoutSet(snapshot: AppSnapshot, expectedStep: string, 
   const prescription = active.plan.exercises[active.exerciseIndex];
   if (!prescription) return snapshot;
   if ((prescription.exercise.loading && !performance) || (performance && !isValidSetPerformance(performance, prescription.exercise))) return snapshot;
+  if (performance?.machineSetup && (!snapshot.profile?.loadouts
+    || performance.machineSetup.location !== snapshot.profile.loadouts.active
+    || !snapshot.profile.machineSetups?.some((setup) => setup.id === performance.machineSetup!.id && setup.exerciseId === prescription.exercise.id
+      && setup.location === performance.machineSetup!.location && setup.label === performance.machineSetup!.label))) return snapshot;
   const completedSets = [...active.completedSets];
   const count = Math.min((completedSets[active.exerciseIndex] ?? 0) + 1, prescription.sets);
   completedSets[active.exerciseIndex] = count;

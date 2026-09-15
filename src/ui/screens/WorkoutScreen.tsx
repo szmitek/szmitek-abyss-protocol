@@ -1,6 +1,5 @@
 import { SetLogForm } from '../components/SetLogForm.tsx';
-import { loadGuidance } from '../../domain/loadGuidance.ts';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -33,7 +32,6 @@ export function WorkoutScreen({ active, profile, history, onReplaceExercise, onC
   const insets = useSafeAreaInsets();
   const prescription = active.plan.exercises[active.exerciseIndex];
   const completedForCurrent = active.completedSets[active.exerciseIndex] ?? 0;
-  const guidance = useMemo(() => prescription ? loadGuidance(prescription.exercise, profile, history, active.plan.dateKey, active.plan.readinessBand === 'reduced') : null, [prescription, profile, history, active.plan.dateKey, active.plan.readinessBand]);
   const initialTarget = prescription?.exercise.repType === 'seconds' ? prescription.target : 0;
   const [restRemaining, setRestRemaining] = useState(0);
   const [timerRemaining, setTimerRemaining] = useState(initialTarget);
@@ -251,8 +249,7 @@ export function WorkoutScreen({ active, profile, history, onReplaceExercise, onC
 
         <View style={styles.footer}>
           {isTimed ? <GlowButton label={primaryLabel} onPress={primaryAction} disabled={restActive || timerPhase === 'countdown'} /> : <>
-            {guidance?.message ? <Text style={styles.cueText}>{guidance.message}{guidance.previousKg !== null ? ` Last recorded: ${guidance.previousKg} kg${prescription.exercise.loading === 'per-hand' ? ' each' : ' total'}.` : ''}</Text> : null}
-            <SetLogForm key={workoutStepKey(active)} exercise={prescription.exercise} target={prescription.target} lastSetLoad={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.loadKg ?? null} label={primaryLabel} disabled={restActive} onComplete={finishSet} />
+            <SetLogForm key={workoutStepKey(active)} profile={profile} history={history} dateKey={active.plan.dateKey} reduced={active.plan.readinessBand === 'reduced'} lastSetupId={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.machineSetup?.id ?? null} exercise={prescription.exercise} target={prescription.target} lastSetLoad={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.loadKg ?? null} label={primaryLabel} disabled={restActive} onComplete={finishSet} />
           </>}
           {restActive ? <Pressable accessibilityRole="button" onPress={skipRecovery} style={styles.skip}><Text style={styles.skipText}>SKIP RECOVERY</Text></Pressable> : null}
           {isTimed && (timerPhase === 'running' || timerPhase === 'paused') ? <Pressable accessibilityRole="button" onPress={() => finishSet()} style={styles.skip}><Text style={styles.skipText}>COMPLETE SET NOW</Text></Pressable> : null}

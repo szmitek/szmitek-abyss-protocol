@@ -34,7 +34,8 @@ function weeklyVolumeCaps(profile: UserProfile): Partial<Record<MuscleGroup, num
 export function weeklyProtocolFingerprint(profile: UserProfile, dateKey: string): string {
   const arc = getTrainingArcState(profile.trainingArcs, dateKey);
   return JSON.stringify({
-    planningVersion: 2,
+    planningVersion: 3,
+    location: profile.loadouts?.active ?? null,
     goal: profile.goal,
     experienceLevel: profile.experienceLevel,
     workoutDuration: profile.workoutDuration,

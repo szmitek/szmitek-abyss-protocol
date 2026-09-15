@@ -1,7 +1,9 @@
+import { isValidMachineSetup } from './loadouts.ts';
 import type { ActiveWorkout, Exercise, ExerciseResult, SetPerformance } from './types.ts';
 
 export function isValidSetPerformance(set: SetPerformance, exercise: Exercise): boolean {
-  return Number.isInteger(set.actual) && set.actual >= 0 && set.actual <= (exercise.repType === 'seconds' ? 3600 : 500)
+  return (set.machineSetup === undefined || (isValidMachineSetup(set.machineSetup) && set.machineSetup.exerciseId === exercise.id && exercise.loading === 'stack'))
+    && Number.isInteger(set.actual) && set.actual >= 0 && set.actual <= (exercise.repType === 'seconds' ? 3600 : 500)
     && (set.effort === null || ['too-easy', 'perfect', 'too-hard'].includes(set.effort))
     && (exercise.loading
       ? typeof set.loadKg === 'number' && Number.isFinite(set.loadKg) && set.loadKg >= 0 && set.loadKg <= 1000 && set.effort !== null
@@ -37,5 +39,5 @@ export function uniformRecordedLoad(result: ExerciseResult): number | null {
 export function formatRecordedSet(set: SetPerformance | null, index: number, unit: string, loading?: Exercise['loading']): string {
   if (!set) return `Set ${index + 1}: legacy target only`;
   const load = set.loadKg === null ? '' : ` · ${set.loadKg} kg${loading === 'per-hand' ? ' each' : loading === 'stack' ? ' marked' : ' total'}`;
-  return `Set ${index + 1}: ${set.actual} ${unit}${load}${set.effort ? ` · ${set.effort.replaceAll('-', ' ')}` : ''}`;
+  return `Set ${index + 1}: ${set.actual} ${unit}${load}${set.machineSetup ? ` · ${set.machineSetup.location.toUpperCase()} / ${set.machineSetup.label}` : loading === 'stack' ? ' · machine not identified' : ''}${set.effort ? ` · ${set.effort.replaceAll('-', ' ')}` : ''}`;
 }

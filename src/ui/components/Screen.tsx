@@ -32,6 +32,7 @@ export function Screen({ eyebrow = 'SYSTEM', title, subtitle, action, scroll = t
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 * Math.max(1, fontScale) + 32 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >

@@ -28,8 +28,9 @@ Completed foundations: trainer follow-through (#33), Data Vault (#34), Player UX
 
 1. Unified Player profile: goals, time, experience, equipment, limitations, symptom history, tests, photos and revision history.
 2. Home and gym training: implement-specific exercise catalog, actual reps/seconds, external load and set effort; progression, substitutions and home/gym loadouts.
-   - Current bounded package: 12 loaded exercises, explicit gear requirements, actual set records, load review guidance, history and compatible migration/backups.
-   - Remaining: separate location loadouts, machine/setup identifiers, warm-up sets, broader catalog, explicit user-controlled load progression rules.
+   - Delivered #37: 12 loaded exercises, explicit gear requirements, actual set records, load review guidance, history and compatible migration/backups.
+   - Current bounded package: HOME/GYM loadouts, explicit machine/configuration registry, same-machine historical kg context, retained set identities and compatible v13 storage/Vault migration.
+   - Remaining: warm-up sets, broader catalog, explicit user-controlled load progression rules, optional additional locations. Machine targets and kilograms are not automatically progressed by this package.
 3. Long-term programming: A/B/C objectives, weekly work/recovery distribution, missed sessions, return after interruption, lower-load periods and transitions between arcs. Readiness adapts the existing contract.
 4. Standardized evidence: comparable photo capture, quality checks, left/right side views, synchronized movement tests and longitudinal comparison of adherence, symptoms and function.
 5. AI Player analysis: prototype photo + test + history observations; uncertainty, source evidence, missing-data questions and proposed training priorities. No diagnosis inferred from a photo. Evaluate accuracy, privacy, execution location and a zero/low-cost budget before choosing a provider. No provider subscription or photo upload is authorized by this roadmap alone.
