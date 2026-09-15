@@ -111,14 +111,14 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
   const baseOffset = directive.rebuilding || profile.experienceLevel === 'beginner' ? 0 : profile.experienceLevel === 'intermediate' ? 2 : 3;
   let target = Math.min(exercise.maxReps, exercise.minReps + baseOffset);
 
-  if (previous[0]) {
+  if (previous[0] && exercise.loading !== 'stack') {
     target = previous[0].result.targetPerSet;
     if (exercise.loading && previous[0].result.recordedSets && (!previous[1] || uniformRecordedLoad(previous[0].result) !== uniformRecordedLoad(previous[1].result))) {
       target = Math.min(target, ...previous[0].result.recordedSets.map((set) => set?.actual ?? target));
     }
     if (previous[0].workout.perceivedDifficulty === 'too-hard') target = Math.max(exercise.minReps, target - (exercise.repType === 'seconds' ? 5 : 2));
     const lastTwoMastered = masteredTwice(history, exercise.id, directive.evidenceStart);
-    if (lastTwoMastered && exercise.loading !== 'stack' && readinessBand !== 'reduced' && directive.progressionAllowed) target += exercise.repType === 'seconds' ? 5 : 2;
+    if (lastTwoMastered && readinessBand !== 'reduced' && directive.progressionAllowed) target += exercise.repType === 'seconds' ? 5 : 2;
   }
   target = Math.max(exercise.minReps, Math.min(exercise.maxReps, target));
 
@@ -318,6 +318,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   return {
     id: weeklySession ? `${weeklySession.protocolId}-${weeklySession.code}` : `daily-${dateKey}`,
     kind: 'training',
+    ...(profile.loadouts ? { location: profile.loadouts.active } : {}),
     dateKey,
     title: options.session ? `PROTOCOL ${options.session.code} // ${options.session.title}` : profile.goal === GOALS.MOBILITY ? 'AURA RESTORATION' : 'DAILY PROTOCOL',
     focus: readinessBand === 'reduced' ? `REDUCED // ${focus.toUpperCase()}` : focus.toUpperCase(),

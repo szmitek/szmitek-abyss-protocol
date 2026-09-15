@@ -8,11 +8,11 @@ import type { BackupFile } from '../domain/backup.ts';
 import { toDateKey } from '../domain/date.ts';
 import { completeWorkoutSet, millisecondsUntilNextDay, workoutReadyToFinish, workoutResumeBlock } from '../domain/workoutLifecycle.ts';
 import { generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { acknowledgeTrainingArcReview, beginDailyWorkout, closeActiveWorkout, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
+import { acknowledgeTrainingArcReview, beginDailyWorkout, closeActiveWorkout, updateTrainingLoadouts, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import type { SetPerformance, AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
+import type { TrainingLoadouts, MachineSetup, SetPerformance, AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
@@ -31,6 +31,7 @@ interface AppStoreValue {
   restoreLocalRecovery: () => Promise<void>;
   completeOnboarding: (answers: OnboardingAnswers) => void;
   updateProfile: (answers: OnboardingAnswers) => void;
+  saveLoadouts: (loadouts: TrainingLoadouts, setups: MachineSetup[]) => void;
   updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
   updateCorrectiveProfile: (correctiveProfile: CorrectiveProfile) => void;
   completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
@@ -225,6 +226,10 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit(() => freshQuest(base));
   }, [commit]);
 
+  const saveLoadouts = useCallback((loadouts: TrainingLoadouts, setups: MachineSetup[]) => {
+    commit((current) => updateTrainingLoadouts(current, loadouts, setups));
+  }, [commit]);
+
   const updateProfile = useCallback((answers: OnboardingAnswers) => {
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
@@ -375,6 +380,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         difficulty: active.plan.difficulty,
         perceivedDifficulty: difficulty,
         results: buildWorkoutResults(active),
+      ...(active.plan.location ? { location: active.plan.location } : {}),
         xpEarned: active.plan.rewardXp,
         attributeXpEarned: development.attributeXpEarned,
         statGains: development.statGains,
@@ -401,6 +407,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout,
     completeOnboarding,
     updateProfile,
+    saveLoadouts,
     updateSystemScan,
     updateCorrectiveProfile: saveCorrectiveProfile,
     completeMovementAssessment,
@@ -416,7 +423,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, saveLoadouts, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

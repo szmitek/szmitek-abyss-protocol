@@ -1,3 +1,5 @@
+import { EXERCISE_BY_ID } from '../data/exercises.ts';
+import { sameMachine } from './loadouts.ts';
 import { latestMovementAssessment } from './calibration.ts';
 import { dayDifference } from './date.ts';
 import { hasSafetyHold } from './health.ts';
@@ -56,6 +58,8 @@ export function masteredTwice(history: readonly WorkoutHistoryEntry[], exerciseI
   return samples.length === 2 && samples[0]!.workout.dateKey !== samples[1]!.workout.dateKey
     && samples.every(({ workout, result }) => workout.perceivedDifficulty !== 'too-hard'
       && resultMeetsTarget(result))
+    && (EXERCISE_BY_ID.get(exerciseId)?.loading !== 'stack' || Boolean(samples[0]?.result.recordedSets?.[0]?.machineSetup
+      && samples.every(({ result }) => result.recordedSets?.every((set) => sameMachine(set, samples[0]!.result.recordedSets![0]!.machineSetup!)))))
     && (!samples.some(({ result }) => result.recordedSets?.some((set) => set?.loadKg !== null && set?.loadKg !== undefined))
       || (uniformRecordedLoad(samples[0]!.result) !== null && uniformRecordedLoad(samples[0]!.result) === uniformRecordedLoad(samples[1]!.result)));
 }

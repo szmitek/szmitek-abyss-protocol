@@ -20,7 +20,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 12,
+  schemaVersion: 13,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
@@ -100,13 +100,15 @@ export function updateCorrectiveProfile(profile: UserProfile, correctiveProfile:
 }
 
 export function updateProfileSettings(profile: UserProfile, answers: OnboardingAnswers): UserProfile {
+  const equipment = normalizeEquipment(answers.availableEquipment);
   return {
     ...profile,
     goal: answers.goal,
     experienceLevel: answers.experienceLevel,
     workoutDuration: answers.workoutDuration,
     workoutsPerWeek: answers.workoutsPerWeek,
-    availableEquipment: normalizeEquipment(answers.availableEquipment),
+    availableEquipment: equipment,
+    ...(profile.loadouts ? { loadouts: { ...profile.loadouts, [profile.loadouts.active]: equipment } } : {}),
   };
 }
 

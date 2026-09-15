@@ -21,7 +21,7 @@ const STATS: { key: StatKey; code: string; label: string }[] = [
   { key: 'mobility', code: 'MOB', label: 'Mobility' },
 ];
 
-export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onOpenCorrectiveProfile, onOpenPostureArchive, onOpenDataVault, onRestoreExercises }: { profile: UserProfile; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onOpenCorrectiveProfile: () => void; onOpenPostureArchive: () => void; onOpenDataVault: () => void; onRestoreExercises: () => void }) {
+export function StatusScreen({ profile, onOpenLoadout, onEditProfile, onOpenSystemScan, onOpenMovementCalibration, onOpenCorrectiveProfile, onOpenPostureArchive, onOpenDataVault, onRestoreExercises }: { profile: UserProfile; onOpenLoadout: () => void; onEditProfile: () => void; onOpenSystemScan: () => void; onOpenMovementCalibration: () => void; onOpenCorrectiveProfile: () => void; onOpenPostureArchive: () => void; onOpenDataVault: () => void; onRestoreExercises: () => void }) {
   const xp = levelProgress(profile);
   const totalStats = STATS.reduce((sum, stat) => sum + profile[stat.key], 0);
   const movementAssessment = latestMovementAssessment(profile);
@@ -36,6 +36,10 @@ export function StatusScreen({ profile, onEditProfile, onOpenSystemScan, onOpenM
   return (
     <Screen eyebrow="CHARACTER DATA" title="Status" subtitle="Parameters reflect completed work. No points are assigned arbitrarily.">
       <GlowButton label="OPEN DATA VAULT" variant="secondary" onPress={onOpenDataVault} />
+      <SystemPanel eyebrow="PLAYER ARMORY" title={profile.loadouts ? `${profile.loadouts.active.toUpperCase()} LOADOUT` : 'Configure training locations'}>
+        <Text style={styles.settingsCopy}>Separate home and gym equipment. Register machines to keep their load records distinct.</Text>
+        <GlowButton label="CHANGE LOADOUT" variant="secondary" onPress={onOpenLoadout} style={styles.settingsButton} />
+      </SystemPanel>
       <SystemPanel accent="purple">
         <View style={styles.identity}>
           <View style={styles.avatar}><Text style={styles.avatarRune}>◇</Text></View>

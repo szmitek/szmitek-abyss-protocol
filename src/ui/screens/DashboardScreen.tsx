@@ -18,6 +18,7 @@ import { colors, radius, spacing } from '../theme.ts';
 
 interface DashboardScreenProps {
   snapshot: AppSnapshot;
+  onOpenLoadout: () => void;
   onBeginQuest: () => void;
   onOpenReadiness: () => void;
   onOpenSystemScan: () => void;
@@ -34,7 +35,7 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenArcReassessment, onOpenCorrectiveProfile }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onOpenLoadout, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenArcReassessment, onOpenCorrectiveProfile }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
@@ -63,6 +64,7 @@ export function DashboardScreen({ snapshot, onBeginQuest, onOpenReadiness, onOpe
       subtitle={directiveReview ? 'The next cycle awaits your confirmed priorities.' : readinessRequired ? 'Today\'s protocol awaits a Player signal.' : safetyHold ? 'Safeguard active. Training remains sealed.' : reassessmentDue ? 'Training Arc complete. A new Player signal is required.' : readinessRecovery ? 'Today\'s signal converted training into protected recovery.' : recoveryDay ? 'Scheduled recovery protects long-term progression.' : reducedLoad ? 'The System reduced today\'s load from your readiness signal.' : 'Your parameters are stable. One protocol awaits.'}
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >
+      <GlowButton label={profile.loadouts ? `${profile.loadouts.active.toUpperCase()} LOADOUT · CHANGE` : 'SET UP HOME / GYM LOADOUT'} variant="secondary" onPress={onOpenLoadout} />
       <SystemPanel>
         <View style={styles.levelHeader}>
           <View><Text style={styles.caption}>CURRENT LEVEL</Text><Text style={styles.level}>{profile.level}</Text></View>

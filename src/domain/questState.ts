@@ -1,8 +1,9 @@
+import { configureLoadouts } from './loadouts.ts';
 import { toDateKey } from './date.ts';
 import { generateDailyProtocol, trainingGate } from './generator.ts';
 import { ensureWeeklyProtocol } from './weeklyProtocol.ts';
 import { createDailyReadiness, readinessForDate, recordDailyReadiness } from './readiness.ts';
-import type { AppSnapshot, DailyReadinessInput } from './types.ts';
+import type { AppSnapshot, DailyReadinessInput, TrainingLoadouts, MachineSetup } from './types.ts';
 
 export function updateDailyReadiness(snapshot: AppSnapshot, input: DailyReadinessInput, expectedDateKey: string, now = new Date()): AppSnapshot {
   if (expectedDateKey !== toDateKey(now)) throw new Error('A new day has started. Return to the System and open a fresh readiness scan.');
@@ -62,4 +63,10 @@ export function closeActiveWorkout(snapshot: AppSnapshot, now = new Date()): App
     ? { ...snapshot.dailyQuest, status: 'available' as const }
     : snapshot.dailyQuest;
   return refreshDailyQuest({ ...snapshot, dailyQuest, activeWorkout: null }, toDateKey(now));
+}
+
+export function updateTrainingLoadouts(snapshot: AppSnapshot, loadouts: TrainingLoadouts, setups: MachineSetup[], now = new Date()): AppSnapshot {
+  if (!snapshot.profile || snapshot.activeWorkout) throw new Error('Finish or exit the workout before changing your loadout.');
+  const profile = configureLoadouts(snapshot.profile, loadouts, setups);
+  return refreshDailyQuest({ ...snapshot, profile, weeklyProtocol: null }, toDateKey(now));
 }

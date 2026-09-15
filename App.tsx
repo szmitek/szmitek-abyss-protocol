@@ -1,3 +1,4 @@
+import { LoadoutScreen } from './src/ui/screens/LoadoutScreen.tsx';
 import { useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -44,7 +45,7 @@ export default function App() {
 }
 
 function SystemRoot() {
-  const { snapshot, hydrated, loadError, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, updateSystemScan, updateCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
+  const { snapshot, hydrated, loadError, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, saveLoadouts, updateSystemScan, updateCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion } = useAppStore();
   const [tab, setTab] = useState<AppTab>('system');
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState(false);
   const [profileEditing, setProfileEditing] = useState(false);
@@ -53,6 +54,7 @@ function SystemRoot() {
   const [postureMode, setPostureMode] = useState<'archive' | 'reassessment' | null>(null);
   const [readinessOpen, setReadinessOpen] = useState(false);
   const [correctiveProfileOpen, setCorrectiveProfileOpen] = useState(false);
+  const [loadoutOpen, setLoadoutOpen] = useState(false);
   const [vaultOpen, setVaultOpen] = useState(false);
 
   if (!hydrated) {
@@ -93,6 +95,8 @@ function SystemRoot() {
       );
     }
   }
+
+  if (loadoutOpen) return <SystemBackground><LoadoutScreen profile={snapshot.profile} onBack={() => setLoadoutOpen(false)} onSave={(loadouts, setups) => { saveLoadouts(loadouts, setups); setLoadoutOpen(false); setDailyBriefingOpen(false); }} /></SystemBackground>;
 
   if (profileEditing) {
     return (
@@ -207,9 +211,9 @@ function SystemRoot() {
 
   return (
     <SystemBackground>
-      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onBeginQuest={requestDailyQuest} onOpenReadiness={() => setReadinessOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
+      {tab === 'system' ? <DashboardScreen snapshot={snapshot} onOpenLoadout={() => setLoadoutOpen(true)} onBeginQuest={requestDailyQuest} onOpenReadiness={() => setReadinessOpen(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => setMovementCalibrationEditing(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
       {tab === 'quests' ? <QuestsScreen snapshot={snapshot} onBeginDaily={requestDailyQuest} onBeginRankTrial={beginRankTrial} onOpenReadiness={() => setReadinessOpen(true)} onOpenArcReassessment={() => setPostureMode('reassessment')} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} /> : null}
-      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => snapshot.dailyQuest?.plan.kind === 'reassessment' ? setPostureMode('reassessment') : setMovementCalibrationEditing(true)} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} onOpenPostureArchive={() => setPostureMode('archive')} onOpenDataVault={() => setVaultOpen(true)} onRestoreExercises={restoreExercises} /> : null}
+      {tab === 'status' ? <StatusScreen profile={snapshot.profile} onOpenLoadout={() => setLoadoutOpen(true)} onEditProfile={() => setProfileEditing(true)} onOpenSystemScan={() => setSystemScanEditing(true)} onOpenMovementCalibration={() => snapshot.dailyQuest?.plan.kind === 'reassessment' ? setPostureMode('reassessment') : setMovementCalibrationEditing(true)} onOpenCorrectiveProfile={() => setCorrectiveProfileOpen(true)} onOpenPostureArchive={() => setPostureMode('archive')} onOpenDataVault={() => setVaultOpen(true)} onRestoreExercises={restoreExercises} /> : null}
       {tab === 'progress' ? <ProgressScreen profile={snapshot.profile} history={snapshot.history} /> : null}
       <BottomNav active={tab} onChange={setTab} />
       <QuestBriefing

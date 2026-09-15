@@ -36,7 +36,7 @@ test('an older supported snapshot upgrades without resetting an active checkpoin
   const checkpoint = completeWorkoutSet(started, workoutStepKey(started.activeWorkout!), now);
   for (const schemaVersion of [1, 10, 11]) {
     const loaded = decodeSnapshot(JSON.stringify({ ...checkpoint, schemaVersion }));
-    assert.equal(loaded.schemaVersion, 12);
+    assert.equal(loaded.schemaVersion, 13);
     assert.deepEqual(loaded.activeWorkout, checkpoint.activeWorkout);
     assert.deepEqual(loaded.profile, checkpoint.profile);
   }

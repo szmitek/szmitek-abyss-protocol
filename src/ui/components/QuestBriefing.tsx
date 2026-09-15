@@ -31,7 +31,7 @@ export function QuestBriefing({ visible, plan, onAccept, onClose }: QuestBriefin
       <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.backdrop}>
         <View style={styles.aura} />
         <View style={styles.panel}>
-          <View style={styles.topSignal}><View style={styles.topLine} /><Text style={styles.topCode}>SYSTEM // DIRECTIVE</Text><View style={styles.topLine} /></View>
+          <View style={styles.topSignal}><View style={styles.topLine} /><Text style={styles.topCode}>SYSTEM // {plan.location ? plan.location.toUpperCase() : 'DIRECTIVE'}</Text><View style={styles.topLine} /></View>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.alertIcon}><Text style={styles.alertIconText}>!</Text></View>
             <Text style={styles.title}>QUEST INFO</Text>
