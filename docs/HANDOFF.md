@@ -1,12 +1,12 @@
 # Batch checkpoint
 
-## Current implementation — weekly session status
+## Delivered source — PR #40; APK verification pending
 
-Branch `feature/weekly-session-status` is based on PR #39 main `7d821bd9c66662582c2c46fb7176d30a743a413b` and carries its delivery documentation forward. Android versionCode 15; storage schema remains 14. Changes share the planner's arc-anchored dates with next-session displays and distinguish missed, protected, completed, other-protocol and open sessions. No catch-up volume, reward changes or new stored fields. See `docs/WEEKLY_SESSION_STATUS.md`.
+PR https://github.com/szmitek/szmitek-abyss-protocol/pull/40 is merged. Reviewed head `3cce2d7c31c39b76b404b90f5032778b1bdd72a4`; merged main `04763f619dfda9685b8b00acc86d66d583d5b037`; reviewed/published/merged tree `ee8e346fe57dca7625ce22aeadb70ac33f216628` (identical). Android versionCode 15; storage schema remains 14. Changes share the planner's arc-anchored dates with next-session displays and distinguish missed, protected, completed, other-protocol and open sessions. No catch-up volume, reward changes or new stored fields. See `docs/WEEKLY_SESSION_STATUS.md`.
 
-Implementation includes nine new domain tests. Delivery actions: complete local checks, publish one reviewed PR, require green CI on its exact head, merge, and verify the new APK artifact/release digests, manifest and unchanged certificate. PR #39/version 14 below remains the latest verified APK until that delivery completes. Inspect live GitHub before resuming to avoid duplicate PRs.
+PR Quality run `35019022508` passed before merge: 161 tests, TypeScript, ESLint and Android export. Local checks also passed, including the nine new date/status tests under Europe/Warsaw. Main Android APK run `35019155229` and Quality run `35019155278` are in progress. Delivery actions: verify successful completion and the new APK artifact/release digests, manifest and unchanged certificate. PR #39/version 14 below remains the latest verified APK until those checks complete. Do not duplicate PR #40.
 
-Next after this package: the user-controlled return-after-interruption policy and its interactions with evidence, active sessions, arc transitions and backup compatibility. The older audit below records the original date mismatch; this implementation fixes it. AI analysis/coach remain later in the roadmap, animations LAST.
+Next after this package: the user-controlled return-after-interruption policy in `docs/RETURN_AFTER_BREAK.md` and its interactions with evidence, active sessions, arc transitions and backup compatibility. The older audit below records the original date mismatch; PR #40 fixes it. AI analysis/coach remain later in the roadmap, animations LAST.
 
 ## Delivered source and verified APK — PR #39
 
