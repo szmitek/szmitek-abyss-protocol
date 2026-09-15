@@ -1,12 +1,12 @@
 # Batch checkpoint
 
-## Current implementation — warm-ups and explicit load progression
+## Delivered source — PR #39; APK verification pending
 
-Branch: `feature/warmup-load-progression`, based on main `94ca61bab4c949854449bd7927ced9cfbd4a94b2` with the PR #38 delivery documentation carried forward. Implementation is complete; 152 tests, TypeScript, ESLint and Android export pass. See `docs/WARMUP_PROGRESSION.md` for the behavior, scope and unperformed phone checks. Schema/versionCode 14. No new dependencies, paid services, photo uploads or AI providers.
+PR https://github.com/szmitek/szmitek-abyss-protocol/pull/39 is merged. Reviewed head `f474bf697367bbe96ebe514d1c85c42c0e68b4b6`; merged main `7d821bd9c66662582c2c46fb7176d30a743a413b`; local, published and merged tree `2a5c6d5fbc06badab951c27402b821ad931f17d5` match. PR Quality run `34988236396` passed before merge: 152 tests, TypeScript, ESLint and Android export. See `docs/WARMUP_PROGRESSION.md` for behavior and unperformed phone checks. Schema/versionCode 14. No new dependencies, paid services, photo uploads or AI providers.
 
-Next delivery actions: publish the reviewed tree, create one PR, require green CI on its exact head, merge and verify the resulting main APK against workflow/release digests and the prior signing certificate below. At this checkpoint the latest published APK is still PR #38/versionCode 13. Inspect GitHub before resuming to avoid duplicate PRs.
+Main Quality run `34988388144` and Android APK run `34988388325` started for the merged SHA above. Next delivery actions: wait for completion and verify the artifact and release digests, versionCode 14 and prior signing certificate below. At this checkpoint PR #38/versionCode 13 is the latest verified APK. Do not duplicate PR #39 or claim its APK is verified before these checks pass.
 
-After this package, continue milestone 3 (long-term programming): audit existing A/B/C and Training Arc behavior against missed sessions, return after interruption, reduced-load periods and arc transitions, then address the remaining gaps. Standardized evidence and AI analysis remain in the full roadmap; animations stay LAST.
+After this package, continue milestone 3 (long-term programming). The code audit in `docs/LONG_TERM_PROGRAMMING.md` identifies existing A/B/C, reduced-volume and arc-transition behavior plus gaps in missed-session handling, next-session dates and return after interruption. Standardized evidence and AI analysis remain in the full roadmap; animations stay LAST.
 
 ## Delivered source — PR #38
 
