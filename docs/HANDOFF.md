@@ -12,7 +12,15 @@
 
 Package: independent HOME/GYM equipment lists, explicit machine/configuration identity, same-machine historical kg context and v13 storage/Vault compatibility. See `docs/LOADOUTS.md` for behavior and physical-device checks. No automatically increased machine targets or kilograms.
 
-APK verification is pending at this checkpoint. Do not claim a new APK until the main workflow finishes and its artifact is checked against the published release asset and previous signing certificate. The previously verified APK is PR #37, SHA256 `6df6f2ef44eb06e6ef95bb5ecbda58304ee2e08c8566b5c5c290280f54e3fc66`; certificate SHA256 `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`.
+## Verified APK publication — 2026-09-15
+
+- Main Quality and native Android build both completed successfully for the merged commit above.
+- Artifact `10391887001` belongs to Android run `34956087120` and that exact main commit. Downloaded ZIP SHA256 matches GitHub's artifact digest: `ece8615cd6d8982b253f259ccd1db9cf4ac9bed336cc697250f8d858c1d6c31b`.
+- Extracted APK SHA256 matches published release asset `565451235`: `d516b9c0e13e70960eca9bca1b219dbf5d652c2b9cee0563d46e8049f8de78c8` (80,226,604 bytes).
+- Binary Android manifest reports versionCode 13 (previous verified APK: 12).
+- Signing certificate SHA256 is unchanged: `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`. The APK v2 RSA signature over signed-data was verified with the certificate's key. This is not a physical-device installation test.
+- Release asset: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+- The preview release URL is reused by subsequent deliveries. For future verification use the recorded commit, workflow, asset ID and digests; do not rely solely on the tag name.
 
 Physical-device verification remains outstanding, including upgrade installation, keyboard/large-font layout, HOME/GYM switching, machine set selection, background/kill/resume and backup restore. Android export is not a native device test.
 
