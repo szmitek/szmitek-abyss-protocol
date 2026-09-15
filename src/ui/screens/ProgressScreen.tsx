@@ -113,6 +113,8 @@ function ExerciseHistoryScreen({ insight, onBack }: { insight: ExerciseInsight; 
       {[...insight.samples].reverse().slice(0, limit).map((sample) => <View key={sample.id} style={styles.sample}>
         <Text style={styles.insightName}>{sample.dateKey} · {sample.sets} × {sample.target} {unit}</Text>
         <Text style={styles.explanation}>{sample.volume} {unit} logged · {sample.difficulty.replaceAll('-', ' ')}</Text>
+        {sample.warmupSets?.length ? <Text style={styles.explanation}>Warm-ups below are separate from work totals and progression.</Text> : null}
+        {sample.warmupSets?.map((set, index) => <Text key={`warmup-${index}`} style={styles.explanation}>{formatRecordedSet(set, index, unit, EXERCISE_BY_ID.get(insight.exerciseId)?.loading, true)}</Text>)}
         {sample.recordedSets ? sample.recordedSets.map((set, index) => <Text key={index} style={styles.explanation}>{formatRecordedSet(set, index, unit, EXERCISE_BY_ID.get(insight.exerciseId)?.loading)}</Text>) : <Text style={styles.explanation}>Legacy record: totals based on prescribed targets; actual sets were not measured.</Text>}
       </View>)}
       {insight.samples.length > limit ? <GlowButton label="OLDER RECORDS" variant="secondary" onPress={() => setLimit((value) => value + 12)} /> : null}

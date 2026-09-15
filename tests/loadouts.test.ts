@@ -38,7 +38,7 @@ test('legacy equipment is preserved until loadouts are explicitly configured', (
   assert.deepEqual(loaded.profile!.availableEquipment, ['none', 'dumbbells']);
   assert.equal(loaded.profile!.loadouts, undefined);
   assert.deepEqual(draftLoadouts(loaded.profile!), { active: 'home', home: ['none', 'dumbbells'], gym: ['none'] });
-  assert.equal(loaded.schemaVersion, 13);
+  assert.equal(loaded.schemaVersion, 14);
 });
 
 test('switching HOME/GYM rebuilds the contract and maintains strict gear filters including replacements', () => {
@@ -143,6 +143,6 @@ test('Vault round-trips loadouts and retired machine history, imports v12, rejec
   assert.equal(restored.payload.snapshot.history[0]!.results[0]!.recordedSets![0]!.machineSetup!.id, setup.id);
   const old = await createBackup(snapshot(), false, async () => '', now);
   const v12 = JSON.parse(JSON.stringify(old)); v12.payload.snapshot.schemaVersion = 12; v12.checksum = backupChecksum(JSON.stringify(v12.payload));
-  assert.equal(parseBackup(JSON.stringify(v12)).payload.snapshot.schemaVersion, 13);
+  assert.equal(parseBackup(JSON.stringify(v12)).payload.snapshot.schemaVersion, 14);
   assert.throws(() => assertValidSnapshot({ ...s, profile: { ...retired, availableEquipment: ['none'] } }), /loadout/);
 });

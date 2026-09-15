@@ -10,6 +10,7 @@ export interface ExerciseSample {
   volume: number;
   difficulty: PerceivedDifficulty;
   recordedSets?: (SetPerformance | null)[];
+  warmupSets?: SetPerformance[];
 }
 
 export interface ExerciseInsight {
@@ -39,6 +40,7 @@ export function buildExerciseInsights(history: readonly WorkoutHistoryEntry[]): 
         target: result.targetPerSet, sets: result.completedSets, volume: result.completedVolume,
         difficulty: workout.perceivedDifficulty,
         ...(result.recordedSets ? { recordedSets: result.recordedSets } : {}),
+        ...(result.warmupSets ? { warmupSets: result.warmupSets } : {}),
       };
       const current = insights.get(result.exerciseId);
       if (!current) {

@@ -52,5 +52,5 @@ export function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
   const lastCompletion = parsed.lastCompletion
     ? { ...parsed.lastCompletion, attributeXpEarned: parsed.lastCompletion.attributeXpEarned ?? { ...EMPTY_STATS } }
     : null;
-  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 13, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
+  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 14, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
 }

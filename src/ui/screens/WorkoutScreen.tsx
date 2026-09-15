@@ -5,7 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { ActiveWorkout, PerceivedDifficulty, SetPerformance, UserProfile, WorkoutHistoryEntry } from '../../domain/types.ts';
+import type { ActiveWorkout, PerceivedDifficulty, SetKind, SetPerformance, UserProfile, WorkoutHistoryEntry } from '../../domain/types.ts';
+import { formatRecordedSet } from '../../domain/setPerformance.ts';
 import { timerSecondsRemaining, workoutStepKey } from '../../domain/workoutLifecycle.ts';
 import { ExerciseGuide } from '../components/ExerciseGuide.tsx';
 import { GlowButton } from '../components/GlowButton.tsx';
@@ -17,7 +18,7 @@ interface WorkoutScreenProps {
   profile: UserProfile;
   history: WorkoutHistoryEntry[];
   onReplaceExercise: (permanentlyExclude: boolean) => void;
-  onCompleteSet: (expectedStep: string, performance: SetPerformance) => void;
+  onCompleteSet: (expectedStep: string, performance: SetPerformance, kind?: SetKind) => void;
   onPause: () => void;
   onExit: () => void;
   onFinish: (difficulty: PerceivedDifficulty) => void;
@@ -116,16 +117,16 @@ export function WorkoutScreen({ active, profile, history, onReplaceExercise, onC
   const isFinalSequence = isLastSetOfExercise && active.exerciseIndex === active.plan.exercises.length - 1;
   const next = isLastSetOfExercise ? active.plan.exercises[active.exerciseIndex + 1] : prescription;
 
-  const finishSet = (performance?: SetPerformance) => {
+  const finishSet = (performance?: SetPerformance, kind: SetKind = 'work') => {
     const remaining = timerDeadlineRef.current ? timerSecondsRemaining(timerDeadlineRef.current) : timerRemaining;
     const logged = performance ?? { actual: Math.max(0, prescription.target - remaining), loadKg: null, effort: null };
     timerDeadlineRef.current = null;
-    if (!isFinalSequence) {
+    if (!isFinalSequence || kind === 'warmup') {
       restDeadlineRef.current = Date.now() + prescription.restSeconds * 1000;
       setRestRemaining(prescription.restSeconds);
     }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-    onCompleteSet(workoutStepKey(active), logged);
+    onCompleteSet(workoutStepKey(active), logged, kind);
   };
 
   const startCountdown = () => {
@@ -239,7 +240,7 @@ export function WorkoutScreen({ active, profile, history, onReplaceExercise, onC
         </View>
 
         <View style={styles.cue}><Text style={styles.cueMark}>SYSTEM TIP</Text><Text style={styles.cueText}>{prescription.exercise.description}</Text></View>
-        {completedForCurrent === 0 && timerPhase === 'idle' && !restActive ? (
+        {completedForCurrent === 0 && !(active.warmupSets?.[active.exerciseIndex]?.length) && timerPhase === 'idle' && !restActive ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Replace current exercise" onPress={confirmReplacement} style={styles.replaceButton}>
             <Text style={styles.replaceText}>REPLACE EXERCISE</Text>
           </Pressable>
@@ -248,8 +249,9 @@ export function WorkoutScreen({ active, profile, history, onReplaceExercise, onC
         <View style={styles.nextPanel}><Text style={styles.nextLabel}>NEXT SEQUENCE</Text><Text style={styles.nextName}>{next?.exercise.name ?? 'QUEST COMPLETE'}</Text><Text style={styles.nextTarget}>{next ? `${isLastSetOfExercise ? 1 : completedForCurrent + 2} / ${next.sets} · ${next.target}${next.exercise.repType === 'seconds' ? ' sec' : ' reps'}` : `+${active.plan.rewardXp} XP`}</Text></View>
 
         <View style={styles.footer}>
+          {active.warmupSets?.[active.exerciseIndex]?.map((set, index) => <Text key={`warmup-${index}`} style={styles.cueText}>{formatRecordedSet(set, index, 'reps', prescription.exercise.loading, true)}</Text>)}
           {isTimed ? <GlowButton label={primaryLabel} onPress={primaryAction} disabled={restActive || timerPhase === 'countdown'} /> : <>
-            <SetLogForm key={workoutStepKey(active)} profile={profile} history={history} dateKey={active.plan.dateKey} reduced={active.plan.readinessBand === 'reduced'} lastSetupId={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.machineSetup?.id ?? null} exercise={prescription.exercise} target={prescription.target} lastSetLoad={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.loadKg ?? null} label={primaryLabel} disabled={restActive} onComplete={finishSet} />
+            <SetLogForm key={workoutStepKey(active)} profile={profile} history={history} dateKey={active.plan.dateKey} reduced={active.plan.readinessBand === 'reduced'} lastSetupId={(active.recordedSets?.[active.exerciseIndex]?.at(-1) ?? active.warmupSets?.[active.exerciseIndex]?.at(-1))?.machineSetup?.id ?? null} exercise={prescription.exercise} target={prescription.target} lastSetLoad={active.recordedSets?.[active.exerciseIndex]?.at(-1)?.loadKg ?? null} label={primaryLabel} disabled={restActive} completedWorkSets={completedForCurrent} warmupSets={active.warmupSets?.[active.exerciseIndex] ?? []} training={active.plan.kind === 'training'} onComplete={finishSet} />
           </>}
           {restActive ? <Pressable accessibilityRole="button" onPress={skipRecovery} style={styles.skip}><Text style={styles.skipText}>SKIP RECOVERY</Text></Pressable> : null}
           {isTimed && (timerPhase === 'running' || timerPhase === 'paused') ? <Pressable accessibilityRole="button" onPress={() => finishSet()} style={styles.skip}><Text style={styles.skipText}>COMPLETE SET NOW</Text></Pressable> : null}
