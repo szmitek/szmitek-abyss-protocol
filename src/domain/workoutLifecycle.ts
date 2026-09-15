@@ -1,11 +1,14 @@
 import { toDateKey } from './date.ts';
 import { trainingGate } from './generator.ts';
 import { readinessForDate } from './readiness.ts';
-import type { ActiveWorkout, AppSnapshot, SetPerformance } from './types.ts';
-import { isValidSetPerformance } from './setPerformance.ts';
+import type { ActiveWorkout, AppSnapshot, SetKind, SetPerformance } from './types.ts';
+import { copySetPerformance, isValidSetPerformance } from './setPerformance.ts';
+import { chooseLoadIncrease, loadProgressionOffer } from './loadProgression.ts';
+
+export const MAX_WARMUP_SETS = 5;
 
 export function workoutStepKey(active: ActiveWorkout): string {
-  return `${active.startedAt}:${active.exerciseIndex}:${active.plan.exercises[active.exerciseIndex]?.exercise.id ?? 'complete'}:${active.completedSets[active.exerciseIndex] ?? 0}`;
+  return `${active.startedAt}:${active.exerciseIndex}:${active.plan.exercises[active.exerciseIndex]?.exercise.id ?? 'complete'}:${active.completedSets[active.exerciseIndex] ?? 0}:${active.warmupSets?.[active.exerciseIndex]?.length ?? 0}`;
 }
 
 export function workoutResumeBlock(snapshot: AppSnapshot, now = new Date()): string | null {
@@ -24,22 +27,40 @@ export function workoutResumeBlock(snapshot: AppSnapshot, now = new Date()): str
   return null;
 }
 
-export function completeWorkoutSet(snapshot: AppSnapshot, expectedStep: string, now = new Date(), performance?: SetPerformance): AppSnapshot {
+export function completeWorkoutSet(snapshot: AppSnapshot, expectedStep: string, now = new Date(), performance?: SetPerformance, kind: SetKind = 'work'): AppSnapshot {
   const active = snapshot.activeWorkout;
   if (!active || workoutResumeBlock(snapshot, now) || workoutStepKey(active) !== expectedStep) return snapshot;
   const prescription = active.plan.exercises[active.exerciseIndex];
-  if (!prescription) return snapshot;
+  if (!prescription || !['work', 'warmup'].includes(kind)) return snapshot;
   if ((prescription.exercise.loading && !performance) || (performance && !isValidSetPerformance(performance, prescription.exercise))) return snapshot;
   if (performance?.machineSetup && (!snapshot.profile?.loadouts
     || performance.machineSetup.location !== snapshot.profile.loadouts.active
     || !snapshot.profile.machineSetups?.some((setup) => setup.id === performance.machineSetup!.id && setup.exerciseId === prescription.exercise.id
       && setup.location === performance.machineSetup!.location && setup.label === performance.machineSetup!.label))) return snapshot;
+  const warmups = active.warmupSets?.[active.exerciseIndex] ?? [];
+  if (kind === 'warmup') {
+    if (active.plan.kind !== 'training' || !prescription.exercise.loading || prescription.exercise.repType !== 'reps'
+      || !performance || performance.loadDecision || active.completedSets[active.exerciseIndex] !== 0 || warmups.length >= MAX_WARMUP_SETS) return snapshot;
+    const warmupSets = active.plan.exercises.map((_, index) => [...(active.warmupSets?.[index] ?? [])]);
+    warmupSets[active.exerciseIndex]!.push(copySetPerformance(performance));
+    return { ...snapshot, activeWorkout: { ...active, warmupSets } };
+  }
+  let plan = active.plan;
+  if (performance?.loadDecision) {
+    if (active.plan.kind !== 'training' || active.completedSets[active.exerciseIndex] !== 0 || warmups.some((s) => s.effort === 'too-hard')) return snapshot;
+    const offer = loadProgressionOffer(prescription.exercise, snapshot.profile!, snapshot.history, toDateKey(now), active.plan.readinessBand === 'reduced', performance.machineSetup);
+    const choice = offer && chooseLoadIncrease(offer, performance.loadDecision.incrementKg);
+    if (!choice || choice.loadKg !== performance.loadKg || choice.decision.previousKg !== performance.loadDecision.previousKg
+      || choice.decision.evidenceDateKeys.join('|') !== performance.loadDecision.evidenceDateKeys.join('|')) return snapshot;
+    plan = { ...plan, exercises: plan.exercises.map((item, index) => index === active.exerciseIndex ? { ...item, target: item.exercise.minReps } : item) };
+  }
   const completedSets = [...active.completedSets];
   const count = Math.min((completedSets[active.exerciseIndex] ?? 0) + 1, prescription.sets);
   completedSets[active.exerciseIndex] = count;
   const recordedSets = active.plan.exercises.map((_, index) => [...(active.recordedSets?.[index] ?? Array.from({ length: active.completedSets[index] ?? 0 }, () => null))]);
-  recordedSets[active.exerciseIndex]!.push(performance ?? null);
-  return { ...snapshot, activeWorkout: { ...active, completedSets, recordedSets, exerciseIndex: count >= prescription.sets ? active.exerciseIndex + 1 : active.exerciseIndex } };
+  recordedSets[active.exerciseIndex]!.push(performance ? copySetPerformance(performance) : null);
+  const dailyQuest = plan !== active.plan && snapshot.dailyQuest?.id === active.questId ? { ...snapshot.dailyQuest, plan } : snapshot.dailyQuest;
+  return { ...snapshot, dailyQuest, activeWorkout: { ...active, plan, completedSets, recordedSets, exerciseIndex: count >= prescription.sets ? active.exerciseIndex + 1 : active.exerciseIndex } };
 }
 
 export function workoutReadyToFinish(snapshot: AppSnapshot, now = new Date()): boolean {

@@ -12,7 +12,7 @@ import { acknowledgeTrainingArcReview, beginDailyWorkout, closeActiveWorkout, up
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
-import type { TrainingLoadouts, MachineSetup, SetPerformance, AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
+import type { SetKind, TrainingLoadouts, MachineSetup, SetPerformance, AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
   snapshot: AppSnapshot;
@@ -43,7 +43,7 @@ interface AppStoreValue {
   beginDailyQuest: () => void;
   beginRankTrial: () => void;
   replaceCurrentExercise: (permanentlyExclude: boolean) => void;
-  completeCurrentSet: (expectedStep: string, performance?: SetPerformance) => void;
+  completeCurrentSet: (expectedStep: string, performance?: SetPerformance, kind?: SetKind) => void;
   abandonWorkout: () => void;
   finishWorkout: (difficulty: PerceivedDifficulty) => void;
   dismissCompletion: () => void;
@@ -333,7 +333,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit((current) => {
       const active = current.activeWorkout;
       const profile = current.profile;
-      if (!active || !profile || (active.completedSets[active.exerciseIndex] ?? 0) > 0) return current;
+      if (!active || !profile || (active.completedSets[active.exerciseIndex] ?? 0) > 0 || (active.warmupSets?.[active.exerciseIndex]?.length ?? 0) > 0) return current;
       const currentExercise = active.plan.exercises[active.exerciseIndex]?.exercise;
       if (!currentExercise) return current;
 
@@ -349,8 +349,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     });
   }, [commit, workoutActionAllowed]);
 
-  const completeCurrentSet = useCallback((expectedStep: string, performance?: SetPerformance) => {
-    if (workoutActionAllowed()) commit((current) => completeWorkoutSet(current, expectedStep, new Date(), performance));
+  const completeCurrentSet = useCallback((expectedStep: string, performance?: SetPerformance, kind?: SetKind) => {
+    if (workoutActionAllowed()) commit((current) => completeWorkoutSet(current, expectedStep, new Date(), performance, kind));
   }, [commit, workoutActionAllowed]);
 
   const abandonWorkout = useCallback(() => {

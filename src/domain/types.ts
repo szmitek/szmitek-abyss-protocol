@@ -180,6 +180,7 @@ export interface ExerciseResult {
   targetPerSet: number;
   completedVolume: number;
   recordedSets?: (SetPerformance | null)[];
+  warmupSets?: SetPerformance[];
 }
 
 export type TrainingLocation = 'home' | 'gym';
@@ -196,11 +197,20 @@ export interface MachineSetup {
 }
 
 export interface SetPerformance {
+  loadDecision?: LoadDecision;
   machineSetup?: MachineSetup;
   actual: number;
   loadKg: number | null;
   effort: PerceivedDifficulty | null;
 }
+
+export interface LoadDecision {
+  previousKg: number;
+  incrementKg: number;
+  evidenceDateKeys: [string, string];
+}
+
+export type SetKind = 'work' | 'warmup';
 
 export interface StatBlock {
   strength: number;
@@ -420,11 +430,12 @@ export interface ActiveWorkout {
   exerciseIndex: number;
   completedSets: number[];
   recordedSets?: (SetPerformance | null)[][];
+  warmupSets?: SetPerformance[][];
   startedAt: string;
 }
 
 export interface AppSnapshot {
-  schemaVersion: 13;
+  schemaVersion: 14;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

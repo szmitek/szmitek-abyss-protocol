@@ -20,7 +20,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 13,
+  schemaVersion: 14,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
