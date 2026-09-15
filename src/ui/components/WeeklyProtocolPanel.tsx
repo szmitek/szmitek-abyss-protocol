@@ -1,28 +1,26 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { toDateKey } from '../../domain/date.ts';
-import type { WeeklyProtocol, WorkoutHistoryEntry } from '../../domain/types.ts';
+import { weeklySessionStatus, type SessionStatus } from '../../domain/protocolSchedule.ts';
+import type { ActiveWorkout, UserProfile, WeeklyProtocol, WorkoutHistoryEntry } from '../../domain/types.ts';
 import { colors, radius, spacing } from '../theme.ts';
 import { SystemPanel } from './SystemPanel.tsx';
 
-function sessionState(dateKey: string, planId: string, completedPlanIds: ReadonlySet<string>, completedDateKeys: ReadonlySet<string>, today: string): 'cleared' | 'current' | 'closed' | 'queued' {
-  if (completedPlanIds.has(planId) || completedDateKeys.has(dateKey)) return 'cleared';
-  if (dateKey === today) return 'current';
-  return dateKey < today ? 'closed' : 'queued';
-}
-
-const STATE_LABELS = {
+const STATE_LABELS: Record<SessionStatus, string> = {
   cleared: 'CLEARED',
-  current: 'ACTIVE',
-  closed: 'CLOSED',
+  trained: 'TRAINED · OTHER PROTOCOL',
+  active: 'IN PROGRESS',
+  ready: 'READY',
+  readiness: 'READINESS REQUIRED',
+  missed: 'MISSED · NO COMPLETION LOG',
+  recovery: 'READINESS RECOVERY',
+  hold: 'READINESS HOLD',
+  unavailable: 'UNAVAILABLE',
   queued: 'QUEUED',
-} as const;
+};
 
-export function WeeklyProtocolPanel({ protocol, history }: { protocol: WeeklyProtocol; history: WorkoutHistoryEntry[] }) {
-  const today = toDateKey(new Date());
-  const completedEntries = history.filter((entry) => entry.completed && !entry.planId.startsWith('rank-trial-'));
-  const completedPlanIds = new Set(completedEntries.map((entry) => entry.planId));
-  const completedDateKeys = new Set(completedEntries.map((entry) => entry.dateKey));
+export function WeeklyProtocolPanel({ protocol, profile, history, today, activeWorkout }: { protocol: WeeklyProtocol; profile: UserProfile; history: WorkoutHistoryEntry[]; today: string; activeWorkout: ActiveWorkout | null }) {
+  const sessions = protocol.sessions.map((session) => ({ session, state: weeklySessionStatus(session, profile, history, today, activeWorkout) }));
+  const missed = sessions.filter(({ state }) => state === 'missed').length;
   const codes = protocol.sessions.map((session) => session.code).join(' / ');
   const arcLabel = protocol.trainingArcCycle && protocol.trainingArcWeek
     ? `ARC ${protocol.trainingArcCycle} // WEEK ${protocol.trainingArcWeek}`
@@ -31,18 +29,20 @@ export function WeeklyProtocolPanel({ protocol, history }: { protocol: WeeklyPro
   return (
     <SystemPanel eyebrow="WEEKLY PROTOCOL" title={codes} accent="purple" trailing={<Text style={styles.arc}>{arcLabel}</Text>}>
       <Text style={styles.intro}>The System has locked the weekly structure. Daily Readiness may reduce a session or replace it with recovery, but it will not redraw the micro-cycle.</Text>
+      {missed > 0 ? <Text style={styles.intro}>{missed} past {missed === 1 ? 'session has' : 'sessions have'} no completion log. Continue with the next scheduled protocol. Missed work is not added to later days.</Text> : null}
       <View style={styles.sessions}>
-        {protocol.sessions.map((session) => {
-          const state = sessionState(session.dateKey, session.plan.id, completedPlanIds, completedDateKeys, today);
-          const weekday = new Date(`${session.dateKey}T12:00:00`).toLocaleDateString('en', { weekday: 'short' }).toUpperCase();
+        {sessions.map(({ session, state }) => {
+          const current = session.dateKey === today && ['active', 'ready', 'readiness'].includes(state);
+          const cleared = state === 'cleared' || state === 'trained';
+          const weekday = new Date(`${session.dateKey}T12:00:00`).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
           return (
-            <View key={session.plan.id} style={[styles.session, state === 'current' && styles.current, state === 'cleared' && styles.cleared]}>
-              <View style={[styles.code, state === 'current' && styles.codeCurrent]}><Text style={styles.codeText}>{session.code}</Text></View>
+            <View key={session.dateKey} style={[styles.session, current && styles.current, cleared && styles.cleared]}>
+              <View style={[styles.code, current && styles.codeCurrent]}><Text style={styles.codeText}>{session.code}</Text></View>
               <View style={styles.copy}>
                 <Text style={styles.title}>{session.title}</Text>
                 <Text style={styles.objective}>{weekday} · {session.objective}</Text>
+                <Text style={[styles.state, current && styles.stateCurrent, cleared && styles.stateCleared]}>{STATE_LABELS[state]}</Text>
               </View>
-              <Text style={[styles.state, state === 'current' && styles.stateCurrent, state === 'cleared' && styles.stateCleared]}>{STATE_LABELS[state]}</Text>
             </View>
           );
         })}
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   copy: { flex: 1 },
   title: { color: colors.text, fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },
   objective: { color: colors.textMuted, fontSize: 8, fontWeight: '700', letterSpacing: 0.45, marginTop: 4 },
-  state: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 0.8 },
+  state: { color: colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 0.6, marginTop: 6 },
   stateCurrent: { color: colors.purple },
   stateCleared: { color: colors.success },
   contract: { color: colors.textDim, fontSize: 7, fontWeight: '900', letterSpacing: 0.55, lineHeight: 13, marginTop: spacing.md, textAlign: 'center' },

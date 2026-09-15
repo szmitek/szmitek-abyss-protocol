@@ -1,4 +1,5 @@
 import { toDateKey } from './date.ts';
+import { getTrainingArcState } from './trainingArc.ts';
 import type { UserProfile } from './types.ts';
 
 const TRAINING_DAYS: Record<UserProfile['workoutsPerWeek'], readonly number[]> = {
@@ -55,6 +56,14 @@ export function trainingWindow(profile: UserProfile, dateKey: string): TrainingW
   const trainingDateKeys = Array.from({ length: 7 }, (_, offset) => addDays(startDateKey, offset))
     .filter((candidate) => weekdayIsScheduled(profile.workoutsPerWeek, dateFromKey(candidate).getDay()));
   return { startDateKey, endDateKey: addDays(startDateKey, 6), trainingDateKeys };
+}
+
+// The planner and next-session display must use the same arc-anchored dates.
+export function plannedTrainingWindow(profile: UserProfile, dateKey: string): TrainingWindow {
+  const arc = getTrainingArcState(profile.trainingArcs, dateKey);
+  return arc
+    ? trainingWindow({ ...profile, totalWorkouts: 0 }, addDays(arc.arc.startDateKey, (arc.week - 1) * 7))
+    : trainingWindow(profile, dateKey);
 }
 
 function weekdayIsScheduled(workoutsPerWeek: UserProfile['workoutsPerWeek'], weekday: number): boolean {
