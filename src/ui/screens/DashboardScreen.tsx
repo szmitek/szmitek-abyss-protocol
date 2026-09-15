@@ -6,7 +6,7 @@ import { getTrainingArcState } from '../../domain/trainingArc.ts';
 import { getArcDirective } from '../../domain/arcDirective.ts';
 import { toDateKey } from '../../domain/date.ts';
 import { levelProgress } from '../../domain/progression.ts';
-import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
+import { nextProtocolTrainingDateKey } from '../../domain/protocolSchedule.ts';
 import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
 import { CORRECTIVE_GOAL_DETAILS, primaryCorrectiveTarget } from '../../domain/correctiveProfile.ts';
 import type { AppSnapshot, StatKey } from '../../domain/types.ts';
@@ -54,7 +54,7 @@ export function DashboardScreen({ snapshot, onOpenLoadout, onBeginQuest, onOpenR
   const movementPain = hasMovementPain(profile);
   const correctiveTarget = primaryCorrectiveTarget(profile);
   const arcState = getTrainingArcState(profile.trainingArcs, quest?.dateKey ?? new Date().toISOString().slice(0, 10));
-  const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
+  const nextTraining = recoveryDay && quest ? nextProtocolTrainingDateKey(profile, snapshot.weeklyProtocol, quest.dateKey) : null;
   const recoveryHighlights = Object.entries(recovery).filter(([group]) => ['chest', 'core', 'quads'].includes(group));
 
   return (
@@ -154,7 +154,7 @@ export function DashboardScreen({ snapshot, onOpenLoadout, onBeginQuest, onOpenR
             <Text style={styles.recoveryDirectiveMark}>◇</Text>
             <View style={styles.recoveryDirectiveCopy}>
               <Text style={styles.recoveryDirectiveTitle}>{readinessRecovery ? 'RECOVERY OVERRIDE ACTIVE' : 'NO TRAINING REQUIRED'}</Text>
-              <Text style={styles.recoveryDirectiveText}>{readinessRecovery ? 'Low combined readiness or high muscle soreness replaced today\'s workout. No streak penalty applies.' : `Your streak is protected. Next training: ${nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }).toUpperCase() : 'SCHEDULED'}`}</Text>
+              <Text style={styles.recoveryDirectiveText}>{readinessRecovery ? 'Low combined readiness or high muscle soreness replaced today\'s workout. No streak penalty applies.' : nextTraining ? `Your streak is protected. Next scheduled training: ${new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })}.` : 'Your streak is protected. Complete the next Player Re-scan before a new training date is assigned.'}</Text>
             </View>
           </View>
         ) : quest ? (

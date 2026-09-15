@@ -30,9 +30,11 @@ Completed foundations: trainer follow-through (#33), Data Vault (#34), Player UX
 2. Home and gym training: implement-specific exercise catalog, actual reps/seconds, external load and set effort; progression, substitutions and home/gym loadouts.
    - Delivered #37: 12 loaded exercises, explicit gear requirements, actual set records, load review guidance, history and compatible migration/backups.
    - Delivered #38: HOME/GYM loadouts, explicit machine/configuration registry, same-machine historical kg context, retained set identities and compatible v13 storage/Vault migration.
-   - Current bounded package: optional warm-up records separated from work/RPG totals, explicit per-session load-increase review, confirmed target reset and v14 migration/Vault compatibility. See `docs/WARMUP_PROGRESSION.md`.
+   - Delivered source #39: optional warm-up records separated from work/RPG totals, explicit per-session load-increase review, confirmed target reset and v14 migration/Vault compatibility. See `docs/WARMUP_PROGRESSION.md` and `docs/HANDOFF.md` for APK verification status.
    - Remaining: broader catalog and optional additional locations. Future starting kilograms are never automatically selected.
 3. Long-term programming: A/B/C objectives, weekly work/recovery distribution, missed sessions, return after interruption, lower-load periods and transitions between arcs. Readiness adapts the existing contract.
+   - Current bounded package: shared arc-anchored next-session dates, explicit weekly missed/protected/completed statuses and no automatic catch-up. See `docs/WEEKLY_SESSION_STATUS.md` and `docs/HANDOFF.md` for delivery state.
+   - Next: user-controlled return after interruption; define entry policy and persistence before implementation.
 4. Standardized evidence: comparable photo capture, quality checks, left/right side views, synchronized movement tests and longitudinal comparison of adherence, symptoms and function.
 5. AI Player analysis: prototype photo + test + history observations; uncertainty, source evidence, missing-data questions and proposed training priorities. No diagnosis inferred from a photo. Evaluate accuracy, privacy, execution location and a zero/low-cost budget before choosing a provider. No provider subscription or photo upload is authorized by this roadmap alone.
 6. Adaptive plan and AI coach: explain and propose changes using actual performance, readiness and reassessment. Deterministic equipment, safety and movement constraints validate every proposed change; record decisions and keep user control.

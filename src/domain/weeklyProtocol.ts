@@ -1,6 +1,5 @@
 import { generateWorkout } from './generator.ts';
-import { toDateKey } from './date.ts';
-import { trainingWindow } from './schedule.ts';
+import { plannedTrainingWindow } from './schedule.ts';
 import { getTrainingArcState } from './trainingArc.ts';
 import { MUSCLE_GROUPS, type MuscleGroup, type UserProfile, type WeeklyProtocol, type WeeklyProtocolSession, type WeeklySessionBlueprint, type WorkoutHistoryEntry } from './types.ts';
 
@@ -13,12 +12,6 @@ const SESSION_TEMPLATES: readonly Omit<WeeklySessionBlueprint, 'dateKey'>[] = [
   { code: 'F', title: 'CONDITIONING WAVE', objective: 'FULL BODY + CORE', focusMuscles: ['full-body', 'core', 'quads', 'calves'] },
   { code: 'G', title: 'AURA RESTORATION', objective: 'CONTROL + MOBILITY', focusMuscles: ['back', 'glutes', 'shoulders', 'core'] },
 ];
-
-function addDays(dateKey: string, days: number): string {
-  const date = new Date(`${dateKey}T12:00:00`);
-  date.setDate(date.getDate() + days);
-  return toDateKey(date);
-}
 
 function weeklyVolumeCaps(profile: UserProfile): Partial<Record<MuscleGroup, number>> {
   const base = profile.experienceLevel === 'beginner' ? 10 : profile.experienceLevel === 'intermediate' ? 14 : 18;
@@ -61,8 +54,7 @@ function addVolume(used: Partial<Record<MuscleGroup, number>>, session: WeeklyPr
 
 export function buildWeeklyProtocol(profile: UserProfile, history: WorkoutHistoryEntry[], dateKey: string): WeeklyProtocol {
   const arc = getTrainingArcState(profile.trainingArcs, dateKey);
-  const arcWeekStart = arc ? addDays(arc.arc.startDateKey, (arc.week - 1) * 7) : null;
-  const window = arcWeekStart ? trainingWindow({ ...profile, totalWorkouts: 0 }, arcWeekStart) : trainingWindow(profile, dateKey);
+  const window = plannedTrainingWindow(profile, dateKey);
   const protocolId = `weekly-${profile.id}-${window.startDateKey}`;
   const caps = weeklyVolumeCaps(profile);
   const used: Partial<Record<MuscleGroup, number>> = {};

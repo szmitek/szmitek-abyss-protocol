@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { rankTrialEligibility } from '../../domain/progression.ts';
 import { toDateKey } from '../../domain/date.ts';
-import { nextScheduledTrainingDateKey } from '../../domain/schedule.ts';
+import { nextProtocolTrainingDateKey } from '../../domain/protocolSchedule.ts';
 import { planRequiresDailyReadiness, readinessForDate } from '../../domain/readiness.ts';
 import type { AppSnapshot } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
@@ -32,7 +32,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
   const readinessRecovery = quest?.plan.readinessBand === 'recovery';
   const reassessmentDue = quest?.plan.kind === 'reassessment';
   const directiveReview = quest?.plan.kind === 'directive-review';
-  const nextTraining = recoveryDay && quest ? nextScheduledTrainingDateKey(profile, quest.dateKey) : null;
+  const nextTraining = recoveryDay && quest ? nextProtocolTrainingDateKey(profile, snapshot.weeklyProtocol, quest.dateKey) : null;
   return (
     <Screen eyebrow="MISSION REGISTRY" title="Quests" subtitle="Clear today's protocol or prepare for ascension.">
       <SystemPanel eyebrow={directiveReview ? 'DIRECTIVE CONFIRMATION' : readinessRequired ? 'DAILY READINESS REQUIRED' : safetyHold ? 'SYSTEM SAFEGUARD' : reassessmentDue ? 'TRAINING ARC COMPLETE' : recoveryDay ? readinessRecovery ? 'ADAPTIVE RECOVERY' : 'RECOVERY DAY' : 'DAILY QUEST'} title={readinessRequired ? 'Sync Player status' : quest?.plan.title ?? 'Scanning'} accent={safetyHold ? 'danger' : reassessmentDue || directiveReview ? 'purple' : 'blue'} trailing={<Text style={[styles.reward, safetyHold && styles.holdReward]}>{directiveReview ? 'REVIEW' : readinessRequired ? 'AWAITING' : safetyHold ? 'SEALED' : reassessmentDue ? 'RE-SCAN' : recoveryDay ? 'REST' : `+${quest?.plan.rewardXp ?? 0} XP`}</Text>}>
@@ -54,7 +54,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
         ) : recoveryDay ? (
           <View style={styles.recoveryMessage}>
             <Text style={styles.recoveryMark}>◇</Text>
-            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>{readinessRecovery ? 'READINESS RECOVERY ACTIVE' : 'RECOVERY DIRECTIVE ACTIVE'}</Text><Text style={styles.recoveryText}>{readinessRecovery ? 'Today\'s combined signal replaced the planned workout with protected recovery.' : `No workout is required today. Your next training protocol is scheduled for ${nextTraining ? new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long' }) : 'the next training day'}.`}</Text></View>
+            <View style={styles.recoveryCopy}><Text style={styles.recoveryTitle}>{readinessRecovery ? 'READINESS RECOVERY ACTIVE' : 'RECOVERY DIRECTIVE ACTIVE'}</Text><Text style={styles.recoveryText}>{readinessRecovery ? 'Today\'s combined signal replaced the planned workout with protected recovery.' : nextTraining ? `No workout is required today. Your next protocol is scheduled for ${new Date(`${nextTraining}T12:00:00`).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })}.` : 'No workout is required today. Complete the next Player Re-scan before a new training date is assigned.'}</Text></View>
           </View>
         ) : quest?.plan.exercises.map((item, index) => (
           <View key={item.exercise.id} style={styles.sequence}>
@@ -71,7 +71,7 @@ export function QuestsScreen({ snapshot, onBeginDaily, onBeginRankTrial, onOpenR
         />
       </SystemPanel>
 
-      {snapshot.weeklyProtocol ? <WeeklyProtocolPanel protocol={snapshot.weeklyProtocol} history={snapshot.history} /> : null}
+      {snapshot.weeklyProtocol ? <WeeklyProtocolPanel protocol={snapshot.weeklyProtocol} profile={profile} history={snapshot.history} today={toDateKey(new Date())} activeWorkout={snapshot.activeWorkout} /> : null}
 
       <SystemPanel eyebrow="ASCENSION" title={trial.target ? `RANK ${profile.rank} → ${trial.target}` : 'MAXIMUM RANK'} accent="danger">
         <View style={styles.trialHero}>
