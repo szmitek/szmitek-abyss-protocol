@@ -1,12 +1,23 @@
 # Batch checkpoint
 
-## Delivered source — PR #39; APK verification pending
+## Delivered source and verified APK — PR #39
 
 PR https://github.com/szmitek/szmitek-abyss-protocol/pull/39 is merged. Reviewed head `f474bf697367bbe96ebe514d1c85c42c0e68b4b6`; merged main `7d821bd9c66662582c2c46fb7176d30a743a413b`; local, published and merged tree `2a5c6d5fbc06badab951c27402b821ad931f17d5` match. PR Quality run `34988236396` passed before merge: 152 tests, TypeScript, ESLint and Android export. See `docs/WARMUP_PROGRESSION.md` for behavior and unperformed phone checks. Schema/versionCode 14. No new dependencies, paid services, photo uploads or AI providers.
 
-Main Quality run `34988388144` and Android APK run `34988388325` started for the merged SHA above. Next delivery actions: wait for completion and verify the artifact and release digests, versionCode 14 and prior signing certificate below. At this checkpoint PR #38/versionCode 13 is the latest verified APK. Do not duplicate PR #39 or claim its APK is verified before these checks pass.
+Main Quality run `34988388144` and Android APK run `34988388325` both completed successfully for the merged SHA above. APK publication was verified on 2026-09-15:
+
+- Artifact `10404539359` belongs to run `34988388325` and exact main SHA `7d821bd9c66662582c2c46fb7176d30a743a413b`.
+- Downloaded artifact ZIP SHA256 matches GitHub's digest: `7ad10907b56fd338c68bb7161e6b95792f97afabd4ec77636c060395da36c413`.
+- Extracted APK SHA256 matches published release asset `565978930`: `b17346e496faaa0905acc803b32950d214a65aa3e4fb64b662cd05c792409e5c` (80,237,524 bytes).
+- Binary manifest: versionCode 14, package `app.abyssprotocol.mobile`; previous verified APK has versionCode 13 and the same package.
+- Signing certificate remains `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`. A focused local check verified the v2 RSA signature over signed-data and the SHA256 chunked content digest in both the old and new APK, following the Android v2 format: https://source.android.com/docs/security/features/apksigning/v2 . This is not Android installation validation or a physical-device test.
+- Published APK: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+
+This package is complete; do not duplicate PR #39 or republish an older APK. The preview URL is reused, so retain the commit, workflow, asset ID and digest above when checking future deliveries. Phone upgrade/resume/keyboard and the flows in `docs/WARMUP_PROGRESSION.md` remain unperformed.
 
 After this package, continue milestone 3 (long-term programming). The code audit in `docs/LONG_TERM_PROGRAMMING.md` identifies existing A/B/C, reduced-volume and arc-transition behavior plus gaps in missed-session handling, next-session dates and return after interruption. Standardized evidence and AI analysis remain in the full roadmap; animations stay LAST.
+
+The date mismatch was reproduced with the real domain functions: for a Tuesday-start arc, the week beginning 2026-09-08 contains A on September 8, B on September 10 and C on September 12. On September 9 the display helper predicts September 11 while the next locked session is September 10. With no completed sessions, September 10 still selects B. These are next-package findings, not fixes included in version 14.
 
 ## Delivered source — PR #38
 
