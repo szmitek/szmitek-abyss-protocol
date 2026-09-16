@@ -1,9 +1,27 @@
 import { configureLoadouts } from './loadouts.ts';
 import { toDateKey } from './date.ts';
+import { lastNormalWorkout, returnPlanActive, returnProgress, RETURN_SESSIONS } from './returnTraining.ts';
 import { generateDailyProtocol, trainingGate } from './generator.ts';
 import { ensureWeeklyProtocol } from './weeklyProtocol.ts';
 import { createDailyReadiness, readinessForDate, recordDailyReadiness } from './readiness.ts';
 import type { AppSnapshot, DailyReadinessInput, TrainingLoadouts, MachineSetup } from './types.ts';
+
+export function changeReturnPlan(snapshot: AppSnapshot, expectedDateKey: string, expectedId: string | null, action: 'start' | 'end', now = new Date()): AppSnapshot {
+  const dateKey = toDateKey(now), profile = snapshot.profile;
+  if (!['start', 'end'].includes(action)) throw new Error('Unknown return-plan action.');
+  if (dateKey !== expectedDateKey) throw new Error('A new day has started. Open a fresh return-plan review.');
+  if (!profile || snapshot.activeWorkout) throw new Error('Finish or close the active workout before changing the return plan.');
+  if ((profile.returnPlan?.id ?? null) !== expectedId) throw new Error('The return plan changed. Open a fresh review.');
+  if (snapshot.pendingArcReviewId || trainingGate(profile, dateKey)) throw new Error('Complete the Player checks and arc review before changing the return plan.');
+  if (action === 'start' && returnPlanActive(profile) || action === 'end' && !returnPlanActive(profile)) return snapshot;
+  if (action === 'start' && !lastNormalWorkout(snapshot.history, now)) throw new Error('Complete your first normal training session before using a return plan.');
+  if (profile.returnPlan && (now.getTime() < Date.parse(profile.returnPlan.endedAt ?? profile.returnPlan.startedAt) || action === 'start' && now.getTime() === Date.parse(profile.returnPlan.startedAt))) throw new Error('Check the device date before changing the return plan.');
+  const returnPlan = action === 'start'
+    ? { id: `return-${now.getTime()}`, startedAt: now.toISOString(), startDateKey: dateKey, endedAt: null, endDateKey: null, exitReason: null }
+    : { ...profile.returnPlan!, endedAt: now.toISOString(), endDateKey: dateKey, exitReason: returnProgress(profile, snapshot.history, now) >= RETURN_SESSIONS ? 'completed' as const : 'early-exit' as const };
+  const completedToday = snapshot.dailyQuest?.dateKey === dateKey && snapshot.dailyQuest.status === 'complete' && snapshot.dailyQuest.plan.kind === 'training';
+  return refreshDailyQuest({ ...snapshot, profile: { ...profile, returnPlan }, weeklyProtocol: null, dailyQuest: completedToday ? snapshot.dailyQuest : null }, dateKey);
+}
 
 export function updateDailyReadiness(snapshot: AppSnapshot, input: DailyReadinessInput, expectedDateKey: string, now = new Date()): AppSnapshot {
   if (expectedDateKey !== toDateKey(now)) throw new Error('A new day has started. Return to the System and open a fresh readiness scan.');

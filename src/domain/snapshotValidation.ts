@@ -35,8 +35,9 @@ const machineSetup: Check = (v, p) => { if (!isValidMachineSetup(v)) fail(p); };
 const equipment = list(choice(Object.values(EQUIPMENT)), Object.keys(EQUIPMENT).length);
 const setPerformance = shape({ loadDecision: optional(shape({ previousKg: number(0, 1000), incrementKg: number(0, 100), evidenceDateKeys: list(day, 2) })), machineSetup: optional(machineSetup), actual: integer(0, 3600), loadKg: nullable(number(0, 1000)), effort: nullable(choice(['too-easy', 'perfect', 'too-hard'])) });
 const result = shape({ warmupSets: optional(list(setPerformance, 5)), recordedSets: optional(list(nullable(setPerformance), 100)), exerciseId: id, completedSets: integer(0, 10000), targetPerSet: number(0, 100000), completedVolume: number() });
-const history = list(shape({ location: optional(location), id, date, dateKey: day, planId: id, title: str, completed: bool, durationSeconds: integer(), difficulty: choice([1, 2, 3]), perceivedDifficulty: choice(['too-easy', 'perfect', 'too-hard']), results: list(result, 200), xpEarned: integer(), attributeXpEarned: stats, statGains: stats }));
+const history = list(shape({ returnBlockId: optional(id), location: optional(location), id, date, dateKey: day, planId: id, title: str, completed: bool, durationSeconds: integer(), difficulty: choice([1, 2, 3]), perceivedDifficulty: choice(['too-easy', 'perfect', 'too-hard']), results: list(result, 200), xpEarned: integer(), attributeXpEarned: stats, statGains: stats }));
 const profile = shape({
+  returnPlan: optional(shape({ id, startedAt: date, startDateKey: day, endedAt: nullable(date), endDateKey: nullable(day), exitReason: nullable(choice(['completed', 'early-exit'])) })),
   loadouts: optional(shape({ active: location, home: equipment, gym: equipment })), machineSetups: optional(list(machineSetup, 50)),
   id, ...Object.fromEntries(STAT_KEYS.map((key) => [key, integer(0, 100000)])), level: integer(1, 100000), xp: integer(), rank, attributeXp: stats,
   goal: choice(Object.values(GOALS)), experienceLevel: choice(['beginner', 'intermediate', 'advanced']), workoutDuration: choice([10, 15, 20, 30, 45, 60]), workoutsPerWeek: choice([2, 3, 4, 5, 6, 7]),
@@ -52,14 +53,14 @@ const profile = shape({
 });
 const numericMap = (keys: readonly string[]) => shape(Object.fromEntries(keys.map((key) => [key, optional(number())])));
 const exercise = shape({ loading: optional(choice(['per-hand', 'total', 'stack'])), blockedPainAreas: optional(list(choice(PAIN_AREAS), 7)), requiredClearChecks: optional(list(choice(MOVEMENT_CHECKS), 5)), id, name: str, description: str, muscleGroups: list(choice(MUSCLE_GROUPS), 11), primaryMuscle: choice(MUSCLE_GROUPS), requiredEquipment: list(choice(Object.values(EQUIPMENT)), Object.keys(EQUIPMENT).length), difficulty: choice([1, 2, 3]), progressionGroup: id, progressionLevel: integer(), exerciseType: choice(['warmup', 'strength', 'cardio', 'core', 'mobility']), repType: choice(['reps', 'seconds']), minReps: number(), maxReps: number(), defaultRest: number(), statImpact: numericMap(STAT_KEYS), muscleLoad: numericMap(MUSCLE_GROUPS) });
-const plan = shape({ location: optional(location), id, dateKey: day, kind: optional(choice(['training', 'rank-trial', 'recovery', 'safety-hold', 'reassessment', 'directive-review'])), title: str, focus: str, estimatedMinutes: number(), difficulty: choice([1, 2, 3]), rewardXp: integer(),
+const plan = shape({ returnBlockId: optional(id), location: optional(location), id, dateKey: day, kind: optional(choice(['training', 'rank-trial', 'recovery', 'safety-hold', 'reassessment', 'directive-review'])), title: str, focus: str, estimatedMinutes: number(), difficulty: choice([1, 2, 3]), rewardXp: integer(),
   exercises: list(shape({ exercise, sets: integer(1, 100), target: number(), restSeconds: number(), selectionReasons: optional(list(shape({ code: choice(['prepare', 'training-goal', 'corrective', 'player-scan', 'movement-analysis', 'recovery', 'mobility']), label: str }), 10)) }), 200),
   trainingArc: optional(shape({ cycleNumber: integer(1), week: choice([1, 2, 3, 4]), phase, entryDecision: optional(nullable(decision)) })), readinessBand: optional(band), correctiveFocus: optional(choice(CORRECTIVE_GOALS)),
   weeklySession: optional(shape({ protocolId: id, code: choice(['A', 'B', 'C', 'D', 'E', 'F', 'G']), sessionIndex: integer(0, 6), sessionCount: integer(1, 7), weekStartDateKey: day, objective: str })),
 });
 
 export function assertValidSnapshot(value: unknown): asserts value is AppSnapshot {
-  shape({ schemaVersion: choice([14]), onboardingComplete: bool, profile: nullable(profile), history, pendingArcReviewId: nullable(id),
+  shape({ schemaVersion: choice([15]), onboardingComplete: bool, profile: nullable(profile), history, pendingArcReviewId: nullable(id),
     dailyQuest: nullable(shape({ id, dateKey: day, status: choice(['available', 'active', 'complete']), plan })),
     activeWorkout: nullable(shape({ questId: id, plan, warmupSets: optional(list(list(setPerformance, 5), 200)), recordedSets: optional(list(list(nullable(setPerformance), 100), 200)), exerciseIndex: integer(0, 200), completedSets: list(integer(0, 100), 200), startedAt: date })),
     weeklyProtocol: nullable(shape({ id, weekStartDateKey: day, weekEndDateKey: day, createdAt: date, profileFingerprint: str, trainingArcCycle: nullable(integer(1)), trainingArcWeek: nullable(integer(1, 4)), volumeCaps: numericMap(MUSCLE_GROUPS), sessions: list(shape({ code: choice(['A', 'B', 'C', 'D', 'E', 'F', 'G']), dateKey: day, title: str, objective: str, focusMuscles: list(choice(MUSCLE_GROUPS), 11), plan }), 7) })),
@@ -72,6 +73,18 @@ export function assertValidSnapshot(value: unknown): asserts value is AppSnapsho
     if (new Set(entries.map((entry) => entry.id)).size !== entries.length) fail('duplicate IDs');
   }
   if (p) {
+    const block = p.returnPlan;
+    if (block) {
+      if ((block.endedAt === null) !== (block.endDateKey === null) || (block.endedAt === null) !== (block.exitReason === null)
+        || (block.endedAt && (Date.parse(block.endedAt) < Date.parse(block.startedAt) || block.endDateKey! < block.startDateKey))) fail('return plan chronology');
+      for (const [timestamp, dateKey] of [[block.startedAt, block.startDateKey], [block.endedAt, block.endDateKey]]) {
+        if (timestamp && dateKey && Math.abs(Date.parse(timestamp) - Date.parse(`${dateKey}T12:00:00Z`)) > 86400000) fail('return plan date');
+      }
+      for (const entry of snapshot.history.filter((entry) => entry.returnBlockId === block.id)) {
+        if (entry.dateKey < block.startDateKey || Date.parse(entry.date) < Date.parse(block.startedAt)
+          || block.endedAt && Date.parse(entry.date) > Date.parse(block.endedAt)) fail('return completion chronology');
+      }
+    }
     if (!p.availableEquipment.includes('none')) fail('equipment');
     if (p.loadouts) {
       validateLoadouts(p.loadouts, p.machineSetups ?? []);
@@ -93,6 +106,12 @@ export function assertValidSnapshot(value: unknown): asserts value is AppSnapsho
       || result.recordedSets.reduce((sum, set) => sum + (set?.actual ?? result.targetPerSet), 0) !== result.completedVolume)) fail('recorded workout sets');
   }
   const active = snapshot.activeWorkout;
+  for (const workout of snapshot.history) if (workout.returnBlockId && workout.planId.startsWith('rank-trial-')) fail('return trial');
+  for (const candidate of [snapshot.dailyQuest?.plan, active?.plan, ...(snapshot.weeklyProtocol?.sessions.map((s) => s.plan) ?? [])]) {
+    if (candidate?.returnBlockId && (candidate.kind !== 'training' || candidate.exercises.some(({ exercise: e, sets, target }) => e.difficulty > 2
+      || (!['warmup', 'mobility'].includes(e.exerciseType) && (sets > 2 || target !== e.minReps))))) fail('return plan limits');
+  }
+  if (active?.plan.returnBlockId && (!p?.returnPlan || p.returnPlan.endedAt !== null || active.plan.returnBlockId !== p.returnPlan.id)) fail('active return plan');
   if (active?.warmupSets && (active.warmupSets.length !== active.plan.exercises.length
     || active.warmupSets.some((sets, index) => sets.some((set) => active.plan.kind !== 'training' || index > active.exerciseIndex
       || !active.plan.exercises[index]!.exercise.loading || active.plan.exercises[index]!.exercise.repType !== 'reps'

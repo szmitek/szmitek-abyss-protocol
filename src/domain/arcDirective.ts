@@ -1,4 +1,5 @@
 import { EXERCISE_BY_ID } from '../data/exercises.ts';
+import { laterEvidenceBoundary, returnPlanActive } from './returnTraining.ts';
 import { sameMachine } from './loadouts.ts';
 import { latestMovementAssessment } from './calibration.ts';
 import { dayDifference } from './date.ts';
@@ -28,12 +29,13 @@ export function getArcDirective(profile: UserProfile, dateKey: string) {
   const rebuilding = decision === 'recalibrate' || decision === 'recovery' || decision === 'hold';
   const entryDateKey = clearance?.dateKey ?? state?.arc.startDateKey;
   const protectedEntry = (decision === 'recovery' || decision === 'hold') && Boolean(entryDateKey && dayDifference(entryDateKey, dateKey) < 7);
-  const progressionAllowed = !needsSafetyCheck && !needsDirectiveReview && !state?.reassessmentDue
+  const returning = returnPlanActive(profile);
+  const progressionAllowed = !returning && !needsSafetyCheck && !needsDirectiveReview && !state?.reassessmentDue
     && (decision === null || decision === 'advance') && (!state || state.phase === 'overload');
   return {
-    state, decision, needsSafetyCheck, needsDirectiveReview, rebuilding, protectedEntry, progressionAllowed,
-    historyStart: rebuilding ? clearance?.date ?? baseline?.date ?? `${state!.arc.startDateKey}T00:00:00` : null,
-    evidenceStart: baseline?.date ?? (state ? `${state.arc.startDateKey}T00:00:00` : null),
+    state, decision, needsSafetyCheck, needsDirectiveReview, rebuilding, protectedEntry, progressionAllowed, returning,
+    historyStart: laterEvidenceBoundary(rebuilding ? clearance?.date ?? baseline?.date ?? `${state!.arc.startDateKey}T00:00:00` : null, profile.returnPlan?.endedAt ?? null),
+    evidenceStart: laterEvidenceBoundary(baseline?.date ?? (state ? `${state.arc.startDateKey}T00:00:00` : null), profile.returnPlan?.endedAt ?? profile.returnPlan?.startedAt ?? null),
     copy: decision ? ARC_DIRECTIVE_COPY[decision] : 'Week 3 may progress after two successful sessions in this cycle. Other weeks establish and consolidate the current level.',
     rankTrialAllowed: progressionAllowed,
   };
@@ -43,7 +45,7 @@ export function getArcDirective(profile: UserProfile, dateKey: string) {
 export function trainingHistoryBefore(history: readonly WorkoutHistoryEntry[], dateKey: string, start: string | null = null): WorkoutHistoryEntry[] {
   const seen = new Set<string>();
   return [...history].sort((a, b) => b.date.localeCompare(a.date)).filter((entry) => {
-    if (!entry.completed || entry.planId.startsWith('rank-trial-') || entry.dateKey >= dateKey || (start && entry.date < start) || seen.has(entry.id)) return false;
+    if (!entry.completed || entry.returnBlockId || entry.planId.startsWith('rank-trial-') || entry.dateKey >= dateKey || (start && Date.parse(entry.date) < Date.parse(start)) || seen.has(entry.id)) return false;
     seen.add(entry.id);
     return true;
   });
@@ -51,7 +53,7 @@ export function trainingHistoryBefore(history: readonly WorkoutHistoryEntry[], d
 
 export function masteredTwice(history: readonly WorkoutHistoryEntry[], exerciseId: string, evidenceStart: string | null): boolean {
   const samples = history.flatMap((workout) => {
-    if (evidenceStart && workout.date < evidenceStart) return [];
+    if (workout.returnBlockId || (evidenceStart && Date.parse(workout.date) < Date.parse(evidenceStart))) return [];
     const result = workout.results.find((item) => item.exerciseId === exerciseId);
     return result ? [{ workout, result }] : [];
   }).slice(0, 2);
@@ -66,7 +68,7 @@ export function masteredTwice(history: readonly WorkoutHistoryEntry[], exerciseI
 
 export function hasArcTrialEvidence(profile: UserProfile, history: readonly WorkoutHistoryEntry[], dateKey: string): boolean {
   const directive = getArcDirective(profile, dateKey);
-  if (!directive.state) return true;
+  if (!directive.state && !profile.returnPlan) return true;
   const successful = trainingHistoryBefore(history, dateKey, directive.evidenceStart).filter((entry) =>
     entry.perceivedDifficulty !== 'too-hard' && entry.results.length > 0
     && entry.results.every(resultMeetsTarget),

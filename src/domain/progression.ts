@@ -138,7 +138,7 @@ export function rankTrialEligibility(profile: UserProfile, dateKey = toDateKey(n
   const directive = getArcDirective(profile, dateKey);
   if (directive.needsDirectiveReview) reasons.push('Confirm the Corrective Profile for this Training Arc');
   if (directive.needsSafetyCheck) reasons.push('Resolve the arc hold with a new pain-free Movement Analysis and clear Player Scan');
-  if (!directive.rankTrialAllowed) reasons.push('Rank Trials require an authorized overload week');
+  if (!directive.rankTrialAllowed) reasons.push(directive.returning ? 'Review and end the return block before a Rank Trial' : 'Rank Trials require an authorized overload week');
   if (!hasArcTrialEvidence(profile, history, dateKey)) reasons.push('Complete two successful training days in this cycle before the Rank Trial');
   if (getTrainingArcState(profile.trainingArcs, dateKey)?.reassessmentDue) reasons.push('Complete the Training Arc re-scan');
   const readiness = readinessForDate(profile, dateKey);

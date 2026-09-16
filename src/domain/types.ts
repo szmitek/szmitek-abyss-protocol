@@ -125,6 +125,7 @@ export interface ExerciseSelectionReason {
 }
 
 export interface WorkoutPlan {
+  returnBlockId?: string;
   location?: TrainingLocation;
   id: string;
   kind?: 'training' | 'recovery' | 'safety-hold' | 'reassessment' | 'directive-review' | 'rank-trial';
@@ -358,6 +359,7 @@ export interface DailyReadinessInput {
 }
 
 export interface WorkoutHistoryEntry {
+  returnBlockId?: string;
   location?: TrainingLocation;
   id: string;
   date: string;
@@ -374,7 +376,17 @@ export interface WorkoutHistoryEntry {
   statGains: StatBlock;
 }
 
+export interface ReturnPlan {
+  id: string;
+  startedAt: string;
+  startDateKey: string;
+  endedAt: string | null;
+  endDateKey: string | null;
+  exitReason: 'completed' | 'early-exit' | null;
+}
+
 export interface UserProfile extends StatBlock {
+  returnPlan?: ReturnPlan;
   id: string;
   level: number;
   xp: number;
@@ -435,7 +447,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 14;
+  schemaVersion: 15;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

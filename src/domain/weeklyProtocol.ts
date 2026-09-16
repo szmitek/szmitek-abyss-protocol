@@ -28,6 +28,7 @@ export function weeklyProtocolFingerprint(profile: UserProfile, dateKey: string)
   const arc = getTrainingArcState(profile.trainingArcs, dateKey);
   return JSON.stringify({
     planningVersion: 3,
+    returnPlan: profile.returnPlan ?? null,
     location: profile.loadouts?.active ?? null,
     goal: profile.goal,
     experienceLevel: profile.experienceLevel,
