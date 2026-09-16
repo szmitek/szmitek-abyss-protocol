@@ -1,12 +1,28 @@
 # Batch checkpoint
 
-## Current package — milestone 4 completion
+## Milestone 4 delivered — verified APK 18 / PR #43 (2026-09-16)
 
-Branch `feature/longitudinal-evidence`, based on PR #42 main `e2bfcc866639f5c7cee86edcc34548321d7a1cc2`, carries verified APK17 documents forward. Android versionCode 18, schema remains 16. `LONGITUDINAL_EVIDENCE.md` records the implemented read-only comparison flow and device checks.
+PR https://github.com/szmitek/szmitek-abyss-protocol/pull/43 is merged at `d53b7dabfb1b164ffc51824ef5176f4ad79a9b40`. Reviewed head `d55452ce7048fe5320ed73bd664a01e3e1ad9912`; local/published/merged tree `e168d5e2fd6ccac0860c52e818731e2ab4f62318` is identical. Android versionCode 18, storage schema unchanged at 16.
 
-187 tests, TypeScript, lint and telemetry-disabled offline Android export pass; eight new comparison tests also pass under Europe/Warsaw. Native delivery still requires the checks below before claiming APK18 published. Create one PR from the exact reviewed tree, wait for green CI, merge and verify artifact/release digests, manifest and certificate. Inspect live GitHub before resuming to avoid duplicate publication.
+Milestone 4 implementation is complete: PR #42 standardized capture; PR #43 adds the read-only longitudinal view of actual test pairs, linked photos, training/return/trial/warm-up context, readiness coverage and original archived targets. See `LONGITUDINAL_EVIDENCE.md` for full behavior and outstanding device checks.
 
-USER PAUSE: finish milestone 4, then stop. Do not begin milestone 5 AI research/implementation/provider selection. The user wants to discuss that approach separately. This supersedes the earlier general instruction to continue the full roadmap. Code/PR/merge/APK publication authorization remains in effect for this package.
+187 tests, TypeScript, lint and telemetry-disabled offline Android export pass. Eight new longitudinal tests also pass under Europe/Warsaw. PR Quality `35147736676` passed before merge. Main Quality `35147859175` and Android Preview `35147859308` completed successfully for the exact merged head. Each CI phase used a single watcher rather than repeated model-driven status polling.
+
+Verified APK delivery:
+
+- Artifact `10468510779` belongs to native run `35147859308` and main SHA `d53b7dabfb1b164ffc51824ef5176f4ad79a9b40`.
+- ZIP SHA256 matches its artifact digest: `0aeb8e7fbc350870941f741e82286f6b512e9465e82f898283060211f791bc8c`.
+- Extracted APK matches published release asset `568770882`: SHA256 `9e09d954178cddb313df302294de6fdd6d0487572aa2d05418e0e2b6617f4e07`, size 80,275,528 bytes.
+- Binary manifest: versionCode 18, package `app.abyssprotocol.mobile`.
+- Certificate SHA256 remains `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, matching APK 17. The focused verifier passed the v2 RSA signature and chunked content digest checks.
+- The initial download stopped at 32 MiB; fetching the remaining byte range completed the archive. Only the final matching digest was accepted.
+- Download: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+
+Milestone 4 implementation and release are complete. Do not duplicate PR #43. The preview tag/URL is reused; retain exact head/run/asset/digests. Physical installation, large-font layout, navigation and real photo rendering remain unverified on a device; code/CI checks do not replace that walkthrough. The final checkpoint is persisted on `docs/stage4-delivery`.
+
+USER PAUSE: stop after completing this delivery. Do not begin milestone 5 AI research, implementation or provider selection. The user wants to discuss that approach separately. This supersedes earlier general roadmap continuation. Code/PR/merge/APK authorization remains in effect for this package.
+
+The previous upload attempt failed because automatic approval review hit a usage limit; the later same-operation retry succeeded. No alternate endpoint or approval bypass was used.
 
 ## Delivered source and verified APK — PR #42 (2026-09-16)
 
