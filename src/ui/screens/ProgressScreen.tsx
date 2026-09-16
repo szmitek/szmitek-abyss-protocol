@@ -132,7 +132,7 @@ function HistoryRow({ workout, expanded, onToggle }: { workout: WorkoutHistoryEn
     <View style={styles.historyEntry}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={onToggle} style={styles.historyRow}>
         <View style={styles.dateBox}><Text style={styles.dateDay}>{workout.dateKey.slice(8)}</Text><Text style={styles.dateMonth}>{new Date(`${workout.dateKey}T12:00:00`).toLocaleDateString('en', { month: 'short' }).toUpperCase()}</Text></View>
-        <View style={styles.historyCopy}><Text style={styles.historyTitle}>{workout.title}{workout.location ? ` · ${workout.location.toUpperCase()}` : ''}</Text><Text style={styles.historyMeta}>{Math.round(workout.durationSeconds / 60)} MIN · {workout.results.length} EXERCISES · {workout.perceivedDifficulty.replace('-', ' ').toUpperCase()}</Text></View>
+        <View style={styles.historyCopy}><Text style={styles.historyTitle}>{workout.title}{workout.returnBlockId ? ' · RETURN PLAN' : ''}{workout.location ? ` · ${workout.location.toUpperCase()}` : ''}</Text><Text style={styles.historyMeta}>{Math.round(workout.durationSeconds / 60)} MIN · {workout.results.length} EXERCISES · {workout.perceivedDifficulty.replace('-', ' ').toUpperCase()}</Text></View>
         <View style={styles.historyReward}><Text style={styles.historyXp}>+{workout.xpEarned}</Text><Text style={styles.expandMark}>{expanded ? '−' : '+'}</Text></View>
       </Pressable>
       {expanded ? (

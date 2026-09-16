@@ -204,13 +204,13 @@ test('stale, forged, machine-mismatched and hard-warmup load decisions cannot be
 test('v13 migration preserves old measurements and adds no invented preparation or decisions', async () => {
   const old = { ...withEvidence(), schemaVersion: 13 };
   const migrated = decodeSnapshot(JSON.stringify(old));
-  assert.equal(migrated.schemaVersion, 14);
+  assert.equal(migrated.schemaVersion, 15);
   assert.equal(migrated.activeWorkout!.warmupSets, undefined);
   assert.equal(migrated.history[0]!.results[0]!.recordedSets![0]!.loadDecision, undefined);
   assert.deepEqual(migrated.history, old.history);
   const backup = await createBackup({ ...withEvidence(), activeWorkout: null }, false, async () => '', now);
   const legacy = JSON.parse(JSON.stringify(backup)); legacy.payload.snapshot.schemaVersion = 13; legacy.checksum = backupChecksum(JSON.stringify(legacy.payload));
-  assert.equal(parseBackup(JSON.stringify(legacy)).payload.snapshot.schemaVersion, 14);
+  assert.equal(parseBackup(JSON.stringify(legacy)).payload.snapshot.schemaVersion, 15);
 });
 
 test('Vault preserves warm-ups, accepted decisions and retired machine identity; malformed data is rejected', async () => {

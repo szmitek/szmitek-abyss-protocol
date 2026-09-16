@@ -208,7 +208,7 @@ export function WorkoutScreen({ active, profile, history, onReplaceExercise, onC
       <View style={styles.aura} />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <View style={styles.headerCopy}><Text style={styles.eyebrow}>ACTIVE PROTOCOL</Text><Text style={styles.planTitle}>{active.plan.title}</Text></View>
+          <View style={styles.headerCopy}><Text style={styles.eyebrow}>{active.plan.returnBlockId ? 'RETURN PLAN · LIMITED WORK' : 'ACTIVE PROTOCOL'}</Text><Text style={styles.planTitle}>{active.plan.title}</Text></View>
           <View style={styles.headerActions}>
             <Text style={styles.progressCopy}>{completedSets} / {totalSets} SETS</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Pause workout" onPress={onPause} style={styles.exitButton}><Text style={styles.exitText}>PAUSE</Text></Pressable>

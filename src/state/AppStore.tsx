@@ -8,7 +8,7 @@ import type { BackupFile } from '../domain/backup.ts';
 import { toDateKey } from '../domain/date.ts';
 import { completeWorkoutSet, millisecondsUntilNextDay, workoutReadyToFinish, workoutResumeBlock } from '../domain/workoutLifecycle.ts';
 import { generateRankTrial, replaceExerciseInPlan } from '../domain/generator.ts';
-import { acknowledgeTrainingArcReview, beginDailyWorkout, closeActiveWorkout, updateTrainingLoadouts, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
+import { acknowledgeTrainingArcReview, beginDailyWorkout, changeReturnPlan, closeActiveWorkout, updateTrainingLoadouts, refreshDailyQuest as freshQuest, updateDailyReadiness } from '../domain/questState.ts';
 import { recordPostureScan, removePostureScan } from '../domain/postureArchive.ts';
 import { createProfile, INITIAL_SNAPSHOT, recordMovementAssessment, restoreExcludedExercises, updateCorrectiveProfile, updateHealthProfile, updateProfileSettings } from '../domain/profile.ts';
 import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial, createCompletionSummary, rankTrialEligibility } from '../domain/progression.ts';
@@ -41,6 +41,7 @@ interface AppStoreValue {
   submitDailyReadiness: (input: DailyReadinessInput, dateKey: string) => void;
   restoreExercises: () => void;
   beginDailyQuest: () => void;
+  saveReturnPlan: (dateKey: string, expectedId: string | null, action: 'start' | 'end') => void;
   beginRankTrial: () => void;
   replaceCurrentExercise: (permanentlyExclude: boolean) => void;
   completeCurrentSet: (expectedStep: string, performance?: SetPerformance, kind?: SetKind) => void;
@@ -349,6 +350,10 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     });
   }, [commit, workoutActionAllowed]);
 
+  const saveReturnPlan = useCallback((dateKey: string, expectedId: string | null, action: 'start' | 'end') => {
+    commit((current) => changeReturnPlan(current, dateKey, expectedId, action));
+  }, [commit]);
+
   const completeCurrentSet = useCallback((expectedStep: string, performance?: SetPerformance, kind?: SetKind) => {
     if (workoutActionAllowed()) commit((current) => completeWorkoutSet(current, expectedStep, new Date(), performance, kind));
   }, [commit, workoutActionAllowed]);
@@ -374,6 +379,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         date: now.toISOString(),
         dateKey: toDateKey(now),
         planId: active.plan.id,
+        ...(active.plan.returnBlockId ? { returnBlockId: active.plan.returnBlockId } : {}),
         title: active.plan.title,
         completed: true,
         durationSeconds: Math.max(60, Math.round((now.getTime() - new Date(active.startedAt).getTime()) / 1000)),
@@ -417,13 +423,14 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     submitDailyReadiness,
     restoreExercises,
     beginDailyQuest,
+    saveReturnPlan,
     beginRankTrial,
     replaceCurrentExercise,
     completeCurrentSet,
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, saveLoadouts, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, saveLoadouts, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, saveReturnPlan, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

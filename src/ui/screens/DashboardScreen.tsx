@@ -1,3 +1,4 @@
+import { ReturnPlanPanel } from '../components/ReturnPlanPanel.tsx';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { calculateRecovery } from '../../domain/recovery.ts';
@@ -18,6 +19,7 @@ import { colors, radius, spacing } from '../theme.ts';
 
 interface DashboardScreenProps {
   snapshot: AppSnapshot;
+  onSaveReturnPlan: (dateKey: string, expectedId: string | null, action: 'start' | 'end') => void;
   onOpenLoadout: () => void;
   onBeginQuest: () => void;
   onOpenReadiness: () => void;
@@ -35,7 +37,7 @@ const STATS: { key: StatKey; code: string }[] = [
   { key: 'mobility', code: 'MOB' },
 ];
 
-export function DashboardScreen({ snapshot, onOpenLoadout, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenArcReassessment, onOpenCorrectiveProfile }: DashboardScreenProps) {
+export function DashboardScreen({ snapshot, onSaveReturnPlan, onOpenLoadout, onBeginQuest, onOpenReadiness, onOpenSystemScan, onOpenMovementCalibration, onOpenArcReassessment, onOpenCorrectiveProfile }: DashboardScreenProps) {
   const profile = snapshot.profile!;
   const quest = snapshot.dailyQuest;
   const xp = levelProgress(profile);
@@ -65,6 +67,7 @@ export function DashboardScreen({ snapshot, onOpenLoadout, onBeginQuest, onOpenR
       action={<View style={styles.rankBadge}><Text style={styles.rankLabel}>RANK</Text><Text style={styles.rank}>{profile.rank}</Text></View>}
     >
       <GlowButton label={profile.loadouts ? `${profile.loadouts.active.toUpperCase()} LOADOUT · CHANGE` : 'SET UP HOME / GYM LOADOUT'} variant="secondary" onPress={onOpenLoadout} />
+      <ReturnPlanPanel key={`${toDateKey(new Date())}:${profile.returnPlan?.id ?? "none"}:${profile.returnPlan?.endedAt ?? "active"}`} snapshot={snapshot} onSave={onSaveReturnPlan} />
       <SystemPanel>
         <View style={styles.levelHeader}>
           <View><Text style={styles.caption}>CURRENT LEVEL</Text><Text style={styles.level}>{profile.level}</Text></View>

@@ -1,5 +1,9 @@
 name: Quality
 
+env:
+  EXPO_NO_TELEMETRY: '1'
+  EXPO_OFFLINE: '1'
+
 on:
   pull_request:
   push:

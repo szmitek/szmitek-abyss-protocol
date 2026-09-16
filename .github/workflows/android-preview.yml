@@ -1,5 +1,8 @@
 name: Android Preview APK
 
+env:
+  EXPO_NO_TELEMETRY: '1'
+
 on:
   workflow_dispatch:
   push:

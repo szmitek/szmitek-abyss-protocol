@@ -108,7 +108,7 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
   const previous = history.flatMap((workout) => workout.results.map((result) => ({ workout, result })))
     .filter(({ result }) => result.exerciseId === exercise.id && result.completedSets > 0)
     .sort((a, b) => b.workout.date.localeCompare(a.workout.date));
-  const baseOffset = directive.rebuilding || profile.experienceLevel === 'beginner' ? 0 : profile.experienceLevel === 'intermediate' ? 2 : 3;
+  const baseOffset = directive.rebuilding || profile.returnPlan || profile.experienceLevel === 'beginner' ? 0 : profile.experienceLevel === 'intermediate' ? 2 : 3;
   let target = Math.min(exercise.maxReps, exercise.minReps + baseOffset);
 
   if (previous[0] && exercise.loading !== 'stack') {
@@ -129,6 +129,7 @@ function prescribe(exercise: Exercise, profile: UserProfile, history: WorkoutHis
   if (directive.rebuilding && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.min(2, sets);
   if (directive.protectedEntry && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') { sets = 1; target = exercise.minReps; }
   if (phase === 'consolidation' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
+  if (directive.returning && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') { sets = Math.min(2, sets); target = exercise.minReps; }
   if (readinessBand === 'reduced' && exercise.exerciseType !== 'warmup' && exercise.exerciseType !== 'mobility') sets = Math.max(1, sets - 1);
   return { exercise, sets, target, restSeconds: exercise.defaultRest, selectionReasons: selectionReasons(exercise, profile, readinessBand) };
 }
@@ -175,7 +176,7 @@ export function replaceExerciseInPlan(plan: WorkoutPlan, exerciseIndex: number, 
   exercises[exerciseIndex] = {
     ...current,
     exercise: replacement,
-    target: directive.rebuilding ? replacement.minReps : Math.max(replacement.minReps, Math.min(replacement.maxReps, current.target)),
+    target: directive.rebuilding || directive.returning ? replacement.minReps : Math.max(replacement.minReps, Math.min(replacement.maxReps, current.target)),
     restSeconds: replacement.defaultRest,
     selectionReasons: selectionReasons(replacement, profile, plan.readinessBand),
   };
@@ -197,7 +198,7 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   const readinessBand = readiness?.band;
   if (readinessBand === 'hold') return generateSafetyHoldProtocol(dateKey, true);
   if (readinessBand === 'recovery') return generateRecoveryProtocol(dateKey, true);
-  const cap = Math.min(difficultyCap(profile, arcState?.phase, readinessBand, arcState?.arc.entryDecision), directive.protectedEntry ? 1 : directive.rebuilding ? 2 : 3);
+  const cap = Math.min(difficultyCap(profile, arcState?.phase, readinessBand, arcState?.arc.entryDecision), directive.protectedEntry ? 1 : directive.rebuilding ? 2 : 3, directive.returning ? 2 : 3);
   const eligible = EXERCISES.filter((exercise) =>
     isEquipmentCompatible(exercise, profile.availableEquipment) &&
     isHealthCompatible(exercise, profile) &&
@@ -318,10 +319,11 @@ export function generateWorkout(profile: UserProfile, history: WorkoutHistoryEnt
   return {
     id: weeklySession ? `${weeklySession.protocolId}-${weeklySession.code}` : `daily-${dateKey}`,
     kind: 'training',
+    ...(directive.returning ? { returnBlockId: profile.returnPlan!.id } : {}),
     ...(profile.loadouts ? { location: profile.loadouts.active } : {}),
     dateKey,
     title: options.session ? `PROTOCOL ${options.session.code} // ${options.session.title}` : profile.goal === GOALS.MOBILITY ? 'AURA RESTORATION' : 'DAILY PROTOCOL',
-    focus: readinessBand === 'reduced' ? `REDUCED // ${focus.toUpperCase()}` : focus.toUpperCase(),
+    focus: `${readinessBand === 'reduced' ? 'REDUCED // ' : ''}${directive.returning ? 'RETURN // ' : ''}${focus.toUpperCase()}`,
     estimatedMinutes: readinessBand === 'reduced' ? Math.max(10, Math.round(profile.workoutDuration * 0.8)) : profile.workoutDuration,
     difficulty,
     exercises: prescriptions,

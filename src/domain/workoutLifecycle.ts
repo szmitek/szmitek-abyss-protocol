@@ -1,4 +1,5 @@
 import { toDateKey } from './date.ts';
+import { returnPlanActive } from './returnTraining.ts';
 import { trainingGate } from './generator.ts';
 import { readinessForDate } from './readiness.ts';
 import type { ActiveWorkout, AppSnapshot, SetKind, SetPerformance } from './types.ts';
@@ -22,6 +23,10 @@ export function workoutResumeBlock(snapshot: AppSnapshot, now = new Date()): str
   const dateKey = toDateKey(now);
   if (toDateKey(new Date(active.startedAt)) !== dateKey) return 'This session belongs to another day. Close it and sync today’s readiness before starting a new protocol.';
   if (snapshot.pendingArcReviewId || trainingGate(snapshot.profile, dateKey)) return 'Your Player checks need attention. Close this session and review the System dashboard.';
+  const returning = returnPlanActive(snapshot.profile);
+  if (returning ? active.plan.returnBlockId !== snapshot.profile.returnPlan!.id || active.plan.kind !== 'training'
+    || active.plan.exercises.some(({ exercise, sets, target }) => exercise.difficulty > 2 || (!['warmup', 'mobility'].includes(exercise.exerciseType) && (sets > 2 || target !== exercise.minReps)))
+    : Boolean(active.plan.returnBlockId)) return 'The saved session does not match your return plan. Close it and review today’s protocol.';
   const signal = readinessForDate(snapshot.profile, dateKey);
   if (!signal || (active.plan.kind === 'rank-trial' ? signal.band !== 'normal' : !['normal', 'reduced'].includes(signal.band))) return 'A current readiness signal is required. Close this session and review Daily Readiness.';
   return null;
