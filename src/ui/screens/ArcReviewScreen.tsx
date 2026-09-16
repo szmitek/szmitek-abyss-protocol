@@ -50,7 +50,7 @@ export function ArcReviewScreen({ review, onContinue, archived = false, profile 
       </SystemPanel> : null}
 
       <SystemPanel eyebrow="WHY THIS DIRECTIVE" title="System rationale" accent="purple">
-        {review.reasons.map((reason, index) => <View key={reason} style={styles.reason}><Text style={styles.reasonIndex}>{String(index + 1).padStart(2, '0')}</Text><Text style={styles.reasonText}>{reason}</Text></View>)}
+        {review.reasons.filter((reason) => photosAvailable || !reason.startsWith('Two visual checkpoints')).map((reason, index) => <View key={reason} style={styles.reason}><Text style={styles.reasonIndex}>{String(index + 1).padStart(2, '0')}</Text><Text style={styles.reasonText}>{reason}</Text></View>)}
       </SystemPanel>
 
       {!archived ? <GlowButton label={review.decision === 'recalibrate' ? 'REVIEW CORRECTIVE PROFILE' : review.decision === 'hold' ? 'ACKNOWLEDGE HOLD' : 'ENTER NEXT TRAINING ARC'} variant={review.decision === 'hold' ? 'danger' : 'primary'} onPress={onContinue} /> : null}

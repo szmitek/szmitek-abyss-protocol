@@ -1,6 +1,7 @@
+import { scanPhotos } from './postureArchive.ts';
 import { INITIAL_SNAPSHOT } from './profile.ts';
 import { assertValidSnapshot } from './snapshotValidation.ts';
-import { POSTURE_VIEWS, type AppSnapshot, type PosturePhoto } from './types.ts';
+import { type AppSnapshot, type PosturePhoto } from './types.ts';
 
 export const MAX_BACKUP_BYTES = 24 * 1024 * 1024;
 export const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
@@ -51,12 +52,12 @@ export async function createBackup(snapshot: AppSnapshot, includesPhotos: boolea
   const photos: BackupPhoto[] = [];
   let photoCharacters = 0;
   if (includesPhotos) {
-    for (const scan of copy.profile!.postureScans) for (const view of POSTURE_VIEWS) {
-      const base64 = await readPhoto(scan.photos[view]);
+    for (const scan of copy.profile!.postureScans) for (const image of scanPhotos(scan)) {
+      const base64 = await readPhoto(image);
       photoCharacters += base64.length;
       if (photoCharacters > MAX_BACKUP_BYTES) throw new Error('Photos exceed the 24 MB backup limit. Export data only instead.');
       const photo = { key: `vault-photo-${photos.length}`, extension: photoExtension(base64), base64 };
-      validatePhoto(photo); photos.push(photo); scan.photos[view].uri = photo.key;
+      validatePhoto(photo); photos.push(photo); image.uri = photo.key;
     }
   } else {
     copy.profile!.postureScans = [];
@@ -81,17 +82,17 @@ export function parseBackup(text: string): BackupFile {
   const p = file.payload;
   if (!p || file.checksum !== backupChecksum(JSON.stringify(p))) throw new Error('The backup integrity check failed. Select an intact copy.');
   if (typeof p.createdAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(p.createdAt) || !Number.isFinite(Date.parse(p.createdAt))
-    || typeof p.includesPhotos !== 'boolean' || !Array.isArray(p.photos) || p.photos.length > 3000) throw new Error('Invalid backup metadata.');
-  // Verify the original checksum before upgrading a v11/v12/v13/v14 backup; do not invent set measurements.
-  if ([11, 12, 13, 14].includes((p.snapshot as { schemaVersion?: number })?.schemaVersion ?? 0)) {
-    p.snapshot = { ...p.snapshot, schemaVersion: 15 };
+    || typeof p.includesPhotos !== 'boolean' || !Array.isArray(p.photos) || p.photos.length > 4000) throw new Error('Invalid backup metadata.');
+  // Verify the original checksum before upgrading a v11/v12/v13/v14/v15 backup; do not invent set measurements.
+  if ([11, 12, 13, 14, 15].includes((p.snapshot as { schemaVersion?: number })?.schemaVersion ?? 0)) {
+    p.snapshot = { ...p.snapshot, schemaVersion: 16 };
     file.checksum = backupChecksum(JSON.stringify(p));
   }
   assertValidSnapshot(p.snapshot);
   if (!p.snapshot.profile || !p.snapshot.onboardingComplete || p.snapshot.activeWorkout || p.snapshot.dailyQuest || p.snapshot.weeklyProtocol || p.snapshot.lastCompletion) throw new Error('The backup contains unsupported session state.');
   p.photos.forEach(validatePhoto);
   const keys = new Set(p.photos.map((photo) => photo.key));
-  const references = p.snapshot.profile.postureScans.flatMap((scan) => POSTURE_VIEWS.map((view) => scan.photos[view].uri));
+  const references = p.snapshot.profile.postureScans.flatMap((scan) => scanPhotos(scan).map((image) => image.uri));
   if (keys.size !== p.photos.length || references.length !== keys.size || new Set(references).size !== references.length || references.some((uri) => !keys.has(uri))
     || (!p.includesPhotos && (p.photos.length || references.length))) throw new Error('The photo archive is incomplete or contains external paths.');
   return file;
@@ -112,7 +113,7 @@ export async function prepareBackupRestore(backup: BackupFile, token: string, wr
   for (const [index, scan] of copy.profile!.postureScans.entries()) {
     const nextId = `restore-${token}-${index}`;
     ids.set(scan.id, nextId); scan.id = nextId;
-    for (const view of POSTURE_VIEWS) scan.photos[view].uri = await writePhoto(nextId, view, photos.get(scan.photos[view].uri)!);
+    for (const image of scanPhotos(scan)) image.uri = await writePhoto(nextId, image.view, photos.get(image.uri)!);
   }
   copy.profile!.trainingArcReviews = copy.profile!.trainingArcReviews.map((review) => ({ ...review,
     baselinePostureScanId: ids.get(review.baselinePostureScanId ?? '') ?? null,

@@ -166,7 +166,7 @@ test('Data Vault preserves measured loads, accepts v11 backups and rejects incon
   delete old.payload.snapshot.history[0].results[0].recordedSets;
   old.checksum = backupChecksum(JSON.stringify(old.payload));
   const restored = parseBackup(JSON.stringify(old));
-  assert.equal(restored.payload.snapshot.schemaVersion, 15);
+  assert.equal(restored.payload.snapshot.schemaVersion, 16);
   assert.doesNotThrow(() => parseBackup(JSON.stringify(restored)));
   const corrupt = structuredClone(snapshot); corrupt.history[0]!.results[0]!.completedVolume++;
   assert.throws(() => assertValidSnapshot(corrupt), /recorded workout/);

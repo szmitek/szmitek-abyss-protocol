@@ -1,12 +1,35 @@
 # Batch checkpoint
 
-## Current implementation — return after interruption
+## Current package — standardized evidence
 
-Branch `feature/return-after-break` is based on PR #40 main `04763f619dfda9685b8b00acc86d66d583d5b037` and carries its verified delivery documents. Android versionCode 16, schema 15. The dashboard supports explicit activation/review/early exit; plans cap work, pause progression/trials, retain stricter readiness/arc rules and require an explicit end decision. Return evidence is tagged and excluded from future overload; the exit boundary survives backups. See `docs/RETURN_AFTER_BREAK.md` for actual behavior and remaining phone checks.
+Branch `feature/standardized-evidence`, based on main PR #41 `1fd69cd35304c24731662c4a824f97b6a7fe9009`, carries its verified delivery documentation forward. Android versionCode 17, storage schema 16. See `docs/STANDARDIZED_EVIDENCE.md` for implemented behavior, limits and remaining work.
 
-Local tests: 172 pass (eleven new return tests), including an additional run under Europe/Warsaw. TypeScript and ESLint pass. The automatic reviewer blocked the first local export due to possible Expo telemetry. Inspection of the installed Expo CLI confirmed EXPO_NO_TELEMETRY and EXPO_OFFLINE disable telemetry; a fresh local export uses both. CI now disables telemetry too. The offline Android export completed successfully. The reviewed tree is ready to publish. Then create one PR, require green CI on the exact head, merge and verify native APK digests, versionCode and prior certificate. PR #40/version 15 below is still the latest verified APK at this checkpoint. Inspect live GitHub before resuming to avoid duplication.
+179 tests, TypeScript, ESLint and telemetry-disabled offline Android export pass; the seven new evidence tests also pass under Europe/Warsaw. No physical-device test. Next publication steps: commit and publish exact reviewed tree, create one PR, require green CI, merge and verify native artifact/release digest, package/version and unchanged certificate. APK 16 below remains the latest verified build until those checks complete. Inspect live GitHub before resuming.
 
-Next: milestone 4 standardized evidence, comparable left/right capture and linked movement/longitudinal evidence. AI analysis and coach remain in scope; animations LAST.
+Next after delivery: unified longitudinal evidence context; AI analysis/coach remain in scope, animations LAST.
+
+## Delivered source and verified APK — PR #41 (2026-09-16)
+
+The user explicitly confirmed public publication of code/documentation to `szmitek/szmitek-abyss-protocol`, PR creation, merge after green CI and APK publication, including subsequent roadmap batches. The automatic review block is resolved.
+
+PR https://github.com/szmitek/szmitek-abyss-protocol/pull/41 is merged at `1fd69cd35304c24731662c4a824f97b6a7fe9009`. Reviewed head `b7c58863dd8d0e4d60ab80fdebb55b2fc1f101ce`; local/published/merged tree `5766cd1b0448a35d3ec07f7da8aa9f5e2f3e8508` is identical. Android versionCode 16, storage schema 15. Explicit return-plan activation, capped work, tagged history and an enduring progression boundary are described in `docs/RETURN_AFTER_BREAK.md`.
+
+172 local tests pass, including eleven new return tests and a Europe/Warsaw run. TypeScript, lint and offline Android export pass. Local export disabled Expo telemetry/network requests; both CI workflows disable telemetry. PR Quality `35074854516` passed before merge; main Quality `35075014427` and native Android run `35075014501` succeeded.
+
+APK verification:
+
+- Artifact `10438496070` belongs to native run `35075014501` and exact merged head `1fd69cd35304c24731662c4a824f97b6a7fe9009`.
+- Downloaded ZIP SHA256 matches the artifact digest: `5cb941c485edef99fac9aa22ab2070e52893fa2161084827b37d0f5858640de4`.
+- Extracted APK SHA256 matches published release asset `567566370`: `80812992ded5c2caea177179050134cdc3aed0c8c812e353d9d8510b9eba7387` (80,249,392 bytes).
+- Binary manifest: versionCode 16; package `app.abyssprotocol.mobile`.
+- Certificate SHA256 remains `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, matching verified APK 15. The focused local verifier passed the v2 RSA signature and chunked content digest checks.
+- Published APK: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+
+Delivery is complete. Do not duplicate PR #41. Physical-device upgrade, return-plan walkthrough, resume, large fonts and Vault restore remain unperformed; artifact verification is not an installation test. The release URL/tag is reused, so retain exact run, head, asset and digest evidence.
+
+Next: milestone 4 standardized evidence. `docs/STANDARDIZED_EVIDENCE.md` records the source audit and next bounded implementation: preserve legacy unspecified-side photos, introduce a versioned four-view protocol, explicit setup review and actual movement-assessment links with compatible Vault iteration. This is a plan, not shipped capture functionality. AI analysis/coach remain later; animations LAST.
+
+This delivery checkpoint and audit are persisted on `docs/return-delivery`. Read it and inspect live git/GitHub before continuing, carrying these documents into the next feature branch.
 
 ## Delivered source and verified APK — PR #40
 

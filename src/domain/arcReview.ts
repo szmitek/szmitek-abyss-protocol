@@ -78,11 +78,8 @@ export function createTrainingArcReview(
       summary[entry.band] += 1;
       return summary;
     }, { normal: 0, reduced: 0, recovery: 0, hold: 0 });
-  const scans = profile.postureScans
-    .filter((scan) => scan.trainingArcId === arc.id)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  const baselinePostureScanId = scans.length >= 2 ? scans[0]!.id : null;
-  const completionPostureScanId = scans[scans.length - 1]?.id ?? null;
+  const baselinePostureScanId = profile.postureScans.find((scan) => scan.movementAssessmentId === baseline.id)?.id ?? null;
+  const completionPostureScanId = profile.postureScans.find((scan) => scan.movementAssessmentId === reassessment.id)?.id ?? null;
   const decision = chooseDecision(profile, reassessment, adherenceRate, completedWorkouts.length, movement, difficulty, readiness);
   const partial = {
     adherence: { scheduledSessions, completedSessions, rate: adherenceRate, targetSource: arc.planSnapshot?.source ?? 'legacy-estimate' as const },

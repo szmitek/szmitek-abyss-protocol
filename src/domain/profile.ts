@@ -1,3 +1,4 @@
+import { linkScanToAssessment } from './postureArchive.ts';
 import { EQUIPMENT, type AppSnapshot, type CorrectiveProfile, type Equipment, type MovementAssessment, type MovementAssessmentKind, type MovementCheck, type MovementRating, type OnboardingAnswers, type PlayerHealthProfile, type UserProfile, type WorkoutHistoryEntry } from './types.ts';
 import { createTrainingArcReview } from './arcReview.ts';
 import { toDateKey } from './date.ts';
@@ -20,7 +21,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 15,
+  schemaVersion: 16,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
@@ -133,6 +134,7 @@ export function recordMovementAssessment(
   kind: MovementAssessmentKind,
   history: readonly WorkoutHistoryEntry[] = [],
   now = new Date(),
+  scanId?: string,
 ): UserProfile {
   const assessment: MovementAssessment = {
     id: `movement-${now.getTime()}`,
@@ -141,6 +143,7 @@ export function recordMovementAssessment(
     dateKey: toDateKey(now),
     results,
   };
+  profile = linkScanToAssessment(profile, scanId, assessment.id, now);
   const review = createTrainingArcReview(profile, assessment, history);
   return {
     ...profile,

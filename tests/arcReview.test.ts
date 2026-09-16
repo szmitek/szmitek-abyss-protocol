@@ -92,9 +92,9 @@ test('consistent execution and improved movement authorize controlled advance', 
   assert.equal(review?.decision, 'advance');
   assert.deepEqual(review?.adherence, { scheduledSessions: 8, completedSessions: 6, rate: 0.75, targetSource: 'cycle-start' });
   assert.deepEqual(review?.movement, { improved: 1, declined: 0, unchanged: 4 });
-  assert.equal(review?.baselinePostureScanId, 'baseline-photo');
-  assert.equal(review?.completionPostureScanId, 'final-photo');
-  assert.ok(review?.reasons.some((reason) => reason.includes('not analyzed or scored')));
+  assert.equal(review?.baselinePostureScanId, null);
+  assert.equal(review?.completionPostureScanId, null);
+  assert.ok(review?.reasons.some((reason) => reason.includes('unavailable')));
 });
 
 test('stable movement defaults to another cycle at the current level', () => {

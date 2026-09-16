@@ -158,12 +158,12 @@ test('resume and confirmation reject stale or over-limit plans while preserving 
 test('legacy migration and Vault retain return decisions without inventing old blocks', async () => {
   const s = snapshot(), legacy = { ...s, schemaVersion: 14 };
   const upgraded = decodeSnapshot(JSON.stringify(legacy));
-  assert.equal(upgraded.schemaVersion, 15);
+  assert.equal(upgraded.schemaVersion, 16);
   assert.equal(upgraded.profile!.returnPlan, undefined);
   assert.deepEqual(upgraded.history, s.history);
   const oldVault = await createBackup(s, false, async () => '');
   const raw = JSON.parse(JSON.stringify(oldVault)); raw.payload.snapshot.schemaVersion = 14; raw.checksum = backupChecksum(JSON.stringify(raw.payload));
-  assert.equal(parseBackup(JSON.stringify(raw)).payload.snapshot.schemaVersion, 15);
+  assert.equal(parseBackup(JSON.stringify(raw)).payload.snapshot.schemaVersion, 16);
   const r = start();
   for (const data of [r, changeReturnPlan(r, day, r.profile!.returnPlan!.id, 'end', new Date(`${day}T13:00:00`))]) {
     const vault = await createBackup(data, false, async () => '');

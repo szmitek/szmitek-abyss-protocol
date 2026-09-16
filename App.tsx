@@ -51,6 +51,7 @@ function SystemRoot() {
   const [profileEditing, setProfileEditing] = useState(false);
   const [systemScanEditing, setSystemScanEditing] = useState(false);
   const [movementCalibrationEditing, setMovementCalibrationEditing] = useState(false);
+  const [pendingEvidenceScanId, setPendingEvidenceScanId] = useState<string | undefined>();
   const [postureMode, setPostureMode] = useState<'archive' | 'reassessment' | null>(null);
   const [readinessOpen, setReadinessOpen] = useState(false);
   const [correctiveProfileOpen, setCorrectiveProfileOpen] = useState(false);
@@ -133,9 +134,10 @@ function SystemRoot() {
       <SystemBackground>
         <MovementCalibrationScreen
           kind={baseline ? 'baseline' : 'reassessment'}
-          {...(!baseline ? { onCancel: () => setMovementCalibrationEditing(false) } : {})}
+          onCancel={() => { setPendingEvidenceScanId(undefined); setMovementCalibrationEditing(false); }}
           onComplete={(results) => {
-            completeMovementAssessment(results, baseline ? 'baseline' : 'reassessment');
+            completeMovementAssessment(results, baseline ? 'baseline' : 'reassessment', pendingEvidenceScanId);
+            setPendingEvidenceScanId(undefined);
             setMovementCalibrationEditing(false);
             if (baseline && !Object.values(results).includes('pain')) setCorrectiveProfileOpen(true);
           }}
@@ -168,12 +170,11 @@ function SystemRoot() {
           onBack={() => setPostureMode(null)}
           onSave={savePostureScan}
           onDelete={deletePostureScan}
-          {...(postureMode === 'reassessment' ? {
-            onCaptureComplete: () => {
-              setPostureMode(null);
-              setMovementCalibrationEditing(true);
-            },
-          } : {})}
+          onCaptureComplete={(scanId) => {
+            setPendingEvidenceScanId(scanId);
+            setPostureMode(null);
+            setMovementCalibrationEditing(true);
+          }}
         />
       </SystemBackground>
     );

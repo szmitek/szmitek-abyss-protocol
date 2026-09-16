@@ -4,16 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, BackHandler, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { deletePosturePhotos, persistPosturePhotos, type PosturePhotoDraft, type PosturePhotoDraftMap } from '../../data/posturePhotos.ts';
-import { createPostureScan, latestPostureComparison } from '../../domain/postureArchive.ts';
+import { comparisonViews, evidenceNotes, scanPhotos, createPostureScan, latestPostureComparison } from '../../domain/postureArchive.ts';
 import { parsePendingPosturePhoto } from '../../domain/pendingPosturePhoto.ts';
-import { POSTURE_VIEWS, type PosturePhotoSource, type PostureScan, type PostureView, type UserProfile } from '../../domain/types.ts';
+import { CAPTURE_VIEWS, type CaptureView, type PosturePhotoSource, type PostureScan, type PostureView, type UserProfile } from '../../domain/types.ts';
 import { GlowButton } from '../components/GlowButton.tsx';
 import { Screen } from '../components/Screen.tsx';
 import { SystemPanel } from '../components/SystemPanel.tsx';
 import { colors, radius, spacing } from '../theme.ts';
 
 const PENDING_VIEW_KEY = '@abyss-protocol/pending-posture-view';
-const VIEW_LABELS: Record<PostureView, string> = { front: 'FRONT', side: 'SIDE', back: 'BACK' };
+const VIEW_LABELS: Record<PostureView, string> = { front: 'FRONT', side: 'SIDE — UNSPECIFIED', left: 'LEFT SIDE', right: 'RIGHT SIDE', back: 'BACK' };
 type Draft = Partial<PosturePhotoDraftMap>;
 
 interface PostureArchiveScreenProps {
@@ -22,11 +22,11 @@ interface PostureArchiveScreenProps {
   onBack: () => void;
   onSave: (scan: PostureScan) => Promise<void>;
   onDelete: (scanId: string) => Promise<void>;
-  onCaptureComplete?: () => void;
+  onCaptureComplete?: (scanId: string) => void;
 }
 
 function completeDraft(draft: Draft): draft is PosturePhotoDraftMap {
-  return POSTURE_VIEWS.every((view) => Boolean(draft[view]));
+  return CAPTURE_VIEWS.every((view) => Boolean(draft[view]));
 }
 
 function scanDate(scan: PostureScan): string {
@@ -34,8 +34,11 @@ function scanDate(scan: PostureScan): string {
 }
 
 export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave, onDelete, onCaptureComplete }: PostureArchiveScreenProps) {
+  const [visibleRecords, setVisibleRecords] = useState(3);
   const [creating, setCreating] = useState(mode === 'reassessment');
   const [draft, setDraft] = useState<Draft>({});
+  const [setup, setSetup] = useState({ framing: false, stance: false, repeatable: false });
+  const setupReady = Object.values(setup).every(Boolean);
   const [busy, setBusy] = useState(true);
   const busyRef = useRef(true);
   const mountedRef = useRef(true);
@@ -47,11 +50,16 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
   const comparison = useMemo(() => latestPostureComparison(profile.postureScans), [profile.postureScans]);
   const latest = profile.postureScans[0] ?? null;
 
-  const applyAsset = useCallback((view: PostureView, asset: ImagePicker.ImagePickerAsset, source: PosturePhotoSource) => {
+  const applyAsset = useCallback((view: CaptureView, asset: ImagePicker.ImagePickerAsset, source: PosturePhotoSource, recovered = false) => {
     if (!mountedRef.current) return;
+    if (!Number.isInteger(asset.width) || !Number.isInteger(asset.height) || asset.width < 1 || asset.height < 1 || asset.width > 32768 || asset.height > 32768) {
+      Alert.alert('Image dimensions unavailable', 'Choose another photo. The existing draft has not changed.');
+      return;
+    }
+    setSetup({ framing: false, stance: false, repeatable: false });
     setDraft((current) => ({
       ...current,
-      [view]: { uri: asset.uri, width: asset.width, height: asset.height, source },
+      [view]: { uri: asset.uri, width: asset.width, height: asset.height, source, originalCapturedAt: source === 'camera' && !recovered ? new Date().toISOString() : null },
     }));
   }, []);
 
@@ -61,9 +69,9 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
     void Promise.all([AsyncStorage.getItem(PENDING_VIEW_KEY), ImagePicker.getPendingResultAsync()]).then(([pendingView, result]) => {
       if (!mounted) return;
       const pending = parsePendingPosturePhoto(pendingView, profile.id);
-      if (pending && result && 'canceled' in result && !result.canceled && result.assets?.[0]) {
+      if (pending && pending.view !== 'side' && result && 'canceled' in result && !result.canceled && result.assets?.[0]) {
         setCreating(true);
-        applyAsset(pending.view, result.assets[0], pending.source);
+        applyAsset(pending.view, result.assets[0], pending.source, true);
       }
       if (pending && result && 'code' in result) Alert.alert('Photo recovery failed', 'The interrupted picker did not return a usable photo. Please capture or select this view again.');
     }).catch(() => {
@@ -76,7 +84,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
     return () => { mounted = false; mountedRef.current = false; };
   }, [applyAsset, profile.id, release]);
 
-  const pickPhoto = async (view: PostureView, source: PosturePhotoSource) => {
+  const pickPhoto = async (view: CaptureView, source: PosturePhotoSource) => {
     if (!acquire()) return;
     try {
       if (source === 'camera') {
@@ -103,16 +111,17 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
     }
   };
 
-  const save = async () => {
-    if (!completeDraft(draft) || !acquire()) return;
+  const save = async (linkMovement = false) => {
+    if (!completeDraft(draft) || !setupReady || !acquire()) return;
     const now = new Date();
     const scanId = `posture-${now.getTime()}`;
     try {
       const photos = await persistPosturePhotos(scanId, draft, now.toISOString());
-      await onSave(createPostureScan(profile, photos, now, scanId));
+      await onSave({ ...createPostureScan(profile, photos, now, scanId), protocol: 'four-view-v1', setupConfirmedAt: now.toISOString() });
       setDraft({});
       setCreating(false);
-      onCaptureComplete?.();
+      setSetup({ framing: false, stance: false, repeatable: false });
+      if (linkMovement) onCaptureComplete?.(scanId);
     } catch {
       await deletePosturePhotos(scanId).catch(() => undefined);
       Alert.alert('Visual record failed', 'The photos could not be stored. Your existing archive was not changed.');
@@ -124,7 +133,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
   const confirmDelete = (scan: PostureScan) => {
     Alert.alert(
       'Delete visual record?',
-      'All three photos in this scan will be permanently removed from this device.',
+      'All photos in this scan will be permanently removed from this device.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -145,7 +154,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
   const close = useCallback(() => {
     if (busyRef.current) return;
     if (creating) {
-      const discard = () => { setDraft({}); setCreating(false); };
+      const discard = () => { setDraft({}); setSetup({ framing: false, stance: false, repeatable: false }); setCreating(false); };
       if (Object.keys(draft).length) Alert.alert('Discard photo draft?', 'These unsealed photos will not be added to your archive.', [{ text: 'Keep editing', style: 'cancel' }, { text: 'Discard', style: 'destructive', onPress: discard }]);
       else discard();
     } else onBack();
@@ -160,7 +169,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
     <Screen
       eyebrow="SYSTEM // VISUAL RECORD"
       title={creating ? mode === 'reassessment' ? 'Final visual checkpoint' : 'Record baseline' : 'Posture Archive'}
-      subtitle={creating ? mode === 'reassessment' ? 'Lock the end-of-cycle views before repeating Movement Analysis.' : 'Capture the same three views every cycle. Consistency matters more than posing.' : 'Private visual checkpoints for comparing Training Arc results.'}
+      subtitle={creating ? mode === 'reassessment' ? 'Lock the end-of-cycle views and optionally continue to Movement Analysis.' : 'Capture the same four views every cycle. Consistency matters more than posing.' : 'Private visual checkpoints for comparing Training Arc results.'}
       action={<Pressable accessibilityRole="button" onPress={close} style={styles.back}><Text style={styles.backLabel}>{creating ? 'CANCEL' : 'BACK'}</Text></Pressable>}
     >
       <SystemPanel eyebrow="LOCAL VAULT" title="Device-only record" accent="purple">
@@ -173,7 +182,7 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
           <SystemPanel eyebrow="CAPTURE STANDARD" title="Repeatable setup">
             <Text style={styles.copy}>Full body visible · neutral stance · camera near waist height · same distance, lighting and fitted clothing. Do not force a “better” posture.</Text>
           </SystemPanel>
-          {POSTURE_VIEWS.map((view) => (
+          {CAPTURE_VIEWS.map((view) => (
             <CaptureSlot
               key={view}
               view={view}
@@ -183,8 +192,21 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
               onLibrary={() => { void pickPhoto(view, 'library'); }}
             />
           ))}
-          <GlowButton label={busy ? 'SEALING RECORD...' : mode === 'reassessment' ? 'LOCK & CONTINUE TO MOVEMENT' : 'SEAL VISUAL RECORD'} disabled={!completeDraft(draft) || busy} onPress={() => { void save(); }} />
-          <Text style={styles.footerNote}>All three views are required so later comparisons use the same evidence.</Text>
+          <SystemPanel eyebrow="REVIEW BEFORE SAVING" title="Confirm the setup">
+            <Text style={styles.copy}>Review all four previews. These confirmations describe your setup; the app does not detect pose, blur or lighting.</Text>
+            {([
+              ['framing', 'Full body is visible in every image, including head and feet.'],
+              ['stance', 'Neutral stance; LEFT and RIGHT refer to my body side facing the camera.'],
+              ['repeatable', 'Camera position, distance, lighting and clothing are repeatable across views and future checkpoints.'],
+            ] as const).map(([key, label]) => (
+              <Pressable key={key} accessibilityRole="checkbox" accessibilityState={{ checked: setup[key], disabled: busy }} disabled={busy} onPress={() => setSetup((value) => ({ ...value, [key]: !value[key] }))} style={styles.setupRow}>
+                <Text style={styles.copy}>{setup[key] ? '☑' : '☐'} {label}</Text>
+              </Pressable>
+            ))}
+          </SystemPanel>
+          <GlowButton label={busy ? 'SEALING RECORD...' : 'SEAL VISUAL RECORD'} disabled={!completeDraft(draft) || !setupReady || busy} onPress={() => { void save(); }} />
+          {onCaptureComplete ? <GlowButton label="SEAL & RUN MOVEMENT CHECK" disabled={!completeDraft(draft) || !setupReady || busy} variant="secondary" onPress={() => { void save(true); }} /> : null}
+          <Text style={styles.footerNote}>All four views and setup confirmations are required. Library and recovered images have unknown capture dates. Only completing the next movement check links it to this record.</Text>
         </>
       ) : (
         <>
@@ -193,16 +215,17 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
             title={latest ? `${profile.postureScans.length} visual record${profile.postureScans.length === 1 ? '' : 's'}` : 'No baseline recorded'}
             trailing={<Text style={styles.count}>{String(profile.postureScans.length).padStart(2, '0')}</Text>}
           >
-            <Text style={styles.copy}>{latest ? `Latest checkpoint: ${scanDate(latest)}${latest.trainingArcCycle ? ` · Training Arc ${latest.trainingArcCycle}` : ''}.` : 'Create a front, side and back baseline before judging physical changes.'}</Text>
+            <Text style={styles.copy}>{latest ? `Latest checkpoint: ${scanDate(latest)}${latest.trainingArcCycle ? ` · Training Arc ${latest.trainingArcCycle}` : ''}.` : 'Create a front, left, right and back baseline before judging physical changes.'}</Text>
             <GlowButton label="NEW VISUAL SCAN" disabled={busy} onPress={() => setCreating(true)} style={styles.primaryAction} />
           </SystemPanel>
 
           {comparison ? (
             <SystemPanel eyebrow="ARC COMPARISON" title={`${comparison.previous.trainingArcCycle ? `Cycle ${comparison.previous.trainingArcCycle}` : 'Earlier'} → ${comparison.current.trainingArcCycle ? `Cycle ${comparison.current.trainingArcCycle}` : 'Current'}`} accent="purple">
               <Text style={styles.comparisonMeta}>{comparison.elapsedDays} DAYS BETWEEN RECORDS</Text>
-              <ScanStrip scan={comparison.previous} label="BEFORE" />
+              <Text style={styles.copy}>Matching views: {comparisonViews(comparison.previous, comparison.current).map((view) => VIEW_LABELS[view]).join(', ')}. Setup and dates may differ; visual differences alone do not establish progress.</Text>
+              <ScanStrip scan={comparison.previous} label="BEFORE" views={comparisonViews(comparison.previous, comparison.current)} />
               <View style={styles.divider} />
-              <ScanStrip scan={comparison.current} label="CURRENT" />
+              <ScanStrip scan={comparison.current} label="CURRENT" views={comparisonViews(comparison.previous, comparison.current)} />
             </SystemPanel>
           ) : latest ? (
             <SystemPanel eyebrow="BASELINE LOCKED" title={scanDate(latest)} accent="purple">
@@ -211,6 +234,10 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
             </SystemPanel>
           ) : null}
 
+          {profile.postureScans.slice(0, visibleRecords).map((scan) => <SystemPanel key={scan.id} eyebrow="SAVED CHECKPOINT" title={scanDate(scan)}>
+            <ScanStrip scan={scan} label="ALL SAVED VIEWS" />
+          </SystemPanel>)}
+          {profile.postureScans.length > visibleRecords ? <GlowButton label="SHOW MORE RECORDS" variant="secondary" onPress={() => setVisibleRecords((count) => count + 3)} /> : null}
           {latest ? <GlowButton label="DELETE LATEST RECORD" disabled={busy} variant="danger" onPress={() => confirmDelete(latest)} /> : null}
         </>
       )}
@@ -218,12 +245,14 @@ export function PostureArchiveScreen({ profile, mode = 'archive', onBack, onSave
   );
 }
 
-function CaptureSlot({ view, draft, disabled, onCamera, onLibrary }: { view: PostureView; draft: PosturePhotoDraft | undefined; disabled: boolean; onCamera: () => void; onLibrary: () => void }) {
+function CaptureSlot({ view, draft, disabled, onCamera, onLibrary }: { view: CaptureView; draft: PosturePhotoDraft | undefined; disabled: boolean; onCamera: () => void; onLibrary: () => void }) {
   return (
     <SystemPanel eyebrow={`VIEW // ${VIEW_LABELS[view]}`} title={draft ? 'Image acquired' : 'Awaiting image'}>
       <View style={styles.captureFrame}>
-        {draft ? <Image source={{ uri: draft.uri }} resizeMode="contain" style={styles.captureImage} /> : <View style={styles.placeholder}><Text style={styles.placeholderGlyph}>◇</Text><Text style={styles.placeholderText}>FULL BODY · {VIEW_LABELS[view]}</Text></View>}
+        {draft ? <Image accessibilityLabel={`${VIEW_LABELS[view]} draft preview`} source={{ uri: draft.uri }} resizeMode="contain" style={styles.captureImage} /> : <View style={styles.placeholder}><Text style={styles.placeholderGlyph}>◇</Text><Text style={styles.placeholderText}>FULL BODY · {VIEW_LABELS[view]}</Text></View>}
       </View>
+      <Text style={styles.copy}>{view === 'left' || view === 'right' ? `Your ${view} body side faces the camera. Avoid mirrored selfies.` : 'Use a neutral stance with your whole body visible.'}</Text>
+      {draft ? <Text style={styles.copy}>{draft.width} × {draft.height} px{Math.min(draft.width, draft.height) < 480 ? ' · Small image: review detail before saving.' : ''}. {draft.originalCapturedAt ? 'Camera acquisition time recorded.' : 'Original capture date unknown.'}</Text> : null}
       <View style={styles.actionRow}>
         <GlowButton label={draft?.source === 'camera' ? 'RETAKE' : 'CAMERA'} disabled={disabled} variant="secondary" onPress={onCamera} style={styles.slotButton} />
         <GlowButton label={draft?.source === 'library' ? 'RESELECT' : 'LIBRARY'} disabled={disabled} variant="secondary" onPress={onLibrary} style={styles.slotButton} />
@@ -232,18 +261,19 @@ function CaptureSlot({ view, draft, disabled, onCamera, onLibrary }: { view: Pos
   );
 }
 
-function ScanStrip({ scan, label }: { scan: PostureScan; label: string }) {
+function ScanStrip({ scan, label, views }: { scan: PostureScan; label: string; views?: PostureView[] }) {
   return (
     <View style={styles.scanBlock}>
       <View style={styles.scanHeader}><Text style={styles.scanLabel}>{label}</Text><Text style={styles.scanDate}>{scanDate(scan)}</Text></View>
       <View style={styles.photoRow}>
-        {POSTURE_VIEWS.map((view) => (
-          <View key={view} style={styles.thumbnailFrame}>
-            <Image source={{ uri: scan.photos[view].uri }} resizeMode="contain" style={styles.thumbnail} />
-            <Text style={styles.thumbnailLabel}>{VIEW_LABELS[view]}</Text>
+        {scanPhotos(scan).filter((photo) => !views || views.includes(photo.view)).map((photo) => (
+          <View key={photo.view} style={styles.thumbnailFrame}>
+            <Image accessibilityLabel={`${VIEW_LABELS[photo.view]} saved record`} source={{ uri: photo.uri }} resizeMode="contain" style={styles.thumbnail} />
+            <Text style={styles.thumbnailLabel}>{VIEW_LABELS[photo.view]}</Text>
           </View>
         ))}
       </View>
+      {evidenceNotes(scan).map((note) => <Text key={note} style={styles.copy}>{note}</Text>)}
     </View>
   );
 }
@@ -271,8 +301,9 @@ const styles = StyleSheet.create({
   scanHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   scanLabel: { color: colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
   scanDate: { color: colors.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
-  photoRow: { flexDirection: 'row', gap: spacing.sm },
-  thumbnailFrame: { flex: 1, aspectRatio: 0.72, overflow: 'hidden', borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(41,182,255,0.2)', backgroundColor: '#050812' },
+  setupRow: { paddingVertical: spacing.md },
+  photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  thumbnailFrame: { width: '47%', aspectRatio: 0.72, overflow: 'hidden', borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(41,182,255,0.2)', backgroundColor: '#050812' },
   thumbnail: { width: '100%', height: '100%' },
   thumbnailLabel: { position: 'absolute', left: 5, bottom: 5, color: colors.text, backgroundColor: 'rgba(7,9,15,0.78)', paddingHorizontal: 5, paddingVertical: 3, fontSize: 6, fontWeight: '900', letterSpacing: 0.8 },
 });
