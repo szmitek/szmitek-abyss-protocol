@@ -1,10 +1,21 @@
 # Batch checkpoint
 
-## PR #42 source delivered; native verification pending
+## Delivered source and verified APK — PR #42 (2026-09-16)
 
 PR https://github.com/szmitek/szmitek-abyss-protocol/pull/42 merged at `e2bfcc866639f5c7cee86edcc34548321d7a1cc2`. Reviewed head `c79dac5aac966118c0bd83446d96c23e395dfa5a`; local/published/merged tree `e1a61fff032d2a0dc9eab48704c3c73b2018dfac` is identical. Android versionCode 17, schema 16. See `docs/STANDARDIZED_EVIDENCE.md` for behavior and phone checks.
 
-179 tests, TypeScript, ESLint and telemetry-disabled offline Android export pass; seven evidence tests pass under Europe/Warsaw. PR Quality `35093692447` passed before merge. Main Quality run `35093830147` and native Android run `35093830233` are the exact-head delivery runs. Native verification is pending: inspect live status, artifact SHA/digest, release asset digest, manifest and certificate. APK 16 below remains the latest verified build. Do not duplicate PR #42.
+179 tests, TypeScript, ESLint and telemetry-disabled offline Android export pass; seven evidence tests pass under Europe/Warsaw. PR Quality `35093692447` passed before merge. Main Quality run `35093830147` and native Android run `35093830233` both succeeded for the exact merged head.
+
+APK verification completed:
+
+- Artifact `10445114722` belongs to native run `35093830233` and merged SHA `e2bfcc866639f5c7cee86edcc34548321d7a1cc2`.
+- Downloaded ZIP SHA256 matches its artifact digest: `da2f67b5403858af01f67eac5eb1edb76fa1b7fe418f6a8e251fead49656fa9f`.
+- Extracted APK SHA256 matches release asset `567904564`: `19b6ee44207c72c81b7ee053fb523e95aa4482bda5dc62954638d32e0ddb7247` (80,258,176 bytes).
+- Binary manifest reports versionCode 17 and package `app.abyssprotocol.mobile`.
+- Certificate SHA256 remains `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, matching APK 16. The focused verifier passed the v2 RSA signature and chunked content digest checks.
+- Published APK: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+
+This batch is delivered. Physical-device installation, capture, cancellation, large fonts and restore remain unperformed. The reused release tag/URL is not source evidence; retain the exact head/run/asset/digests above. Do not duplicate PR #42. This final checkpoint is persisted on `docs/evidence-delivery`; carry it into the next feature branch.
 
 Next implementation is specified in `docs/LONGITUDINAL_EVIDENCE.md`: linked movement/photos, archived adherence targets, actual readiness coverage and missing-data context. AI analysis/coach remain later; animations LAST.
 
