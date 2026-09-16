@@ -1,5 +1,13 @@
 # Batch checkpoint
 
+## PR #41 publication checkpoint — 2026-09-16
+
+The user explicitly confirmed public publication of code/documentation to `szmitek/szmitek-abyss-protocol`, PR creation, merge after green CI and APK publication, including subsequent roadmap batches. The automatic review block is resolved.
+
+PR #41 is merged at `1fd69cd35304c24731662c4a824f97b6a7fe9009`. Reviewed head `b7c58863dd8d0e4d60ab80fdebb55b2fc1f101ce`; local/published/merged tree `5766cd1b0448a35d3ec07f7da8aa9f5e2f3e8508` is identical. PR Quality `35074854516` passed before merge; main Quality `35075014427` passed. Native Android run `35075014501` is building versionCode 16. Verify its exact-head artifact, ZIP digest, release asset digest, manifest and signing certificate before marking the APK delivered. Do not duplicate PR #41.
+
+Next source audit is in `docs/STANDARDIZED_EVIDENCE.md`: preserve legacy unspecified-side photos, add a versioned four-view protocol, explicit setup review and actual assessment links with compatible Vault iteration. This audit is a plan, not shipped capture functionality.
+
 ## Current implementation — return after interruption
 
 Branch `feature/return-after-break` is based on PR #40 main `04763f619dfda9685b8b00acc86d66d583d5b037` and carries its verified delivery documents. Android versionCode 16, schema 15. The dashboard supports explicit activation/review/early exit; plans cap work, pause progression/trials, retain stricter readiness/arc rules and require an explicit end decision. Return evidence is tagged and excluded from future overload; the exit boundary survives backups. See `docs/RETURN_AFTER_BREAK.md` for actual behavior and remaining phone checks.
