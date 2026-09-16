@@ -1,12 +1,12 @@
 # Batch checkpoint
 
-## Current package — standardized evidence
+## PR #42 source delivered; native verification pending
 
-Branch `feature/standardized-evidence`, based on main PR #41 `1fd69cd35304c24731662c4a824f97b6a7fe9009`, carries its verified delivery documentation forward. Android versionCode 17, storage schema 16. See `docs/STANDARDIZED_EVIDENCE.md` for implemented behavior, limits and remaining work.
+PR https://github.com/szmitek/szmitek-abyss-protocol/pull/42 merged at `e2bfcc866639f5c7cee86edcc34548321d7a1cc2`. Reviewed head `c79dac5aac966118c0bd83446d96c23e395dfa5a`; local/published/merged tree `e1a61fff032d2a0dc9eab48704c3c73b2018dfac` is identical. Android versionCode 17, schema 16. See `docs/STANDARDIZED_EVIDENCE.md` for behavior and phone checks.
 
-179 tests, TypeScript, ESLint and telemetry-disabled offline Android export pass; the seven new evidence tests also pass under Europe/Warsaw. No physical-device test. Next publication steps: commit and publish exact reviewed tree, create one PR, require green CI, merge and verify native artifact/release digest, package/version and unchanged certificate. APK 16 below remains the latest verified build until those checks complete. Inspect live GitHub before resuming.
+179 tests, TypeScript, ESLint and telemetry-disabled offline Android export pass; seven evidence tests pass under Europe/Warsaw. PR Quality `35093692447` passed before merge. Main Quality run `35093830147` and native Android run `35093830233` are the exact-head delivery runs. Native verification is pending: inspect live status, artifact SHA/digest, release asset digest, manifest and certificate. APK 16 below remains the latest verified build. Do not duplicate PR #42.
 
-Next after delivery: unified longitudinal evidence context; AI analysis/coach remain in scope, animations LAST.
+Next implementation is specified in `docs/LONGITUDINAL_EVIDENCE.md`: linked movement/photos, archived adherence targets, actual readiness coverage and missing-data context. AI analysis/coach remain later; animations LAST.
 
 ## Delivered source and verified APK — PR #41 (2026-09-16)
 
