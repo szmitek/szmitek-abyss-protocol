@@ -1,15 +1,16 @@
 import { Directory, File, Paths } from 'expo-file-system';
 
-import { POSTURE_VIEWS, type PosturePhotoMap, type PosturePhotoSource, type PostureView } from '../domain/types.ts';
+import { CAPTURE_VIEWS, type PosturePhotoMap, type PosturePhotoSource, type CaptureView } from '../domain/types.ts';
 
 export interface PosturePhotoDraft {
   uri: string;
   width: number;
   height: number;
   source: PosturePhotoSource;
+  originalCapturedAt: string | null;
 }
 
-export type PosturePhotoDraftMap = Record<PostureView, PosturePhotoDraft>;
+export type PosturePhotoDraftMap = Record<CaptureView, PosturePhotoDraft>;
 
 function safeScanId(scanId: string): string {
   if (!/^[a-zA-Z0-9_-]+$/.test(scanId)) throw new Error('Invalid posture scan identifier');
@@ -31,7 +32,7 @@ export async function persistPosturePhotos(scanId: string, drafts: PosturePhotoD
   const photos = {} as PosturePhotoMap;
 
   try {
-    for (const view of POSTURE_VIEWS) {
+    for (const view of CAPTURE_VIEWS) {
       const draft = drafts[view];
       const destination = new File(directory, `${view}${extensionFor(draft.uri)}`);
       if (destination.exists) destination.delete();
@@ -43,6 +44,7 @@ export async function persistPosturePhotos(scanId: string, drafts: PosturePhotoD
         height: draft.height,
         source: draft.source,
         capturedAt,
+        originalCapturedAt: draft.originalCapturedAt,
       };
     }
     return photos;

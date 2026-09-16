@@ -49,12 +49,14 @@ const RATINGS: { value: MovementRating; label: string; detail: string }[] = [
 
 export function MovementCalibrationScreen({ kind, onCancel, onComplete }: MovementCalibrationScreenProps) {
   const [results, setResults] = useState<Partial<Record<MovementCheck, MovementRating>>>({});
+  const [error, setError] = useState<string | null>(null);
   const complete = MOVEMENT_CHECKS.every((check) => results[check] !== undefined);
   const painDetected = Object.values(results).includes('pain');
 
   const save = () => {
     if (!complete) return;
-    onComplete(results as Record<MovementCheck, MovementRating>);
+    try { onComplete(results as Record<MovementCheck, MovementRating>); }
+    catch (error) { setError(error instanceof Error ? error.message : 'The movement check could not be saved.'); }
   };
 
   return (
@@ -71,6 +73,7 @@ export function MovementCalibrationScreen({ kind, onCancel, onComplete }: Moveme
         </View>
       </View>
 
+      {error ? <Text accessibilityRole="alert" style={styles.signal}>{error}</Text> : null}
       {MOVEMENT_CHECKS.map((check, index) => {
         const item = CHECKS[check];
         return (

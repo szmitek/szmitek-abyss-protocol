@@ -65,7 +65,10 @@ export type CorrectivePriority = 'primary' | 'support';
 export type CorrectiveEvidenceSource = 'self-observation' | 'player-scan' | 'movement-analysis' | 'posture-archive';
 
 export const POSTURE_VIEWS = ['front', 'side', 'back'] as const;
-export type PostureView = (typeof POSTURE_VIEWS)[number];
+export const CAPTURE_VIEWS = ['front', 'left', 'right', 'back'] as const;
+export const ALL_POSTURE_VIEWS = ['front', 'side', 'left', 'right', 'back'] as const;
+export type PostureView = (typeof ALL_POSTURE_VIEWS)[number];
+export type CaptureView = (typeof CAPTURE_VIEWS)[number];
 export type PosturePhotoSource = 'camera' | 'library';
 
 export const STAT_KEYS = ['strength', 'endurance', 'agility', 'vitality', 'mobility'] as const;
@@ -288,12 +291,16 @@ export interface PosturePhoto {
   width: number;
   height: number;
   source: PosturePhotoSource;
-  capturedAt: string;
+  capturedAt: string; // Legacy seal time; use originalCapturedAt for actual capture evidence.
+  originalCapturedAt?: string | null;
 }
 
-export type PosturePhotoMap = Record<PostureView, PosturePhoto>;
+export type PosturePhotoMap = Record<'front' | 'back', PosturePhoto> & Partial<Record<'side' | 'left' | 'right', PosturePhoto>>;
 
 export interface PostureScan {
+  protocol?: 'four-view-v1';
+  setupConfirmedAt?: string;
+  movementAssessmentId?: string;
   id: string;
   date: string;
   dateKey: string;
@@ -447,7 +454,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 15;
+  schemaVersion: 16;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

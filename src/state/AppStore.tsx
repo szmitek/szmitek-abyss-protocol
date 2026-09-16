@@ -1,3 +1,4 @@
+import { assertValidSnapshot } from '../domain/snapshotValidation.ts';
 import { buildWorkoutResults, resultMeetsTarget } from '../domain/setPerformance.ts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { AppState } from 'react-native';
@@ -34,7 +35,7 @@ interface AppStoreValue {
   saveLoadouts: (loadouts: TrainingLoadouts, setups: MachineSetup[]) => void;
   updateSystemScan: (healthProfile: PlayerHealthProfile) => void;
   updateCorrectiveProfile: (correctiveProfile: CorrectiveProfile) => void;
-  completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => void;
+  completeMovementAssessment: (results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind, scanId?: string) => void;
   acknowledgeArcReview: () => void;
   savePostureScan: (scan: PostureScan) => Promise<void>;
   deletePostureScan: (scanId: string) => Promise<void>;
@@ -125,6 +126,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     busyRef.current = true; setSaving(true); saveSequence.current += 1;
     try {
       const next = update(currentRef.current);
+      assertValidSnapshot(next);
       await snapshotRepository.save(next);
       currentRef.current = next; setSnapshot(next); dirtyRef.current = false; setSaveError(null);
     } catch (error) {
@@ -249,11 +251,13 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     });
   }, [commit]);
 
-  const completeMovementAssessment = useCallback((results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind) => {
+  const completeMovementAssessment = useCallback((results: Record<MovementCheck, MovementRating>, kind: MovementAssessmentKind, scanId?: string) => {
+    if (!readyRef.current || busyRef.current) throw new Error('Storage is busy. Keep this screen open and try again.');
+    if (!currentRef.current.profile || currentRef.current.activeWorkout) throw new Error('Finish or exit the active workout before saving movement checks.');
     commit((current) => {
       if (!current.profile || current.activeWorkout) return current;
       const previousReviewId = current.profile.trainingArcReviews[0]?.id ?? null;
-      const profile = recordMovementAssessment(current.profile, results, kind, current.history);
+      const profile = recordMovementAssessment(current.profile, results, kind, current.history, new Date(), scanId);
       const reviewId = profile.trainingArcReviews[0]?.id;
       const pendingArcReviewId = reviewId && reviewId !== previousReviewId ? reviewId : current.pendingArcReviewId;
       if (current.dailyQuest?.status === 'complete' && current.dailyQuest.plan.kind === 'training') return { ...current, profile, weeklyProtocol: null, pendingArcReviewId };
