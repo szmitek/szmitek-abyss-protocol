@@ -33,7 +33,7 @@ export function ActivityPanel({ weeks }: { weeks: ActivityWeek[] }) {
         <Text style={styles.copy}>{selected.sessions} sessions · {selected.activeDays} active days · {Math.round(selected.seconds / 60)} min</Text>
         <Text style={styles.copy}>{selected.sets} sets · {selected.repetitions} reps · {selected.timedVolume} sec of timed exercises</Text>
       </View> : null}
-      <Text style={styles.note}>Tap a week for details. Completed sessions include Rank Trials; sets include warm-ups. Recorded targets and volume are completion logs, not measured strength.</Text>
+      <Text style={styles.note}>Tap a week for details. Completed sessions include Rank Trials; sets include prescribed warm-up exercises but exclude separately logged warm-up sets. Recorded targets and volume are completion logs, not measured strength.</Text>
     </SystemPanel>
   );
 }

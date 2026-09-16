@@ -8,6 +8,7 @@
 - Merge only the reviewed PR head after all required checks pass. Verify the release asset against the merged commit.
 - If interrupted, read this file and `docs/HANDOFF.md`, inspect git and GitHub state, then resume the recorded step. Do not duplicate a PR or publish an older APK as new.
 - Commits, PRs, merges and APK publication are authorized by the user.
+- User instruction (2026-09-16): finish milestone 4, then STOP before milestone 5. Discuss AI approach with the user before any AI research/implementation/provider selection. Earlier authorization to continue the full roadmap does not override this pause.
 - App language stays English. Polish translation is removed from the roadmap.
 - Exercise animations are a required later milestone, not canceled.
 
@@ -36,8 +37,9 @@ Completed foundations: trainer follow-through (#33), Data Vault (#34), Player UX
    - Delivered source #40: shared arc-anchored next-session dates, explicit weekly missed/protected/completed statuses and no automatic catch-up. See `docs/WEEKLY_SESSION_STATUS.md` and `docs/HANDOFF.md` for APK verification state.
    - Delivered source #41: explicit return-after-interruption mode, three marked training days followed by review, lower work limits, progression boundary and v15 storage/Vault compatibility. See `docs/RETURN_AFTER_BREAK.md` and `docs/HANDOFF.md` for delivery status.
 4. Standardized evidence: comparable photo capture, quality checks, left/right side views, synchronized movement tests and longitudinal comparison of adherence, symptoms and function.
-   - Current package: four-view capture, explicit setup review, legacy compatibility and actual movement-assessment links. See `docs/STANDARDIZED_EVIDENCE.md` and `docs/HANDOFF.md`.
-   - Next: a unified longitudinal evidence view with linked movement, adherence/readiness and clear missing-data context, then the AI analysis prototype.
+   - Delivered source #42: four-view capture, explicit setup review, legacy compatibility and actual movement-assessment links. See `docs/STANDARDIZED_EVIDENCE.md` and `docs/HANDOFF.md`.
+   - Current completion package: unified longitudinal view with selectable actual checks, linked photos, separate training/return/trial/warm-up context, retained readiness coverage and exact archived targets. See `docs/LONGITUDINAL_EVIDENCE.md` and `docs/HANDOFF.md` for validation/delivery.
+   - Milestone 5 is explicitly paused for user discussion after this delivery.
 5. AI Player analysis: prototype photo + test + history observations; uncertainty, source evidence, missing-data questions and proposed training priorities. No diagnosis inferred from a photo. Evaluate accuracy, privacy, execution location and a zero/low-cost budget before choosing a provider. No provider subscription or photo upload is authorized by this roadmap alone.
 6. Adaptive plan and AI coach: explain and propose changes using actual performance, readiness and reassessment. Deterministic equipment, safety and movement constraints validate every proposed change; record decisions and keep user control.
 7. Progress and RPG: load and exercise development, cycle comparisons, Player card, titles, achievements, adherence including planned recovery, meaningful rank trials.
