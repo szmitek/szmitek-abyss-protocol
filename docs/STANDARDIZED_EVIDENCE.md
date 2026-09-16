@@ -16,7 +16,7 @@ Phone checks remain unperformed: upgrade from APK 16, all four camera/library sl
 
 ## Remaining milestone-4 work
 
-A unified longitudinal evidence view should show linked movement results beside adherence/readiness history, with missing-data and comparison-window explanations. Current cycle reports already summarize these signals separately. No new body measurements are invented. After that bounded step, evaluate the AI analysis prototype under the accepted privacy/cost constraints; animations remain last.
+The milestone-4 completion package implements the unified longitudinal evidence view described in `LONGITUDINAL_EVIDENCE.md`. No new body measurements are invented. Milestone 5 is paused by explicit user instruction pending discussion; animations remain last.
 
 ## Original source audit and acceptance scope
 
