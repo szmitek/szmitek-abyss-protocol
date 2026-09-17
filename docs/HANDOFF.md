@@ -1,12 +1,26 @@
-# Current checkpoint — Stage 5 data foundation
+# Current checkpoint — Stage 5 data foundation delivered
 
-User authorized this bounded package after AI Research & Architecture v2. Branch `feat/ai-data-foundation`, based on verified main `d53b7dabfb1b164ffc51824ef5176f4ad79a9b40`, also carries the prior milestone-4 documentation checkpoint.
+PR #44 merged as `3582e9ed90ced6175efb4ab1d6bc15bf42a60a0a`. Reviewed head `9212a06e7e7c41866259ae5393265516fe1bec18`; local/source/merged tree `604b566e3ec21a99b2116bda77a9637fa3f4a599`. Local implementation commit `84eb46bc9688591a654c9c6c5d09b68220d7dfa7` has the same tree; publishing used the connected GitHub tools.
 
-Implementation: Body Measurements UI/history, v17 local/Vault compatibility, deterministic measurement/review facts, application-owned AI contracts and an explicitly labelled offline mock. No real provider, SDK, network AI request, API secret, backend, photo/video analysis, pain coaching or automatic plan mutation. See `AI_DATA_FOUNDATION.md`.
+Implementation: English Body Measurements screen/history, optional kg/cm records with nulls, v17 local/Vault compatibility, deterministic measurement/review facts, application-owned AI contracts and an explicitly labelled offline mock. See `AI_DATA_FOUNDATION.md`. No real provider, SDK, network AI request, API secret, backend, photo/video analysis, pain coaching or automatic plan mutation.
 
-Local verification passed: 207 tests, TypeScript, lint and telemetry-disabled offline Android export. APK19 is not yet claimed as published. Next: publish exact reviewed PR head, require green Quality before merge, then verify main Quality and native run plus artifact/release digest and signing certificate. Do not treat the reused release URL as proof of a new build.
+## Verified delivery
 
-Next package is proposed only: offline Weekly Review UI/evidence/validation using the mock. Do not start it without a new task. Real AI remains explicitly out of scope. Physical-device update/form walkthrough remains unperformed.
+- 207 tests, TypeScript, lint and telemetry-disabled offline Android export passed locally.
+- PR Quality `35235649270` passed for the exact reviewed head before merge.
+- Main Quality `35235810884` and native Android Preview `35235810863` succeeded for exact merged main SHA. Each phase used one bounded watcher; no manual workflow-status polling loop.
+- Artifact `10503199720` belongs to native run `35235810863` and merged main. ZIP SHA-256: `4c458553db78fbdcd4bea42f372e7f8e26591c324fe0dd76cd51227a152de624`.
+- Extracted APK SHA-256: `0c850307e733265fcf19eab11ec09f0665c0eb4e44d8ce00bd3a8b7260ea675e`, 80,287,380 bytes; matches GitHub release asset `570477414` digest and size. Release target is the exact merged commit.
+- Binary manifest: versionCode **19**, package `app.abyssprotocol.mobile`.
+- APK v2 RSA signature and chunked content digest verified. Signing certificate SHA-256 `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, independently compared with the preserved APK18 file; identical.
+- Download: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+- Physical-device update/form walkthrough remains unperformed. Use an update over APK18 without uninstalling; `ANDROID_VERIFICATION.md` contains the new checklist.
+
+This documentation-only checkpoint is published on `docs/stage5-foundation-delivery`; carry it into the next authorized feature branch. Do not trigger another APK for documentation alone or mistake the reused release URL for immutable provenance.
+
+## Scope boundary / next package
+
+The user authorized only this bounded package after Research & Architecture v2; it is complete. Next proposed package: offline Weekly Review UI/evidence navigation/coverage and runtime response validation using the mock. It is not started. Provider choice, cloud consent/key handling, paid benchmark and budget require a separate agreed task. Real AI remains explicitly out of scope.
 
 ---
 
