@@ -23,6 +23,7 @@ export interface ExerciseExposure {
   context: 'training' | 'return' | 'trial' | 'warmup';
 }
 export interface WeeklyReviewInput {
+  historyContext?: Omit<WeeklyReviewInput, 'historyContext' | 'requestId'>;
   contractVersion: 'weekly-review.v1'; requestId: string; locale: 'en';
   period: ReviewPeriod;
   facts: ReviewFact[];
