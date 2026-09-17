@@ -21,7 +21,7 @@ export const EMPTY_CORRECTIVE_PROFILE: CorrectiveProfile = {
 };
 
 export const INITIAL_SNAPSHOT: AppSnapshot = {
-  schemaVersion: 16,
+  schemaVersion: 17,
   onboardingComplete: false,
   profile: null,
   weeklyProtocol: null,
@@ -54,6 +54,7 @@ export function createProfile(answers: OnboardingAnswers): UserProfile {
     trainingArcReviews: [],
     postureScans: [],
     readinessLog: [],
+    bodyMeasurements: [],
     strength: 1,
     endurance: 1,
     agility: 1,

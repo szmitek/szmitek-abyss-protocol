@@ -83,9 +83,9 @@ export function parseBackup(text: string): BackupFile {
   if (!p || file.checksum !== backupChecksum(JSON.stringify(p))) throw new Error('The backup integrity check failed. Select an intact copy.');
   if (typeof p.createdAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(p.createdAt) || !Number.isFinite(Date.parse(p.createdAt))
     || typeof p.includesPhotos !== 'boolean' || !Array.isArray(p.photos) || p.photos.length > 4000) throw new Error('Invalid backup metadata.');
-  // Verify the original checksum before upgrading a v11/v12/v13/v14/v15 backup; do not invent set measurements.
-  if ([11, 12, 13, 14, 15].includes((p.snapshot as { schemaVersion?: number })?.schemaVersion ?? 0)) {
-    p.snapshot = { ...p.snapshot, schemaVersion: 16 };
+  // Verify the original checksum before upgrading a v11–v16 backup; do not invent set measurements.
+  if ([11, 12, 13, 14, 15, 16].includes((p.snapshot as { schemaVersion?: number })?.schemaVersion ?? 0)) {
+    p.snapshot = { ...p.snapshot, schemaVersion: 17, profile: p.snapshot.profile ? { ...p.snapshot.profile, bodyMeasurements: p.snapshot.profile.bodyMeasurements ?? [] } : null };
     file.checksum = backupChecksum(JSON.stringify(p));
   }
   assertValidSnapshot(p.snapshot);

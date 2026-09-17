@@ -25,7 +25,7 @@ test('legacy migration preserves unspecified side and never invents capture date
   const before = snapshot([scan(true)]);
   const after = decodeSnapshot(JSON.stringify({ ...before, schemaVersion: 15 }));
   assert.deepEqual(after.profile!.postureScans, before.profile!.postureScans);
-  assert.equal(after.schemaVersion, 16);
+  assert.equal(after.schemaVersion, 17);
   assert.deepEqual(comparisonViews(scan(true), scan()), ['front', 'back']);
   assert.deepEqual(comparisonViews(scan(true), scan(true)), ['front', 'back']);
   assert.deepEqual(comparisonViews(scan(), scan()), ['front', 'left', 'right', 'back']);
@@ -61,7 +61,7 @@ test('v11 through v15 Vault imports verify old checksums before migration', asyn
     const raw = JSON.parse(JSON.stringify(backup)); raw.payload.snapshot.schemaVersion = version;
     raw.checksum = backupChecksum(JSON.stringify(raw.payload));
     const restored = parseBackup(JSON.stringify(raw));
-    assert.equal(restored.payload.snapshot.schemaVersion, 16);
+    assert.equal(restored.payload.snapshot.schemaVersion, 17);
     assert.equal(restored.payload.snapshot.profile!.postureScans[0]!.photos.side!.view, 'side');
     raw.payload.snapshot.profile.level = 99;
     assert.throws(() => parseBackup(JSON.stringify(raw)), /integrity/);
