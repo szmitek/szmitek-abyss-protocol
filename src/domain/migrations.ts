@@ -5,7 +5,7 @@ import { STAT_KEYS, type AppSnapshot, type StatBlock, type UserProfile, type Wor
 const EMPTY_STATS: StatBlock = { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 };
 export type StoredSnapshot = Omit<Partial<AppSnapshot>, 'schemaVersion'> & { schemaVersion?: number };
 
-function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): UserProfile {
+function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[], version: number): UserProfile {
   const attributeXp = profile.attributeXp ?? { ...EMPTY_STATS };
   if (!profile.attributeXp) {
     for (const key of STAT_KEYS) attributeXp[key] = totalAttributeXpForValue(profile[key]);
@@ -20,6 +20,7 @@ function migrateProfile(profile: UserProfile, history: WorkoutHistoryEntry[]): U
   }] : []);
   return {
     ...profile,
+    bodyMeasurements: version < 17 ? (profile.bodyMeasurements ?? []) : profile.bodyMeasurements,
     attributeXp,
     activeTrainingWeeks: profile.activeTrainingWeeks
       ?? [...new Set(history.filter((entry) => entry.completed).map((entry) => trainingWeekKey(entry.dateKey)))],
@@ -48,9 +49,9 @@ export function migrateSnapshot(parsed: StoredSnapshot): AppSnapshot {
     ...entry,
     attributeXpEarned: entry.attributeXpEarned ?? { ...EMPTY_STATS },
   }));
-  const profile = parsed.profile ? migrateProfile(parsed.profile, history) : null;
+  const profile = parsed.profile ? migrateProfile(parsed.profile, history, parsed.schemaVersion ?? 1) : null;
   const lastCompletion = parsed.lastCompletion
     ? { ...parsed.lastCompletion, attributeXpEarned: parsed.lastCompletion.attributeXpEarned ?? { ...EMPTY_STATS } }
     : null;
-  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 16, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
+  return { ...INITIAL_SNAPSHOT, ...parsed, schemaVersion: 17, profile, history, lastCompletion, weeklyProtocol: parsed.weeklyProtocol ?? null, pendingArcReviewId: parsed.pendingArcReviewId ?? null };
 }

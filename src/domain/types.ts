@@ -1,3 +1,4 @@
+import type { BodyMeasurement } from './bodyMeasurements.ts';
 export const EQUIPMENT = {
   NONE: 'none',
   MAT: 'mat',
@@ -393,6 +394,7 @@ export interface ReturnPlan {
 }
 
 export interface UserProfile extends StatBlock {
+  bodyMeasurements: BodyMeasurement[];
   returnPlan?: ReturnPlan;
   id: string;
   level: number;
@@ -454,7 +456,7 @@ export interface ActiveWorkout {
 }
 
 export interface AppSnapshot {
-  schemaVersion: 16;
+  schemaVersion: 17;
   onboardingComplete: boolean;
   profile: UserProfile | null;
   weeklyProtocol: WeeklyProtocol | null;

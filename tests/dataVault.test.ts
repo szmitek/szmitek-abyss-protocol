@@ -1,3 +1,4 @@
+import { createBodyMeasurement } from '../src/domain/bodyMeasurements.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -23,6 +24,7 @@ function richSnapshot(): AppSnapshot {
   profile = recordPostureScan(profile, createPostureScan(profile, photos, new Date('2026-08-01T12:00:00Z'), 'old-scan'));
   profile = recordMovementAssessment(profile, clear, 'reassessment', [], new Date('2026-08-29T12:00:00Z'));
   profile = recordDailyReadiness(profile, createDailyReadiness({ energy: 'stable', sleep: 'good', soreness: 'none', soreMuscles: [], painOrWarning: false }, new Date('2026-08-29T13:00:00Z')));
+  profile.bodyMeasurements = [createBodyMeasurement('vault-body', '2026-08-29', { weight: 80, waist: 92 }, new Date('2026-08-29T13:00:00Z'))];
   profile.trainingArcReviews[0]!.baselinePostureScanId = 'old-scan';
   const stats = { strength: 0, endurance: 0, agility: 0, vitality: 0, mobility: 0 };
   return { ...INITIAL_SNAPSHOT, onboardingComplete: true, profile, pendingArcReviewId: profile.trainingArcReviews[0]!.id, history: [{
@@ -50,6 +52,7 @@ test('data-only backup round-trip preserves Player signals, reports and pending 
   assert.deepEqual(restored.profile?.trainingArcs, snapshot.profile?.trainingArcs);
   assert.deepEqual(restored.profile?.correctiveHistory, snapshot.profile?.correctiveHistory);
   assert.deepEqual(restored.history, snapshot.history);
+  assert.deepEqual(restored.profile?.bodyMeasurements, snapshot.profile?.bodyMeasurements);
   assert.equal(restored.pendingArcReviewId, snapshot.pendingArcReviewId);
   assert.deepEqual(restored.profile?.postureScans, []);
   assert.equal(restored.profile?.trainingArcReviews[0]?.baselinePostureScanId, null);
@@ -66,6 +69,9 @@ test('photo backup remaps isolated files and archived references on every restor
   const first = await prepareBackupRestore(backup, 'one', write);
   const second = await prepareBackupRestore(backup, 'two', write);
   assert.equal(new Set(writes).size, 6);
+  assert.deepEqual(first.profile?.bodyMeasurements, backup.payload.snapshot.profile?.bodyMeasurements);
+  assert.deepEqual(first.profile?.readinessLog, backup.payload.snapshot.profile?.readinessLog);
+  assert.deepEqual(first.profile?.movementAssessments, backup.payload.snapshot.profile?.movementAssessments);
   assert.notEqual(first.profile?.postureScans[0]?.id, second.profile?.postureScans[0]?.id);
   assert.equal(first.profile?.trainingArcReviews[0]?.baselinePostureScanId, first.profile?.postureScans[0]?.id);
   assert.ok(first.profile?.postureScans[0]?.photos.front.uri.includes('restore-one-0'));

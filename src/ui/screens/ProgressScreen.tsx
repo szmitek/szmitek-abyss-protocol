@@ -1,3 +1,4 @@
+import { BodyMeasurementsScreen } from './BodyMeasurementsScreen.tsx';
 import { formatRecordedSet } from '../../domain/setPerformance.ts';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -23,6 +24,7 @@ const DECISION_LABELS: Record<TrainingArcDecision, string> = {
 };
 
 export function ProgressScreen({ profile, history }: { profile: UserProfile; history: WorkoutHistoryEntry[] }) {
+  const [bodyOpen, setBodyOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
   const [reviewId, setReviewId] = useState<string | null>(null);
@@ -42,6 +44,7 @@ export function ProgressScreen({ profile, history }: { profile: UserProfile; his
   const reports = [...profile.trainingArcReviews].sort((a, b) => b.cycleNumber - a.cycleNumber);
   const selectedReview = reports.find((review) => review.id === reviewId);
   const selectedExercise = insights.find((insight) => insight.exerciseId === exerciseId);
+  if (bodyOpen) return <BodyMeasurementsScreen onBack={() => setBodyOpen(false)} />;
   if (evidenceOpen) return <EvidenceScreen profile={profile} history={history} onBack={() => setEvidenceOpen(false)} />;
   if (selectedReview) return <ArcReviewScreen review={selectedReview} profile={profile} archived onContinue={() => setReviewId(null)} />;
   if (selectedExercise) return <ExerciseHistoryScreen key={selectedExercise.exerciseId} insight={selectedExercise} onBack={() => setExerciseId(null)} />;
@@ -56,6 +59,7 @@ export function ProgressScreen({ profile, history }: { profile: UserProfile; his
         <Text style={styles.explanation}>Future protocols use this archive to adjust volume, variants, recovery, and exercise rotation.</Text>
       </SystemPanel>
       <GlowButton label="COMPARE CHECKS, PHOTOS & WELLBEING" onPress={() => setEvidenceOpen(true)} />
+      <GlowButton label="BODY MEASUREMENTS" onPress={() => setBodyOpen(true)} />
       <ActivityPanel weeks={weeks} />
       <SystemPanel eyebrow="PROGRESSION SIGNALS" title={insights.length ? 'Exercise development' : 'Awaiting data'}>
         <Text style={styles.explanation}>Inspect every exercise you have completed. Targets reflect logged prescriptions; a higher target alone does not prove improved technique.</Text>

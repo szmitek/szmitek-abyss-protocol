@@ -1,3 +1,4 @@
+import { assertBodyMeasurement } from './bodyMeasurements.ts';
 import { isValidMachineSetup, validateLoadouts } from './loadouts.ts';
 import { EXERCISE_BY_ID } from '../data/exercises.ts';
 import { isValidSetPerformance } from './setPerformance.ts';
@@ -59,6 +60,7 @@ const profile = shape({
   movementAssessments: list(shape({ id, date, dateKey: day, kind: choice(['baseline', 'reassessment']), results: shape(Object.fromEntries(MOVEMENT_CHECKS.map((key) => [key, choice(['clear', 'limited', 'pain'])]))) })),
   trainingArcs: list(shape({ id, cycleNumber: integer(1, 10000), startDateKey: day, durationWeeks: choice([4]), baselineAssessmentId: id, completionAssessmentId: nullable(id), reviewId: nullable(id), entryDecision: nullable(decision), directiveReviewedAt: nullable(date), planSnapshot: nullable(shape({ workoutsPerWeek: choice([2, 3, 4, 5, 6, 7]), source: targetSource })) })),
   trainingArcReviews: list(shape({ id, trainingArcId: id, cycleNumber: integer(1, 10000), date, dateKey: day, baselineAssessmentId: id, completionAssessmentId: id, baselinePostureScanId: nullable(id), completionPostureScanId: nullable(id), adherence: shape({ scheduledSessions: integer(1), completedSessions: integer(), rate: number(0, 1), targetSource }), movement: counts(['improved', 'declined', 'unchanged']), difficulty: counts(['tooEasy', 'perfect', 'tooHard']), readiness: counts(['normal', 'reduced', 'recovery', 'hold']), decision, reasons: list(str, 100) })),
+  bodyMeasurements: list((v) => assertBodyMeasurement(v)),
   postureScans: list(postureScan, 1000),
   readinessLog: list(shape({ id, date, dateKey: day, energy: choice(['low', 'stable', 'high']), sleep: choice(['poor', 'fair', 'good']), soreness: choice(['none', 'mild', 'high']), soreMuscles: list(choice(MUSCLE_GROUPS), 11), painOrWarning: bool, band }), 90),
 });
@@ -71,7 +73,7 @@ const plan = shape({ returnBlockId: optional(id), location: optional(location), 
 });
 
 export function assertValidSnapshot(value: unknown): asserts value is AppSnapshot {
-  shape({ schemaVersion: choice([16]), onboardingComplete: bool, profile: nullable(profile), history, pendingArcReviewId: nullable(id),
+  shape({ schemaVersion: choice([17]), onboardingComplete: bool, profile: nullable(profile), history, pendingArcReviewId: nullable(id),
     dailyQuest: nullable(shape({ id, dateKey: day, status: choice(['available', 'active', 'complete']), plan })),
     activeWorkout: nullable(shape({ questId: id, plan, warmupSets: optional(list(list(setPerformance, 5), 200)), recordedSets: optional(list(list(nullable(setPerformance), 100), 200)), exerciseIndex: integer(0, 200), completedSets: list(integer(0, 100), 200), startedAt: date })),
     weeklyProtocol: nullable(shape({ id, weekStartDateKey: day, weekEndDateKey: day, createdAt: date, profileFingerprint: str, trainingArcCycle: nullable(integer(1)), trainingArcWeek: nullable(integer(1, 4)), volumeCaps: numericMap(MUSCLE_GROUPS), sessions: list(shape({ code: choice(['A', 'B', 'C', 'D', 'E', 'F', 'G']), dateKey: day, title: str, objective: str, focusMuscles: list(choice(MUSCLE_GROUPS), 11), plan }), 7) })),
@@ -80,7 +82,7 @@ export function assertValidSnapshot(value: unknown): asserts value is AppSnapsho
   const snapshot = value as AppSnapshot;
   if (snapshot.onboardingComplete !== Boolean(snapshot.profile)) fail('snapshot.profile');
   const p = snapshot.profile;
-  for (const entries of [snapshot.history, p?.movementAssessments ?? [], p?.trainingArcs ?? [], p?.trainingArcReviews ?? [], p?.postureScans ?? []]) {
+  for (const entries of [snapshot.history, p?.movementAssessments ?? [], p?.trainingArcs ?? [], p?.trainingArcReviews ?? [], p?.postureScans ?? [], p?.bodyMeasurements ?? []]) {
     if (new Set(entries.map((entry) => entry.id)).size !== entries.length) fail('duplicate IDs');
   }
   if (p) {

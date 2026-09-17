@@ -1,3 +1,4 @@
+import { appendBodyMeasurement, type BodyMeasurement } from '../domain/bodyMeasurements.ts';
 import { assertValidSnapshot } from '../domain/snapshotValidation.ts';
 import { buildWorkoutResults, resultMeetsTarget } from '../domain/setPerformance.ts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
@@ -16,6 +17,7 @@ import { applyCompletedWorkout, calculateAttributeDevelopment, completeRankTrial
 import type { SetKind, TrainingLoadouts, MachineSetup, SetPerformance, AppSnapshot, CorrectiveProfile, DailyReadinessInput, MovementAssessmentKind, MovementCheck, MovementRating, OnboardingAnswers, PerceivedDifficulty, PlayerHealthProfile, PostureScan, WorkoutHistoryEntry } from '../domain/types.ts';
 
 interface AppStoreValue {
+  saveBodyMeasurement: (measurement: BodyMeasurement) => void;
   snapshot: AppSnapshot;
   hydrated: boolean;
   loadError: string | null;
@@ -229,6 +231,11 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     commit(() => freshQuest(base));
   }, [commit]);
 
+  const saveBodyMeasurement = useCallback((measurement: BodyMeasurement) => {
+    if (!readyRef.current || busyRef.current || !currentRef.current.profile) throw new Error('Local storage is not ready. Try again.');
+    commit((current) => ({ ...current, profile: { ...current.profile!, bodyMeasurements: appendBodyMeasurement(current.profile!.bodyMeasurements, measurement) } }));
+  }, [commit]);
+
   const saveLoadouts = useCallback((loadouts: TrainingLoadouts, setups: MachineSetup[]) => {
     commit((current) => updateTrainingLoadouts(current, loadouts, setups));
   }, [commit]);
@@ -418,6 +425,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     completeOnboarding,
     updateProfile,
     saveLoadouts,
+    saveBodyMeasurement,
     updateSystemScan,
     updateCorrectiveProfile: saveCorrectiveProfile,
     completeMovementAssessment,
@@ -434,7 +442,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     abandonWorkout,
     finishWorkout,
     dismissCompletion,
-  }), [snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, saveLoadouts, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, saveReturnPlan, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
+  }), [saveBodyMeasurement, snapshot, hydrated, loadError, saveError, saving, restoring, retrySave, reloadStorage, restoreBackup, restoreLocalRecovery, workoutResumeRequired, calendarDay, resumeWorkout, interruptWorkout, completeOnboarding, updateProfile, saveLoadouts, updateSystemScan, saveCorrectiveProfile, completeMovementAssessment, acknowledgeArcReview, savePostureScan, deletePostureScan, submitDailyReadiness, restoreExercises, beginDailyQuest, saveReturnPlan, beginRankTrial, replaceCurrentExercise, completeCurrentSet, abandonWorkout, finishWorkout, dismissCompletion]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
