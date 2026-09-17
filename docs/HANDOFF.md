@@ -1,12 +1,28 @@
-# Current checkpoint — local Weekly Review
+# Current checkpoint — Weekly Review implemented, APK20 verified, release upload blocked
 
-User authorized Stage 5 package 2: real local data, deterministic mock, evidence, coverage and response validation. Feature branch `feat/local-weekly-review` starts from the verified PR44 code tree and carries `docs/stage5-foundation-delivery` documentation.
+PR #45 merged as `71fc99759d656ef8acc1eb2eeae5426636d6daf7`. Reviewed PR head `397f698a7ea476584323c32ca175aecfc2d0c959`; local/source/merged tree `42b48b550027fa9762c93b8f35c0504938f109cf`. Local implementation commit `1b842a331d5bf4fdd1933c08c6b719a267982f02` has the same tree.
 
-Implemented: Weekly Review screen for completed weeks with separate four-week context; evidence navigation; strict response validation and canonical FACT text; mock-only injected provider execution; cancellation/stale-result handling. Reports remain ephemeral, no storage migration (v17 unchanged), APK target 20. No real AI/API, credentials, paid benchmark, proxy, photo analysis, Coach or plan changes. See `LOCAL_WEEKLY_REVIEW.md`.
+Implemented: English Weekly Review under Progress for completed weeks with separate four-week context; real local facts, coverage and evidence navigation; runtime validation including canonical FACT numbers/topic; mock-only injected provider execution; cancellation/stale-result handling. Reports remain ephemeral, storage v17 unchanged. No real AI/API, keys, paid benchmark, proxy, photo analysis, Coach or plan mutation. See `LOCAL_WEEKLY_REVIEW.md`.
 
-Local verification passed: 222 tests, TypeScript, lint and offline Android export. Do not claim APK20 published until exact-head CI, artifact/release digest and signing checks finish. Physical-device checks remain pending.
+## Verification and outstanding release publication
 
-Next proposed package is provider selection/benchmark against v2 fixtures after agreeing permitted data and budget; not started. Real calls require explicit authorization.
+- 222 tests, TypeScript, lint and offline Android export passed locally.
+- PR Quality `35240094903` passed for the reviewed head. Main Quality `35267696764` passed for exact merged main.
+- Native Android run `35267696782` successfully compiled and uploaded the Actions artifact in attempts 1 and 2. The workflow is RED solely because `Publish preview release` failed both times. Each phase used a single bounded watcher, not model-driven status polling.
+- Attempt 1: GitHub server error during release asset upload (Unicorn HTML). Attempt 2: `Error creating asset temp dir`. No application code fix is indicated. Do not repeatedly rebuild to retry a release-server failure.
+- The reused release target points to main, but its assets list is EMPTY as checked after attempt 2. The previous APK19 asset was deleted by the existing replacement workflow before upload failed. Do not advertise the usual release URL as an APK20 download.
+- Verified attempt-2 artifact: `10518343459`, exact workflow/main SHA. ZIP size 36,863,251 bytes; SHA-256 `3a47a9a97fc3dd26adb08a490f39744fc1db2999405dba99721fe3b3451d25e8`.
+- Extracted APK: 80,320,868 bytes; SHA-256 `5cb195997cd87d13a0c2e22857ca6b195d0188da520c0c04516f51b59bd16fde`.
+- Binary manifest versionCode **20**, package `app.abyssprotocol.mobile`. APK v2 RSA signature and chunked content digest verified.
+- Certificate SHA-256 `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, independently compared with preserved APK19; identical.
+- Artifact: https://github.com/szmitek/szmitek-abyss-protocol/actions/runs/35267696782/artifacts/10518343459 (expires 2026-10-01). A verified direct APK copy is provided with the delivery.
+- Physical-device installation/form/Weekly Review walkthrough remains pending; see `ANDROID_VERIFICATION.md`.
+
+## Resume boundary
+
+Implementation and native artifact are complete; GitHub Release publication remains blocked by upload errors. Recover publication using the verified existing artifact when the service permits; avoid another full Android build solely for publishing. Do not mark release successful without comparing the uploaded asset digest to the verified APK. This documentation-only checkpoint is on `docs/weekly-review-delivery`; carry it into the next authorized branch.
+
+Next proposed functional package: provider-selection/benchmark against existing v2 fixtures after jointly agreeing permitted data and budget. Not started; no real-provider calls are authorized by this checkpoint.
 
 ---
 
