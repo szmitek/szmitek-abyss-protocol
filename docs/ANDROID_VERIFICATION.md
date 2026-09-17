@@ -34,3 +34,24 @@ Use the standalone release APK and update over the existing installation. Do not
 - [ ] Layout: 320/360-point screens, large system text and gesture navigation do not clip controls or hide final content.
 
 API references: [React Native AppState](https://reactnative.dev/docs/appstate), [Linking.openSettings](https://reactnative.dev/docs/linking#opensettings), [Expo ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/). Release-device behavior cannot be inferred from domain tests alone.
+
+
+## APK19 body measurements — physical checks pending
+
+- [ ] Update over APK18 without uninstalling or clearing data. Check previous workouts, movement assessments, wellbeing and private photos.
+- [ ] Open Progress → Body measurements with an empty history; continue a normal offline workout without entering any measurement.
+- [ ] Add weight only, waist only and optional circumferences; missing fields stay blank rather than becoming zero. Restart offline and inspect the retained records.
+- [ ] Enter a backdated reading, two readings on one date, decimal comma and decimal point. Confirm chronological history, independent latest weight/waist, and useful validation of zero/invalid/future input.
+- [ ] Export and restore both data-only and photo-inclusive Vault backups; confirm body records survive and the documented data-only photo exclusion remains explicit.
+- [ ] Test keyboard, scrolling, large text and older-history pagination. Check failed-save/retry behavior before closing the app.
+
+These are device checks, not claims of completed testing. Automated migration/backup/facts/mock checks are recorded in HANDOFF.
+
+
+## APK20 local Weekly Review — physical checks pending
+
+- [ ] Update over APK19; confirm source history, body measurements, private photos and Vault remain intact.
+- [ ] In airplane mode open Progress → Weekly Review. Inspect empty and populated weeks, separate four-week context and explicit missing coverage.
+- [ ] Run Development Mock. Confirm visible mock labels, qualitative confidence and limitations; drill from a FACT through source IDs to the exact measurement/workout.
+- [ ] Move weeks, leave/return and background/foreground; previous output must not appear as current for another period or changed source data. Leaving the screen clears the ephemeral review.
+- [ ] Check evidence navigation, more-facts/source pagination and large text. No photo display/upload or plan-change control should appear.

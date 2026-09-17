@@ -57,4 +57,5 @@ No purchased or third-party sample animations are in the APK/repository. MoveKit
 - Body Measurements under Progress: optional kg/cm entries, actual date, append-only history, protocol/version and null missing values.
 - v17 snapshot and Data Vault compatibility with APK18/v16; APK19 is the target delivery for this package.
 - Local statistics and weekly-review.v1 facts; AIProvider and DEVELOPMENT MOCK only. See `AI_DATA_FOUNDATION.md` and `HANDOFF.md` for verification/delivery status.
-- Next proposed package: an offline Weekly Review screen with evidence links, coverage and mock labels; response validation before showing future provider output. Provider choice, API budget/consent and paid benchmark remain separate explicit decisions. No next package is started here.
+- Authorized next package: local Weekly Review with mock, evidence, data coverage and runtime response validation. Implemented on the local-weekly-review branch; see `LOCAL_WEEKLY_REVIEW.md` and `HANDOFF.md` for delivery status.
+- Provider choice, API budget/consent and paid benchmark remain separate explicit decisions. No real-provider, Coach or image-analysis work is authorized.
