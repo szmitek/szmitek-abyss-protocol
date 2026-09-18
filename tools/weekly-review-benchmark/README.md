@@ -124,3 +124,7 @@ BENCH_ALLOW_PAID=NO BENCH_MAX_SESSION_PLN=5 npm run benchmark:weekly -- --dry-ru
 ```
 
 `preflight.json` records each maximum estimate and whether the whole plan fits. `budget-stop.json` records the first blocked case and remaining allowance. A dry-run does not demonstrate that seven real calls fit 5 PLN. Do not retry a paid run, clear existing reservations or increase limits without separate authorization.
+
+## Offline model selection
+
+See [the staged comparison plan](../../docs/WEEKLY_REVIEW_MODEL_SELECTION.md). `prepare-comparison.mjs` only serializes proposed requests and validates mock fixtures; it cannot run live. The existing live harness remains Astra-only. Sol requires a separately reviewed runner, pricing, and explicit spending approval.

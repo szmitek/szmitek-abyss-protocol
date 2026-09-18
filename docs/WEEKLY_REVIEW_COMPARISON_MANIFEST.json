@@ -1,0 +1,84 @@
+{
+  "offlineOnly": true,
+  "paidAuthorized": false,
+  "apiRequests": 0,
+  "apiCostPln": 0,
+  "baselineRequestSha256": "1a07e0113ba4a23875de647aa1544a2ea2a5b3c4e91141ff013ef627a19422c2",
+  "pricingAssumptionDate": "2026-09-18",
+  "plnPerUsd": 4,
+  "pricingRequiresRecheckBeforeLive": true,
+  "requests": [
+    {
+      "id": "screen-W01-sol",
+      "caseId": "W01",
+      "phase": "screen",
+      "payload": "original-artifact",
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "requestSha256": "84413c91925e6ee9e37763d034c5ef948d07c84f032267e909dfd81dfe43b7f1",
+      "controlledFieldsSha256": "0f475533c90013dabef95f415fa1864fcb7221257e1abf8010261c95e7c74c13",
+      "byteBasedReservationPln": 2.06838
+    },
+    {
+      "id": "compare-W02-astra",
+      "caseId": "W02",
+      "phase": "conditional-comparison",
+      "payload": "compact",
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "requestSha256": "dae89e1a97313dcc5e9ffb2f2515e920587facdf1f4cc9c4107bbad40c250ffe",
+      "controlledFieldsSha256": "c3e1d5ffbf60ecade5e140fc62f4bfff5ac03898d8b704483193cdac3e34dc84",
+      "byteBasedReservationPln": 3.74625
+    },
+    {
+      "id": "compare-W02-sol",
+      "caseId": "W02",
+      "phase": "conditional-comparison",
+      "payload": "compact",
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "requestSha256": "57e7ef69850ff8d04d201553a02203554d1429b6ec496846ff9b6407820b6ef3",
+      "controlledFieldsSha256": "c3e1d5ffbf60ecade5e140fc62f4bfff5ac03898d8b704483193cdac3e34dc84",
+      "byteBasedReservationPln": 1.4985
+    },
+    {
+      "id": "compare-W03-astra",
+      "caseId": "W03",
+      "phase": "conditional-comparison",
+      "payload": "compact",
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "requestSha256": "41ab9c3535f10b9e9149442c19a2e1d8792cb581933bea32b2d601eae37458d2",
+      "controlledFieldsSha256": "7cd20a08bcd8d72677755caf645d415d88a30e55c1218943fd2f75b15fda3a6d",
+      "byteBasedReservationPln": 4.8207
+    },
+    {
+      "id": "compare-W03-sol",
+      "caseId": "W03",
+      "phase": "conditional-comparison",
+      "payload": "compact",
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "requestSha256": "d1899fcfbd12a602a83b6bc655fc56cb6f43e68ebc456f29543952047a4f72be",
+      "controlledFieldsSha256": "7cd20a08bcd8d72677755caf645d415d88a30e55c1218943fd2f75b15fda3a6d",
+      "byteBasedReservationPln": 1.92828
+    }
+  ],
+  "mockValidation": [
+    {
+      "testcaseId": "W01",
+      "mockValid": true,
+      "modelQuality": "NOT_EVALUATED"
+    },
+    {
+      "testcaseId": "W02",
+      "mockValid": true,
+      "modelQuality": "NOT_EVALUATED"
+    },
+    {
+      "testcaseId": "W03",
+      "mockValid": true,
+      "modelQuality": "NOT_EVALUATED"
+    }
+  ]
+}
