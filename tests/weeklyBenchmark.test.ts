@@ -101,3 +101,32 @@ test('critical violations disqualify regardless of average; dry-run and unreview
   assert.equal(configurationVerdict([{ valid: true, dryRun: false, assessment: { ...assessment, reviewStatus: 'pending' } }]), 'pending_human_review');
   assert.equal(configurationVerdict([{ valid: false, dryRun: false, assessment }]), 'failed_pilot_gate');
 });
+
+test('secret preflight fails closed and detects response echoes without revealing credentials', async () => {
+  const { requireEnvironmentKey, containsCredential } = await import('../tools/weekly-review-benchmark/security.ts');
+  for (const env of [{}, { OPENAI_API_KEY: '' }, { OPENAI_API_KEY: '  ' }, { OPENAI_API_KEY: 'line\nbreak' }, { OPENAI_API_KEY: 'synthetic-only', NODE_DEBUG: 'http' }, { OPENAI_API_KEY: 'synthetic-only', NODE_OPTIONS: '--inspect' }]) assert.throws(() => requireEnvironmentKey(env));
+  assert.equal(requireEnvironmentKey({ OPENAI_API_KEY: 'synthetic-only' }), 'synthetic-only');
+  assert(containsCredential('An error echoed synthetic-only', 'synthetic-only'));
+  assert(containsCredential('{"Authorization":"Bearer anything"}', 'synthetic-only'));
+  assert.equal(containsCredential('{"message":"Invalid authentication"}', 'synthetic-only'), false);
+});
+
+test('manual workflow exposes secret only to no-network preflight and cannot run live', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/weekly-review-secret-check.yml', import.meta.url), 'utf8');
+  assert.equal(workflow.split('${{ secrets.OPENAI_API_KEY }}').length - 1, 1);
+  assert.match(workflow, /environment: rpgfitness-benchmark/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /--live|BENCH_ALLOW_PAID: ['"]?YES|upload-artifact|pull_request_target/);
+  assert.match(workflow, /BENCH_ALLOW_PAID: 'NO'/);
+});
+
+test('first authorized screening can select medium only without losing its eight cases', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'medium-only-'));
+  try {
+    const options = cliOptions(['--dry-run', '--effort=medium'], {});
+    const result = await runBenchmark({ ...options, outputRoot: dir });
+    assert.equal(result.summary.runs, 8);
+    assert(result.summary.results.every((r) => r.effort === 'medium' && r.valid));
+    assert.equal(result.summary.actualApiCostPln, 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

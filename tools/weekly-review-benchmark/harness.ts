@@ -1,3 +1,4 @@
+import { requireEnvironmentKey } from './security.ts';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, openSync, closeSync, unlinkSync, renameSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -12,12 +13,13 @@ import { scoreTemplate } from './scoring.ts';
 const defaultRoot = fileURLToPath(new URL('../../.benchmark-results/', import.meta.url));
 const save = (path: string, data: unknown) => writeFileSync(path, JSON.stringify(data, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
-export interface Options { dryRun: boolean; repeats: number; outputRoot: string; fx: number; perRunPln: number; sessionPln: number; maxOutputTokens: number; env: Readonly<Record<string, string | undefined>> }
+export interface Options { effort?: 'medium' | 'matrix'; dryRun: boolean; repeats: number; outputRoot: string; fx: number; perRunPln: number; sessionPln: number; maxOutputTokens: number; env: Readonly<Record<string, string | undefined>> }
 export async function runBenchmark(options: Options) {
   const { dryRun, repeats, fx, perRunPln, sessionPln, maxOutputTokens, env } = options;
   if (!Number.isSafeInteger(repeats) || repeats < 1 || repeats > 5) throw new Error('Repeats must be 1–5.');
   positive(fx, 'FX'); positive(perRunPln, 'per-run limit'); positive(sessionPln, 'session limit');
   if (!dryRun && (env.BENCH_ALLOW_PAID !== 'YES' || !env.OPENAI_API_KEY?.trim())) throw new Error('Live mode is not authorized/configured.');
+  if (!dryRun) requireEnvironmentKey(env);
   // One fixed ledger for all live invocations on this checkout, irrespective of output path.
   mkdirSync(defaultRoot, { recursive: true, mode: 0o700 });
   let lock: number | undefined;
@@ -44,7 +46,7 @@ export async function runBenchmark(options: Options) {
     const assessments: ReturnType<typeof scoreTemplate>[] = [];
     let stopped: string | null = null;
     for (const test of weeklyCases()) {
-      const efforts: Effort[] = test.high ? ['medium', 'high'] : ['medium'];
+      const efforts: Effort[] = test.high && options.effort !== 'medium' ? ['medium', 'high'] : ['medium'];
       for (const effort of efforts) for (let repeat = 1; repeat <= repeats; repeat++) {
         if (stopped) break;
         const body = makeRequest(test, effort, maxOutputTokens);
@@ -86,10 +88,10 @@ export async function runBenchmark(options: Options) {
 export function cliOptions(args: string[], env: Readonly<Record<string, string | undefined>>): Options {
   const modes = args.filter((a) => a === '--dry-run' || a === '--live');
   if (modes.length !== 1) throw new Error('Specify exactly one of --dry-run or --live.');
-  if (args.some((a) => !['--dry-run', '--live'].includes(a) && !/^--repeats=[1-5]$/.test(a))) throw new Error('Unknown argument.');
+  if (args.some((a) => !['--dry-run', '--live'].includes(a) && !/^--repeats=[1-5]$/.test(a) && !/^--effort=(medium|matrix)$/.test(a))) throw new Error('Unknown argument.');
   const dryRun = modes[0] === '--dry-run';
   if (!dryRun && (!env.BENCH_MAX_RUN_PLN || !env.BENCH_MAX_SESSION_PLN || !env.BENCH_PLN_PER_USD)) throw new Error('Live mode requires explicit run/session limits and FX.');
-  return { dryRun, repeats: Number(args.find((a) => a.startsWith('--repeats='))?.split('=')[1] ?? 1), outputRoot: defaultRoot, fx: positive(env.BENCH_PLN_PER_USD ?? 4, 'FX'), perRunPln: positive(env.BENCH_MAX_RUN_PLN ?? 5, 'run cap'), sessionPln: positive(env.BENCH_MAX_SESSION_PLN ?? 10, 'session cap'), maxOutputTokens: Number(env.BENCH_MAX_OUTPUT_TOKENS ?? 4096), env };
+  return { effort: args.includes('--effort=medium') ? 'medium' : 'matrix', dryRun, repeats: Number(args.find((a) => a.startsWith('--repeats='))?.split('=')[1] ?? 1), outputRoot: defaultRoot, fx: positive(env.BENCH_PLN_PER_USD ?? 4, 'FX'), perRunPln: positive(env.BENCH_MAX_RUN_PLN ?? 5, 'run cap'), sessionPln: positive(env.BENCH_MAX_SESSION_PLN ?? 10, 'session cap'), maxOutputTokens: Number(env.BENCH_MAX_OUTPUT_TOKENS ?? 4096), env };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   runBenchmark(cliOptions(process.argv.slice(2), process.env)).then(({ directory, summary }) => {

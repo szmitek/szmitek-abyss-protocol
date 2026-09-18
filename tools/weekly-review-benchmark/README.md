@@ -56,6 +56,8 @@ Result files are gitignored, created with private permissions where supported, a
 
 ## Future live setup — NOT authorized or run in this package
 
+For this Work/GitHub project, use an environment secret as described in [SECRET_SETUP.md](SECRET_SETUP.md). Do not paste the key into chat. The manual secret-check workflow performs no OpenAI request and contains no live mode.
+
 | Variable | Purpose |
 |---|---|
 | `OPENAI_API_KEY` | Secret, from environment only; never CLI argument, fixture, source, APK or log |
@@ -68,10 +70,10 @@ Result files are gitignored, created with private permissions where supported, a
 After account/model access and pricing have been checked, a separate user authorization to spend is obtained, and these variables are set securely, run exactly:
 
 ```sh
-npm run benchmark:weekly -- --live --repeats=1
+npm run benchmark:weekly -- --live --effort=medium --repeats=1
 ```
 
-This is the 12-request screening matrix, **subject to budget stops**. After reviewing quality/cost, a separately authorized `--repeats=3` run is the 36-request matrix. Do not run both automatically. No code edit is required to enable the developer transport. The application remains mock-only regardless of this command. There is no default live mode. No API key is needed for dry-run, tests or development.
+This is the 8-request medium-only screening matrix, **subject to budget stops**. After reviewing quality/cost, a separately authorized `--repeats=3` run is the 36-request matrix. Do not run both automatically. No code edit is required to enable the developer transport. The application remains mock-only regardless of this command. There is no default live mode. No API key is needed for dry-run, tests or development.
 
 Responses request: `model: gpt-6-astra`, `reasoning.effort: medium | high`, `store:false`, `stream:false`, strict `text.format` schema, explicit `max_output_tokens`; no previous response, conversation, tools or cross-case memory. Requests are sequential with a 180-second timeout, no redirects and **zero automatic retries**. `store:false` is not a claim of zero provider retention. No external model request was used to verify provider acceptance of this schema; that remains part of the first live smoke test.
 
@@ -103,3 +105,5 @@ It writes `scored-summary.json` with **per-testcase/configuration** assessments 
 ## Delivery boundaries
 
 No production `AIProvider`, UI, snapshot/storage migration, photo handling or Android version is changed. No APK is needed. The benchmark transport is separate from app composition. A future production adapter still needs approved consent/credentials architecture, operational policy, usage metadata and integration tests. This package only makes the developer benchmark ready for later authorization and credentials.
+
+Credential safety: secret-bearing execution rejects runtime debug/injection options. Exceptions are never serialized. If a provider body echoes the key or an Authorization bearer header, it is withheld, marked `sensitive_response_withheld`, and the run stops with the reservation retained. This is an explicit security exception to verbatim raw-response retention; it is not a repaired model answer.

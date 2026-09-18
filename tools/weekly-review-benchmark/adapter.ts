@@ -1,3 +1,4 @@
+import { requireEnvironmentKey, containsCredential } from './security.ts';
 import { reviewEvidence } from '../../src/domain/reviewEvidence.ts';
 import { validateProgressResponse } from '../../src/domain/reviewValidation.ts';
 import { MockAIProvider } from '../../src/domain/mockAIProvider.ts';
@@ -21,14 +22,17 @@ export function makeRequest(test: TestCase, effort: Effort, maxOutputTokens: num
   };
 }
 export type RequestBody = ReturnType<typeof makeRequest>;
-export interface TransportResult { httpStatus: number | null; rawBody: string; transportError: 'timeout' | 'network' | null }
+export interface TransportResult { httpStatus: number | null; rawBody: string; transportError: 'timeout' | 'network' | 'sensitive_response_withheld' | null }
 // Developer-only adapter. Never imported by the mobile application. No retries,
 // redirect following, tools, files, previous_response_id, conversations or SDK.
 export async function openAIRequest(body: RequestBody, env: Readonly<Record<string, string | undefined>>): Promise<TransportResult> {
   if (env.BENCH_ALLOW_PAID !== 'YES' || !env.OPENAI_API_KEY?.trim()) throw new Error('Live benchmark requires explicit paid opt-in and an environment API key.');
+  const key = requireEnvironmentKey(env);
   try {
-    const result = await fetch('https://api.openai.com/v1/responses', { method: 'POST', redirect: 'error', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.OPENAI_API_KEY}` }, body: JSON.stringify(body), signal: AbortSignal.timeout(180_000) });
-    return { httpStatus: result.status, rawBody: await result.text(), transportError: null };
+    const result = await fetch('https://api.openai.com/v1/responses', { method: 'POST', redirect: 'error', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` }, body: JSON.stringify(body), signal: AbortSignal.timeout(180_000) });
+    const rawBody = await result.text();
+    if (containsCredential(rawBody, key)) return { httpStatus: result.status, rawBody: '', transportError: 'sensitive_response_withheld' };
+    return { httpStatus: result.status, rawBody, transportError: null };
   } catch (error) {
     // Do not serialize exception messages/headers: credentials must never enter logs.
     return { httpStatus: null, rawBody: '', transportError: error instanceof Error && error.name === 'TimeoutError' ? 'timeout' : 'network' };
