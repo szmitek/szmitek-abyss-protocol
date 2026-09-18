@@ -296,3 +296,22 @@ test('Sol workflow is manual, default-off, secret-scoped and capped at 2.10 PLN'
   assert.match(workflow, /sol-w01.ts --live/);
   assert.doesNotMatch(workflow, /schedule:|pull_request_target|harness.ts --live/);
 });
+
+test('offline completeness v2 preserves safety, schema and all input, without changing live v1', async () => {
+  const { completenessRequest, completenessPrompt, completenessPromptVersion } = await import('../tools/weekly-review-benchmark/completeness-v2.ts');
+  const { systemPrompt, promptVersion } = await import('../tools/weekly-review-benchmark/contract.ts');
+  assert.equal(promptVersion, 'weekly-review.benchmark.v1');
+  assert.notEqual(completenessPromptVersion, promptVersion);
+  assert.ok(completenessPrompt.startsWith(systemPrompt));
+  for (const testCase of weeklyCases().slice(0, 3)) {
+    const before = makeRequest(testCase, 'medium', 4096, 'compact');
+    const after = completenessRequest(testCase, 'gpt-5.6-sol');
+    assert.deepEqual(after.input[1], before.input[1]);
+    assert.deepEqual(after.text, before.text);
+    assert.equal(after.model, 'gpt-5.6-sol');
+    assert.deepEqual(after.reasoning, { effort: 'medium' });
+    assert.equal(after.max_output_tokens, 4096);
+  }
+  assert.throws(() => completenessRequest(weeklyCases()[3]!, 'gpt-5.6-sol'));
+  assert.throws(() => completenessRequest(weeklyCases()[0]!, 'gpt-5.6-sol', 'high'));
+});
