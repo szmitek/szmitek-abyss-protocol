@@ -107,3 +107,7 @@ It writes `scored-summary.json` with **per-testcase/configuration** assessments 
 No production `AIProvider`, UI, snapshot/storage migration, photo handling or Android version is changed. No APK is needed. The benchmark transport is separate from app composition. A future production adapter still needs approved consent/credentials architecture, operational policy, usage metadata and integration tests. This package only makes the developer benchmark ready for later authorization and credentials.
 
 Credential safety: secret-bearing execution rejects runtime debug/injection options. Exceptions are never serialized. If a provider body echoes the key or an Authorization bearer header, it is withheld, marked `sensitive_response_withheld`, and the run stops with the reservation retained. This is an explicit security exception to verbatim raw-response retention; it is not a repaired model answer.
+
+## GitHub Actions execution
+
+See [ACTIONS_PILOT.md](ACTIONS_PILOT.md) for the manual, default-off medium-only workflow and durable full-session budget reservation. The key is environment-scoped; a separate explicit spending approval is still required. A successful secret check is not a successful model request.

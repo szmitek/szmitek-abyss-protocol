@@ -33,7 +33,7 @@ jobs:
             const base = process.env.BASE_SHA;
             if (!/^[0-9a-f]{40}$/.test(base) || /^0+$/.test(base)) throw Error('No comparison base');
             const files = execFileSync('git', ['diff', '--name-only', base, 'HEAD'], { encoding: 'utf8' }).trim().split('\n');
-            const onlyBenchmark = files.every(p => p.startsWith('tools/weekly-review-benchmark/') || p.startsWith('docs/') || ['tests/weeklyBenchmark.test.ts', 'package.json', '.gitignore', '.github/workflows/quality.yml', '.github/workflows/weekly-review-secret-check.yml', '.github/workflows/android-preview.yml'].includes(p));
+            const onlyBenchmark = files.every(p => p.startsWith('tools/weekly-review-benchmark/') || p.startsWith('docs/') || ['tests/weeklyBenchmark.test.ts', 'package.json', '.gitignore', '.github/workflows/quality.yml', '.github/workflows/weekly-review-secret-check.yml', '.github/workflows/weekly-review-benchmark.yml', '.github/workflows/android-preview.yml'].includes(p));
             const oldPackage = JSON.parse(execFileSync('git', ['show', `${base}:package.json`], { encoding: 'utf8' }));
             const newPackage = JSON.parse(readFileSync('package.json', 'utf8'));
             delete oldPackage.scripts['benchmark:weekly'];

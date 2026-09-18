@@ -130,3 +130,84 @@ test('first authorized screening can select medium only without losing its eight
     assert.equal(result.summary.actualApiCostPln, 0);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('durable journal retains full reservations, blocks reruns and enforces monthly cap across runners', async () => {
+  const { reserveSession } = await import('../tools/weekly-review-benchmark/actionsBudget.ts');
+  const empty = { version: 1, reservations: [] };
+  const first = reserveSession(empty, '101', '2026-09', 5);
+  const second = reserveSession(first, '102', '2026-09', 5);
+  assert.equal(second.reservations.reduce((n, r) => n + r.microPln, 0), 10000000);
+  assert.deepEqual(empty.reservations, []);
+  assert.throws(() => reserveSession(second, '103', '2026-09', 0.01));
+  assert.throws(() => reserveSession(first, '101', '2026-09', 5));
+  assert.throws(() => reserveSession(first, '101', '2026-10', 5));
+  assert.equal(reserveSession(second, '103', '2026-10', 5).reservations.length, 3);
+  for (const bad of [null, {}, { version: 2, reservations: [] }, { version: 1, reservations: [{ runId: '1', month: '2026-09', microPln: -1 }] }, { version: 1, reservations: [{ runId: 101, month: '2026-09', microPln: 1 }] }, { version: 1, reservations: [...first.reservations, ...first.reservations] }]) assert.throws(() => reserveSession(bad, '103', '2026-09', 5));
+  assert.throws(() => reserveSession(first, '103', '2026-08', 5));
+  assert.throws(() => reserveSession(first, '103', '2026-09', NaN));
+});
+
+test('Actions reservation uses fixed GitHub endpoint, compare-and-set and no secret-bearing journal', async () => {
+  const { reserveActionsSession } = await import('../tools/weekly-review-benchmark/actionsBudget.ts');
+  const env = { GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'szmitek/szmitek-abyss-protocol', GITHUB_REF: 'refs/heads/main', GITHUB_EVENT_NAME: 'workflow_dispatch', BENCH_ALLOW_PAID: 'YES', GITHUB_TOKEN: 'synthetic-github-token', GITHUB_RUN_ID: '101' };
+  const original = globalThis.fetch;
+  const calls: { url: string; body: string }[] = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), body: String(options?.body ?? '') });
+    assert.equal(options?.redirect, 'error');
+    return new Response(JSON.stringify(calls.length === 1 ? { sha: 'a'.repeat(40), encoding: 'base64', content: Buffer.from(JSON.stringify({ version: 1, reservations: [] })).toString('base64') } : {}), { status: 200 });
+  };
+  try {
+    await reserveActionsSession(env, 5, '2026-09');
+    assert.equal(calls.length, 2);
+    assert(calls.every((c) => c.url.startsWith('https://api.github.com/repos/szmitek/szmitek-abyss-protocol/contents/budget.json')));
+    const update = JSON.parse(calls[1]!.body);
+    assert.equal(update.sha, 'a'.repeat(40)); assert.equal(update.branch, 'benchmark-budget');
+    assert.deepEqual(JSON.parse(Buffer.from(update.content, 'base64').toString()), { version: 1, reservations: [{ runId: '101', month: '2026-09', microPln: 5000000 }] });
+    assert(!calls[1]!.body.includes(env.GITHUB_TOKEN));
+    for (const override of [{ GITHUB_TOKEN: '' }, { BENCH_ALLOW_PAID: 'NO' }, { GITHUB_REF: 'refs/heads/untrusted' }, { GITHUB_EVENT_NAME: 'pull_request' }, { GITHUB_REPOSITORY: 'other/repo' }]) await assert.rejects(reserveActionsSession({ ...env, ...override }, 5, '2026-09'));
+    assert.equal(calls.length, 2);
+  } finally { globalThis.fetch = original; }
+});
+
+test('missing/corrupt/conflicting durable journal never falls back or retries and errors are sanitized', async () => {
+  const { reserveActionsSession } = await import('../tools/weekly-review-benchmark/actionsBudget.ts');
+  const env = { GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'szmitek/szmitek-abyss-protocol', GITHUB_REF: 'refs/heads/main', GITHUB_EVENT_NAME: 'workflow_dispatch', BENCH_ALLOW_PAID: 'YES', GITHUB_TOKEN: 'synthetic-only', GITHUB_RUN_ID: '101' };
+  const original = globalThis.fetch;
+  try {
+    for (const mode of ['missing', 'corrupt', 'conflict', 'timeout']) {
+      let calls = 0;
+      globalThis.fetch = async () => {
+        calls++;
+        if (mode === 'timeout') throw new Error('Authorization: Bearer synthetic-only');
+        if (mode === 'missing') return new Response('private error', { status: 404 });
+        if (mode === 'corrupt') return new Response('{bad');
+        return calls === 1 ? new Response(JSON.stringify({ sha: 'a'.repeat(40), encoding: 'base64', content: Buffer.from('{"version":1,"reservations":[]}').toString('base64') })) : new Response('private conflict', { status: 409 });
+      };
+      await assert.rejects(reserveActionsSession(env, 5, '2026-09'), (error: Error) => error.message === 'Durable budget unavailable or exhausted; no model request permitted.');
+      assert.equal(calls, mode === 'conflict' ? 2 : 1);
+    }
+  } finally { globalThis.fetch = original; }
+});
+
+test('live Actions harness refuses to reach the model without durable reservation', async () => {
+  const original = globalThis.fetch, directory = mkdtempSync(join(tmpdir(), 'budget-guard-'));
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error('Forbidden'); };
+  try {
+    await assert.rejects(runBenchmark({ ...cliOptions(['--dry-run', '--effort=medium'], {}), dryRun: false, outputRoot: directory, env: { GITHUB_ACTIONS: 'true', BENCH_ALLOW_PAID: 'YES', OPENAI_API_KEY: 'synthetic-only' } }));
+    assert.equal(calls, 0);
+  } finally { globalThis.fetch = original; rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('pilot workflow defaults to offline, confines secret and fixes medium-only single repetition', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/weekly-review-benchmark.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /default: 'NO'/);
+  assert.match(workflow, /inputs.allow_paid == 'YES'/);
+  assert.match(workflow, /environment: rpgfitness-benchmark/);
+  assert.match(workflow, /BENCH_ALLOW_PAID: \$\{\{ inputs.allow_paid \}\}/);
+  assert.equal(workflow.split('${{ secrets.OPENAI_API_KEY }}').length - 1, 1);
+  assert.match(workflow, /--live --effort=medium --repeats=1/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.doesNotMatch(workflow, /pull_request_target|schedule:|--effort=matrix/);
+});

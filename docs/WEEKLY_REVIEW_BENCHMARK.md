@@ -17,3 +17,5 @@ The dry-run exercises request serialization, exact raw response persistence, pro
 CLI defaults to no execution unless a mode is supplied. Live additionally requires environment key, explicit paid opt-in, FX and per-run/session limits. The local persistent monthly ledger applies only to this checkout, not OpenAI account billing. A first authorized screening may stop early at the budget limit; no automatic increase or retry exists.
 
 Future work, not started: authorize actual spending, configure account/credentials, run the first 12-request screening matrix within limits, assess original outputs, and only then decide repeat testing and production adapter work. No Luna, Coach, Vision or model routing implementation is included.
+
+The manual Actions pilot now adds a durable, conservative full-session reservation on branch `benchmark-budget`; see [pilot operations](../tools/weekly-review-benchmark/ACTIONS_PILOT.md). It defaults to offline and still requires separate authorization before paid execution. No APK or application integration is part of this preparation.

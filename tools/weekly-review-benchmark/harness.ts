@@ -1,3 +1,4 @@
+import { reserveActionsSession } from './actionsBudget.ts';
 import { requireEnvironmentKey } from './security.ts';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, openSync, closeSync, unlinkSync, renameSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -26,6 +27,7 @@ export async function runBenchmark(options: Options) {
   const lockPath = resolve(defaultRoot, 'live.lock'), ledgerPath = resolve(defaultRoot, 'monthly-budget.json');
   const month = new Date().toISOString().slice(0, 7);
   let monthlySpent = 0, sessionSpent = 0;
+  let actionsMonthlyReservedPln: number | null = null;
   if (!dryRun) {
     lock = openSync(lockPath, 'wx', 0o600);
   }
@@ -39,6 +41,9 @@ export async function runBenchmark(options: Options) {
       const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8'));
       if (!/^\d{4}-\d{2}$/.test(ledger.month) || !Number.isFinite(ledger.reservedOrSpentPln) || ledger.reservedOrSpentPln < 0 || ledger.month > month) throw new Error('Invalid local monthly ledger; manual reconciliation required.');
       monthlySpent = ledger.month === month ? ledger.reservedOrSpentPln : 0;
+    }
+    if (!dryRun && env.GITHUB_ACTIONS === 'true') {
+      actionsMonthlyReservedPln = await reserveActionsSession(env, sessionPln, month);
     }
     const directory = resolve(options.outputRoot, `${dryRun ? 'dry-run' : 'live'}-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
     mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -78,7 +83,7 @@ export async function runBenchmark(options: Options) {
       }
     }
     save(resolve(directory, 'scores.json'), assessments);
-    const summary = { dryRun, model, promptVersion, results, stopped, runs: results.length, actualApiCostPln: dryRun ? 0 : results.some((r) => r.chargedPln > 0) ? 'see per-run measured costs; unknown usage retains reservation' : 0, sessionAccountedPln: sessionSpent, monthlyAccountedPln: dryRun ? null : monthlySpent, softBudgetReached: !dryRun && monthlySpent >= pilot.astraSoftMonthlyPln, hardCapScope: 'local checkout, not OpenAI billing control', qualityVerdict: 'not_evaluated', noAutomaticRetries: true };
+    const summary = { dryRun, model, promptVersion, results, stopped, runs: results.length, actualApiCostPln: dryRun ? 0 : results.some((r) => r.chargedPln > 0) ? 'see per-run measured costs; unknown usage retains reservation' : 0, sessionAccountedPln: sessionSpent, monthlyAccountedPln: dryRun ? null : monthlySpent, actionsMonthlyReservedPln, softBudgetReached: !dryRun && Math.max(monthlySpent, actionsMonthlyReservedPln ?? 0) >= pilot.astraSoftMonthlyPln, hardCapScope: env.GITHUB_ACTIONS === 'true' && !dryRun ? 'durable Actions session reservations plus local per-request accounting; not billing control' : 'local checkout, not OpenAI billing control', qualityVerdict: 'not_evaluated', noAutomaticRetries: true };
     save(resolve(directory, 'summary.json'), summary);
     return { directory, summary };
   } finally {
