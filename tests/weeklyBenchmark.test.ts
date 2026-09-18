@@ -71,7 +71,7 @@ test('budget reserves worst-case input and output, respects run/session/month li
   assert.throws(() => estimateMaximum(r, 4096, NaN));
 });
 test('cost includes reasoning once; unknown and inconsistent usage are not free', () => {
-  const cost = usageCost({ input_tokens: 1000, output_tokens: 2000, input_tokens_details: { cached_tokens: 500 }, output_tokens_details: { reasoning_tokens: 1500 } }, 4)!;
+  const cost = usageCost({ input_tokens: 1000, output_tokens: 2000, input_tokens_details: { cached_tokens: 500, cache_write_tokens: 0 }, output_tokens_details: { reasoning_tokens: 1500 } }, 4)!;
   assert.equal(cost.outputTokens, 2000); assert.equal(cost.reasoningTokens, 1500); assert(Math.abs(cost.usd - 0.1055) < 1e-8);
   assert.equal(usageCost(null, 4), null);
   assert.equal(usageCost({ input_tokens: 1, output_tokens: 1, output_tokens_details: { reasoning_tokens: 2 } }, 4), null);
@@ -210,4 +210,53 @@ test('pilot workflow defaults to offline, confines secret and fixes medium-only 
   assert.match(workflow, /--live --effort=medium --repeats=1/);
   assert.match(workflow, /persist-credentials: false/);
   assert.doesNotMatch(workflow, /pull_request_target|schedule:|--effort=matrix/);
+});
+
+test('usage pricing separates normal input, cache write/read and inclusive reasoning output', () => {
+  const cost = (input: number, cached: number, written: number, output: number, reasoning?: number) => usageCost({ input_tokens: input, input_tokens_details: { cached_tokens: cached, cache_write_tokens: written }, output_tokens: output, output_tokens_details: reasoning === undefined ? {} : { reasoning_tokens: reasoning }, total_tokens: input + output }, 4)!;
+  assert.equal(cost(1000, 0, 0, 0).usd, 0.01);
+  assert.equal(cost(1000, 0, 1000, 0).usd, 0.0125);
+  assert.equal(cost(1000, 1000, 0, 0).usd, 0.001);
+  assert.equal(cost(0, 0, 0, 1000, 600).usd, 0.05);
+  assert.equal(cost(0, 0, 0, 1000, 0).usd, 0.05);
+  assert.equal(cost(0, 0, 0, 1000).visibleOutputTokens, null);
+  const w01 = cost(21979, 0, 21976, 2174, 86);
+  assert.equal(w01.usd, 0.38343); assert.equal(w01.pln, 1.53372);
+  assert.equal(w01.ordinaryInputTokens, 3); assert.equal(w01.visibleOutputTokens, 2088);
+  assert.equal(cost(1000, 300, 500, 100, 20).usd, 0.01355);
+  for (const invalid of [{ input_tokens: 100, output_tokens: 10, input_tokens_details: { cached_tokens: 60, cache_write_tokens: 60 } }, { input_tokens: 1, output_tokens: 1, input_tokens_details: { cache_write_tokens: -1 } }, { input_tokens: 1, output_tokens: 1, total_tokens: 1 }, { input_tokens: 272001, output_tokens: 1 }]) assert.equal(usageCost(invalid, 4), null);
+  assert.throws(() => usageCost({input_tokens: 1, output_tokens: 1}, NaN));
+});
+
+test('compact evidence transport preserves original snapshot, identifiers, availability and canonical facts', () => {
+  for (const c of weeklyCases()) {
+    const full = JSON.parse(makeRequest(c, 'medium', 4096).input[1]!.content);
+    const compact = JSON.parse(makeRequest(c, 'medium', 4096, 'compact').input[1]!.content);
+    assert.deepEqual(compact.review, full.review);
+    assert.deepEqual(compact.evidence, full.evidence.map(({id,kind,sourceIds,available,canonicalFactText}: Record<string,unknown>) => ({id,kind,sourceIds,available,canonicalFactText})));
+    assert(JSON.stringify(compact).length < JSON.stringify(full).length);
+    const body = makeRequest(c, 'medium', 4096, 'compact');
+    const reservation = estimateMaximum(body, 4096, 4);
+    const worst = usageCost({input_tokens: reservation.inputTokenCeiling, input_tokens_details: {cached_tokens: 0, cache_write_tokens: reservation.inputTokenCeiling}, output_tokens: 4096}, 4)!;
+    assert(Math.abs(reservation.maximumPln - worst.pln) < 1e-10);
+  }
+});
+
+test('offline remaining-case selection never repeats W01 and never reaches transport', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'remaining-cases-')), original = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('No network'); };
+  try {
+    const options = cliOptions(['--dry-run', '--effort=medium', '--cases=remaining', '--payload=compact'], {});
+    const r = await runBenchmark({...options, outputRoot: directory});
+    assert.deepEqual(r.summary.results.map((v) => v.testcaseId), ['W02','W03','W04','W05','W06','W07','W08']);
+    assert.equal(r.summary.payloadVersion, 'evidence-index.v2');
+    assert.equal(r.summary.actualApiCostPln, 0);
+    assert(r.summary.results.every((v) => v.valid));
+  } finally {globalThis.fetch = original; rmSync(directory, {recursive:true,force:true});}
+});
+
+test('missing cache accounting is not treated as zero-price writes; standard tier is explicit', () => {
+  assert.equal(usageCost({input_tokens: 100, output_tokens: 10, input_tokens_details: {cached_tokens: 0}}, 4), null);
+  assert.equal(usageCost({input_tokens: 100, output_tokens: 10, input_tokens_details: {cache_write_tokens: 0}}, 4), null);
+  assert.equal(makeRequest(cases[0]!, 'medium', 4096).service_tier, 'default');
 });

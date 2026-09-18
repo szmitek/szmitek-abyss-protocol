@@ -8,15 +8,15 @@ import { responseSchema, systemPrompt } from './contract.ts';
 export type Effort = 'medium' | 'high';
 export const model = 'gpt-6-astra';
 export const providerId = 'openai-weekly-benchmark';
-export function makeRequest(test: TestCase, effort: Effort, maxOutputTokens: number) {
+export function makeRequest(test: TestCase, effort: Effort, maxOutputTokens: number, payload: 'full' | 'compact' = 'full') {
   if (!['medium', 'high'].includes(effort) || !Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 1024 || maxOutputTokens > 16384) throw new Error('Invalid benchmark configuration.');
   const facts = [...test.input.facts, ...(test.input.historyContext?.facts ?? [])];
   const evidence = [...reviewEvidence(test.input).values()].map((e) => {
     const f = facts.find((v) => v.id === e.id);
-    return { ...e, canonicalFactText: f && f.value !== null && f.sourceIds.length ? `${f.metric}: ${f.value} ${f.unit}.` : null };
+    return { ...(payload === 'compact' ? { id: e.id, kind: e.kind, sourceIds: e.sourceIds, available: e.available } : e), canonicalFactText: f && f.value !== null && f.sourceIds.length ? `${f.metric}: ${f.value} ${f.unit}.` : null };
   });
   // Explicit whitelist: no title, reference answers, rubric, mutation note or sibling cases.
-  return { model, reasoning: { effort }, store: false, stream: false, max_output_tokens: maxOutputTokens,
+  return { model, service_tier: 'default', reasoning: { effort }, store: false, stream: false, max_output_tokens: maxOutputTokens,
     input: [{ role: 'system', content: systemPrompt }, { role: 'user', content: JSON.stringify({ review: test.input, evidence }) }],
     text: { format: { type: 'json_schema', name: 'progress_review_v1', strict: true, schema: responseSchema } },
   };
@@ -59,5 +59,5 @@ export function evaluateResponse(raw: TransportResult, test: TestCase, dry: bool
   if (outputs.length === 1) { try { data = JSON.parse(outputs[0]!.text as string); } catch { /* Raw text is preserved separately, never repaired. */ } }
   const eligible = !raw.transportError && (dry || raw.httpStatus === 200) && status === 'completed' && !refusal && outputs.length === 1 && returnedModel !== null;
   const validation = validateProgressResponse({ ok: true, data, provenance: { providerId, mode: 'cloud', label: dry ? 'DRY RUN — not model output' : 'OpenAI benchmark only' } }, test.input, providerId, 'cloud');
-  return { valid: eligible && validation.ok && validation.result.ok, status: refusal ? 'refused' : status, returnedModel, usage, data, error: eligible && validation.ok ? null : 'Rejected by completion/envelope/production response validation' };
+  return { serviceTier: typeof envelope.service_tier === 'string' ? envelope.service_tier : null, valid: eligible && validation.ok && validation.result.ok, status: refusal ? 'refused' : status, returnedModel, usage, data, error: eligible && validation.ok ? null : 'Rejected by completion/envelope/production response validation' };
 }

@@ -111,3 +111,16 @@ Credential safety: secret-bearing execution rejects runtime debug/injection opti
 ## GitHub Actions execution
 
 See [ACTIONS_PILOT.md](ACTIONS_PILOT.md) for the manual, default-off medium-only workflow and durable full-session budget reservation. The key is environment-scoped; a separate explicit spending approval is still required. A successful secret check is not a successful model request.
+
+## W01 post-mortem correction (no paid execution)
+
+See [the complete post-mortem](../../docs/W01_POSTMORTEM.md). Cost accounting now charges cache writes at $12.50/M (ordinary $10/M, reads $1/M, inclusive output $50/M). Missing cache counters, unknown model/tier or unsupported long context retain a reservation and stop; they are not treated as free.
+
+`--payload=compact` removes only duplicate evidence titles/descriptions; the original snapshot, all evidence IDs, source links, availability and canonical fact strings remain unchanged. `--cases=remaining` selects W02–W08 without repeating W01. CLI defaults retain full/all for reproducibility; the manual default-off workflow now selects remaining/compact for a future separately approved run. Its limits and cache policy are unchanged.
+
+Offline check (no key needed):
+```sh
+BENCH_ALLOW_PAID=NO BENCH_MAX_SESSION_PLN=5 npm run benchmark:weekly -- --dry-run --effort=medium --cases=remaining --payload=compact
+```
+
+`preflight.json` records each maximum estimate and whether the whole plan fits. `budget-stop.json` records the first blocked case and remaining allowance. A dry-run does not demonstrate that seven real calls fit 5 PLN. Do not retry a paid run, clear existing reservations or increase limits without separate authorization.

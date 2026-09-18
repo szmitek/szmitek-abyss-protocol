@@ -14,7 +14,7 @@ import { scoreTemplate } from './scoring.ts';
 const defaultRoot = fileURLToPath(new URL('../../.benchmark-results/', import.meta.url));
 const save = (path: string, data: unknown) => writeFileSync(path, JSON.stringify(data, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
-export interface Options { effort?: 'medium' | 'matrix'; dryRun: boolean; repeats: number; outputRoot: string; fx: number; perRunPln: number; sessionPln: number; maxOutputTokens: number; env: Readonly<Record<string, string | undefined>> }
+export interface Options { cases?: 'all' | 'remaining'; payload?: 'full' | 'compact'; effort?: 'medium' | 'matrix'; dryRun: boolean; repeats: number; outputRoot: string; fx: number; perRunPln: number; sessionPln: number; maxOutputTokens: number; env: Readonly<Record<string, string | undefined>> }
 export async function runBenchmark(options: Options) {
   const { dryRun, repeats, fx, perRunPln, sessionPln, maxOutputTokens, env } = options;
   if (!Number.isSafeInteger(repeats) || repeats < 1 || repeats > 5) throw new Error('Repeats must be 1–5.');
@@ -47,20 +47,27 @@ export async function runBenchmark(options: Options) {
     }
     const directory = resolve(options.outputRoot, `${dryRun ? 'dry-run' : 'live'}-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
     mkdirSync(directory, { recursive: true, mode: 0o700 });
+    const selected = weeklyCases().filter((c) => options.cases !== 'remaining' || c.id !== 'W01');
+    const preflight = selected.flatMap((test) => (test.high && options.effort !== 'medium' ? ['medium', 'high'] as Effort[] : ['medium'] as Effort[]).map((effort) => ({ testcaseId: test.id, effort, repeats, estimate: estimateMaximum(makeRequest(test, effort, maxOutputTokens, options.payload ?? 'full'), maxOutputTokens, fx) })));
+    const plannedMaximumPln = preflight.reduce((sum, row) => sum + row.estimate.maximumPln * repeats, 0);
+    save(resolve(directory, 'preflight.json'), { cases: preflight, plannedMaximumPln, sessionPln, fullPlanFitsMaximum: plannedMaximumPln <= sessionPln, note: 'No assumed cache hits. Partial execution may stop at the session limit; dry-run makes no model calls.' });
     const results: { testcaseId: string; effort: Effort; repeat: number; valid: boolean; dryRun: boolean; chargedPln: number; budgetWouldBlock: boolean }[] = [];
     const assessments: ReturnType<typeof scoreTemplate>[] = [];
     let stopped: string | null = null;
-    for (const test of weeklyCases()) {
+    for (const test of selected) {
       const efforts: Effort[] = test.high && options.effort !== 'medium' ? ['medium', 'high'] : ['medium'];
       for (const effort of efforts) for (let repeat = 1; repeat <= repeats; repeat++) {
         if (stopped) break;
-        const body = makeRequest(test, effort, maxOutputTokens);
+        const body = makeRequest(test, effort, maxOutputTokens, options.payload ?? 'full');
         const serialized = JSON.stringify(body);
         const estimate = estimateMaximum(body, maxOutputTokens, fx);
         let budgetWouldBlock = false;
         try { reserveCost(estimate.maximumPln, sessionSpent, monthlySpent, perRunPln, sessionPln); } catch {
           budgetWouldBlock = true;
-          if (!dryRun) { stopped = 'budget_stop_before_request'; break; }
+          if (!dryRun) {
+            save(resolve(directory, 'budget-stop.json'), { testcaseId: test.id, effort, repeat, estimate, sessionSpent, remainingSessionPln: sessionPln - sessionSpent, perRunPln, sessionPln, reason: 'budget_stop_before_request' });
+            stopped = 'budget_stop_before_request'; break;
+          }
         }
         if (!dryRun && new Date().toISOString().slice(0, 7) !== month) { stopped = 'month_changed_restart_session'; break; }
         const key = `${test.id}-${effort}-${repeat}`;
@@ -73,7 +80,8 @@ export async function runBenchmark(options: Options) {
         // Preserve bytes verbatim before parsing; malformed JSON and HTTP errors remain auditable.
         writeFileSync(resolve(directory, `${key}.raw.txt`), raw.rawBody, { mode: 0o600, flag: 'wx' });
         const evaluated = evaluateResponse(raw, test, dryRun);
-        const measured = dryRun ? null : usageCost(evaluated.usage, fx);
+        const pricingSupported = evaluated.returnedModel === model && 'serviceTier' in evaluated && evaluated.serviceTier === 'default';
+        const measured = dryRun || !pricingSupported ? null : usageCost(evaluated.usage, fx);
         const chargedPln = dryRun ? 0 : measured?.pln ?? estimate.maximumPln;
         if (!dryRun) { monthlySpent += chargedPln - estimate.maximumPln; sessionSpent += chargedPln - estimate.maximumPln; writeLedger(); }
         const row = { testcaseId: test.id, effort, repeat, valid: evaluated.valid, dryRun, chargedPln, budgetWouldBlock };
@@ -83,7 +91,7 @@ export async function runBenchmark(options: Options) {
       }
     }
     save(resolve(directory, 'scores.json'), assessments);
-    const summary = { dryRun, model, promptVersion, results, stopped, runs: results.length, actualApiCostPln: dryRun ? 0 : results.some((r) => r.chargedPln > 0) ? 'see per-run measured costs; unknown usage retains reservation' : 0, sessionAccountedPln: sessionSpent, monthlyAccountedPln: dryRun ? null : monthlySpent, actionsMonthlyReservedPln, softBudgetReached: !dryRun && Math.max(monthlySpent, actionsMonthlyReservedPln ?? 0) >= pilot.astraSoftMonthlyPln, hardCapScope: env.GITHUB_ACTIONS === 'true' && !dryRun ? 'durable Actions session reservations plus local per-request accounting; not billing control' : 'local checkout, not OpenAI billing control', qualityVerdict: 'not_evaluated', noAutomaticRetries: true };
+    const summary = { plannedMaximumPln, fullPlanFitsMaximum: plannedMaximumPln <= sessionPln, payloadVersion: options.payload === 'compact' ? 'evidence-index.v2' : 'full.v1', selectedCases: options.cases ?? 'all', dryRun, model, promptVersion, results, stopped, runs: results.length, actualApiCostPln: dryRun ? 0 : results.some((r) => r.chargedPln > 0) ? 'see per-run measured costs; unknown usage retains reservation' : 0, sessionAccountedPln: sessionSpent, monthlyAccountedPln: dryRun ? null : monthlySpent, actionsMonthlyReservedPln, softBudgetReached: !dryRun && Math.max(monthlySpent, actionsMonthlyReservedPln ?? 0) >= pilot.astraSoftMonthlyPln, hardCapScope: env.GITHUB_ACTIONS === 'true' && !dryRun ? 'durable Actions session reservations plus local per-request accounting; not billing control' : 'local checkout, not OpenAI billing control', qualityVerdict: 'not_evaluated', noAutomaticRetries: true };
     save(resolve(directory, 'summary.json'), summary);
     return { directory, summary };
   } finally {
@@ -93,10 +101,10 @@ export async function runBenchmark(options: Options) {
 export function cliOptions(args: string[], env: Readonly<Record<string, string | undefined>>): Options {
   const modes = args.filter((a) => a === '--dry-run' || a === '--live');
   if (modes.length !== 1) throw new Error('Specify exactly one of --dry-run or --live.');
-  if (args.some((a) => !['--dry-run', '--live'].includes(a) && !/^--repeats=[1-5]$/.test(a) && !/^--effort=(medium|matrix)$/.test(a))) throw new Error('Unknown argument.');
+  if (args.some((a) => !['--dry-run', '--live'].includes(a) && !/^--repeats=[1-5]$/.test(a) && !/^--effort=(medium|matrix)$/.test(a) && !/^--cases=(all|remaining)$/.test(a) && !/^--payload=(full|compact)$/.test(a))) throw new Error('Unknown argument.');
   const dryRun = modes[0] === '--dry-run';
   if (!dryRun && (!env.BENCH_MAX_RUN_PLN || !env.BENCH_MAX_SESSION_PLN || !env.BENCH_PLN_PER_USD)) throw new Error('Live mode requires explicit run/session limits and FX.');
-  return { effort: args.includes('--effort=medium') ? 'medium' : 'matrix', dryRun, repeats: Number(args.find((a) => a.startsWith('--repeats='))?.split('=')[1] ?? 1), outputRoot: defaultRoot, fx: positive(env.BENCH_PLN_PER_USD ?? 4, 'FX'), perRunPln: positive(env.BENCH_MAX_RUN_PLN ?? 5, 'run cap'), sessionPln: positive(env.BENCH_MAX_SESSION_PLN ?? 10, 'session cap'), maxOutputTokens: Number(env.BENCH_MAX_OUTPUT_TOKENS ?? 4096), env };
+  return { cases: args.includes('--cases=remaining') ? 'remaining' : 'all', payload: args.includes('--payload=compact') ? 'compact' : 'full', effort: args.includes('--effort=medium') ? 'medium' : 'matrix', dryRun, repeats: Number(args.find((a) => a.startsWith('--repeats='))?.split('=')[1] ?? 1), outputRoot: defaultRoot, fx: positive(env.BENCH_PLN_PER_USD ?? 4, 'FX'), perRunPln: positive(env.BENCH_MAX_RUN_PLN ?? 5, 'run cap'), sessionPln: positive(env.BENCH_MAX_SESSION_PLN ?? 10, 'session cap'), maxOutputTokens: Number(env.BENCH_MAX_OUTPUT_TOKENS ?? 4096), env };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   runBenchmark(cliOptions(process.argv.slice(2), process.env)).then(({ directory, summary }) => {

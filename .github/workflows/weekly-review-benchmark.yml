@@ -39,11 +39,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Validate all eight medium cases without credentials or HTTP
+      - name: Validate remaining seven medium cases without credentials or HTTP
         env:
           OPENAI_API_KEY: ''
           BENCH_ALLOW_PAID: 'NO'
-        run: node --experimental-strip-types tools/weekly-review-benchmark/harness.ts --dry-run --effort=medium --repeats=1
+        run: node --experimental-strip-types tools/weekly-review-benchmark/harness.ts --dry-run --effort=medium --repeats=1 --cases=remaining --payload=compact
 
   paid-pilot:
     needs: dry-run
@@ -65,7 +65,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
           BENCH_ALLOW_PAID: ${{ inputs.allow_paid }}
-        run: node --experimental-strip-types tools/weekly-review-benchmark/harness.ts --live --effort=medium --repeats=1
+        run: node --experimental-strip-types tools/weekly-review-benchmark/harness.ts --live --effort=medium --repeats=1 --cases=remaining --payload=compact
       - name: Preserve synthetic benchmark results, including partial failures
         if: always()
         uses: actions/upload-artifact@v4

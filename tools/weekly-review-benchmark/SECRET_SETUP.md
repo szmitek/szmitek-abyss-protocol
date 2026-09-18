@@ -22,11 +22,11 @@ GitHub encrypts the saved secret and injects it into the explicitly configured s
 
 The workflow must be reviewed and present on the default branch before GitHub exposes manual dispatch. PR46 includes a scope check so developer-only changes do not build a new APK on merge. Do not weaken the environment branch rule to run unmerged code. After merge, run only Actions → Weekly Review - secret check only → Run workflow → main. Approve the environment job through Review deployments when prompted. This connector cannot dispatch workflows or approve deployments; the user performs those two UI actions. A green secret check verifies injection, **not** key validity, expiry, permissions or billing; checking those by an OpenAI request still requires separate authorization.
 
-The key is absent from checkout/setup/dependency installation/test steps and regular PR CI. No `--live` exists in this workflow. No `BENCH_ALLOW_PAID=YES` has been set for a real execution.
+The key is absent from checkout/setup/dependency installation/test steps and regular PR CI. No `--live` exists in this workflow. The separate pilot subsequently executed W01 under explicit authorization; further paid calls are paused.
 
 ## Before any paid execution
 
-The first authorized benchmark is **medium only** (`--effort=medium`, eight cases per repeat). High remains a separately authorized comparison. Keep `BENCH_MAX_RUN_PLN`, `BENCH_MAX_SESSION_PLN`, `BENCH_PLN_PER_USD`, `BENCH_MAX_OUTPUT_TOKENS` and the explicit paid opt-in gate.
+The first authorized benchmark was **medium only** and stopped after W01. The prepared continuation selects W02–W08 with `--effort=medium --cases=remaining --payload=compact`, one repetition, only after new explicit authorization. High remains a separately authorized comparison. Keep `BENCH_MAX_RUN_PLN`, `BENCH_MAX_SESSION_PLN`, `BENCH_PLN_PER_USD`, `BENCH_MAX_OUTPUT_TOKENS` and the explicit paid opt-in gate.
 
 The manual pilot workflow now defaults to dry-run. Paid execution requires the explicit `allow_paid=YES` input and environment approval (when the configured reviewer rule is enabled). The Actions harness reserves the **entire 5 PLN session allowance durably before contacting OpenAI**. See [ACTIONS_PILOT.md](ACTIONS_PILOT.md). This preparation does not authorize selecting YES. The local per-request ledger remains an additional check; it is not the persistent monthly source of truth in Actions.
 

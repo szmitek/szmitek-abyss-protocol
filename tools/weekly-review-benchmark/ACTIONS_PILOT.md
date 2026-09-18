@@ -1,12 +1,12 @@
 # Manual Astra medium pilot — not yet authorized to spend
 
-The secret-only check passed; no model call has been made. The API key remains an environment secret named `OPENAI_API_KEY` in `rpgfitness-benchmark`. No new user-managed credential is needed. GitHub's short-lived `GITHUB_TOKEN` authorizes budget writes only within this repository (technically `contents: write` is repository-wide, not branch-scoped).
+The secret-only check passed. The first paid session completed W01 and stopped before W02; see [W01 post-mortem](../../docs/W01_POSTMORTEM.md). Further paid execution requires new explicit authorization. The API key remains an environment secret named `OPENAI_API_KEY` in `rpgfitness-benchmark`. No new user-managed credential is needed. GitHub's short-lived `GITHUB_TOKEN` authorizes budget writes only within this repository (technically `contents: write` is repository-wide, not branch-scoped).
 
 ## Scope and defaults
 
-Workflow: `.github/workflows/weekly-review-benchmark.yml`, **Weekly Review - Astra medium pilot**. Only `workflow_dispatch` on `main`; no push/PR/schedule triggers. Default `allow_paid=NO` runs eight synthetic cases W01–W08 locally. No credentials, HTTP, model inference, or charge in that job. No dependencies are installed. The paid job is skipped.
+Workflow: `.github/workflows/weekly-review-benchmark.yml`, **Weekly Review - Astra medium pilot**. Only `workflow_dispatch` on `main`; no push/PR/schedule triggers. Default `allow_paid=NO` runs seven synthetic cases W02–W08 locally with `--cases=remaining --payload=compact`. No credentials, HTTP, model inference, or charge in that job. No dependencies are installed. The paid job is skipped.
 
-After **separate explicit approval**, the same workflow can run at most eight sequential model calls: Astra `medium`, one repetition. No high, Luna, retries, fallback or application integration. It may stop before completing all eight cases because worst-case reservation for the next call must fit the remaining session allowance.
+After **separate explicit approval**, the same workflow can run at most seven sequential model calls (W02–W08, compact payload): Astra `medium`, one repetition. No high, Luna, retries, fallback or application integration. It may stop before completing all seven cases because worst-case reservation for the next call must fit the remaining session allowance.
 
 Fixed reviewed configuration:
 
@@ -18,7 +18,7 @@ Fixed reviewed configuration:
 | BENCH_PLN_PER_USD | 4 | Accounting conversion assumption, not live FX |
 | BENCH_MAX_OUTPUT_TOKENS | 4096 | Reasoning and visible output share the API output allowance |
 
-Monthly policy: Astra soft allowance 5 PLN; hard allowance 10 PLN for this benchmark's Actions runs. These are application controls, not OpenAI billing controls. Other applications, local CLI runs, foreign workflows or account usage are outside this journal. The user's separately configured billing settings remain independent. Verify model ID availability, price assumptions and FX before authorizing the first paid execution; a green dry-run cannot establish API access.
+Monthly policy: Astra soft allowance 5 PLN; hard allowance 10 PLN for this benchmark's Actions runs. These are application controls, not OpenAI billing controls. Other applications, local CLI runs, foreign workflows or account usage are outside this journal. The user's separately configured billing settings remain independent. Verify model ID availability, price assumptions and FX before authorizing another paid execution; a green dry-run cannot establish API access.
 
 ## Durable reservation
 
