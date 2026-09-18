@@ -59,3 +59,5 @@ No purchased or third-party sample animations are in the APK/repository. MoveKit
 - Local statistics and weekly-review.v1 facts; AIProvider and DEVELOPMENT MOCK only. See `AI_DATA_FOUNDATION.md` and `HANDOFF.md` for verification/delivery status.
 - Authorized next package: local Weekly Review with mock, evidence, data coverage and runtime response validation. Implemented on the local-weekly-review branch; see `LOCAL_WEEKLY_REVIEW.md` and `HANDOFF.md` for delivery status.
 - Provider choice, API budget/consent and paid benchmark remain separate explicit decisions. No real-provider, Coach or image-analysis work is authorized.
+
+- Weekly Review benchmark preparation after PR45: progress-review.v1 fixtures, Astra medium plus a bounded high subset, developer-only transport and zero-network dry-run. See `../tools/weekly-review-benchmark/README.md`. No live benchmark or production API integration is authorized by this preparation.
