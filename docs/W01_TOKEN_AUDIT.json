@@ -1,0 +1,78 @@
+{
+  "artifactSha256": "2ed123ba7a810824b5883842cb302db5f9ad732113b437c38ee0e673007b6dfd",
+  "tokenizer": "tiktoken 0.14.0 / o200k_base proxy, NOT verified Astra tokenizer",
+  "reportedInputTokens": 21979,
+  "visibleProxyTotal": 22165,
+  "unattributedDifference": -186,
+  "sections": {
+    "systemPrompt": 395,
+    "responseSchema": 425,
+    "userMessage": 21345,
+    "snapshot": 12553,
+    "evidenceRegistry": 8787
+  },
+  "systemParagraphTokens": [
+    60,
+    45,
+    55,
+    104,
+    73,
+    57
+  ],
+  "snapshotBreakdown": {
+    "week": {
+      "contractVersion": 4,
+      "requestId": 4,
+      "locale": 1,
+      "period": 34,
+      "facts": 2472,
+      "training": 111,
+      "exerciseExposures": 435,
+      "adherence": 43,
+      "archivedAdherence": 1,
+      "wellbeing": 210,
+      "tests": 86,
+      "body": 936,
+      "dataCoverage": 30,
+      "photos": 17,
+      "constraints": 20
+    },
+    "history": {
+      "contractVersion": 4,
+      "locale": 1,
+      "period": 34,
+      "facts": 2870,
+      "training": 399,
+      "exerciseExposures": 1579,
+      "adherence": 43,
+      "archivedAdherence": 1,
+      "wellbeing": 825,
+      "tests": 86,
+      "body": 2165,
+      "dataCoverage": 30,
+      "photos": 17,
+      "constraints": 20
+    }
+  },
+  "evidenceByKind": {
+    "exercise": 1050,
+    "fact": 4834,
+    "measurement": 1368,
+    "test": 90,
+    "wellbeing": 782,
+    "workout": 673
+  },
+  "candidateReductions": {
+    "compactEvidenceIndex": {
+      "savedProxyTokens": 4691,
+      "userProxyTokens": 16654
+    },
+    "removeRepeatedWeekRecordsFromHistory_ESTIMATE_ONLY": {
+      "savedProxyTokens": 1158
+    },
+    "factorRepeatedFactPeriods_ESTIMATE_ONLY": {
+      "savedProxyTokens": 1818
+    }
+  },
+  "note": "Nested numbers overlap. Independently tokenized fragments are not perfectly additive. Difference includes tokenizer/serialization/provider overhead; do not label it known hidden tokens."
+}
