@@ -12,7 +12,39 @@ permissions:
   contents: write
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      app_changed: ${{ steps.scope.outputs.app_changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check whether application export is needed
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const { readFileSync, appendFileSync } = require('node:fs');
+          let needed = true;
+          try {
+            const base = process.env.BASE_SHA;
+            if (!/^[0-9a-f]{40}$/.test(base) || /^0+$/.test(base)) throw Error('No comparison base');
+            const files = execFileSync('git', ['diff', '--name-only', base, 'HEAD'], { encoding: 'utf8' }).trim().split('\n');
+            const onlyBenchmark = files.every(p => p.startsWith('tools/weekly-review-benchmark/') || p.startsWith('docs/') || ['tests/weeklyBenchmark.test.ts', 'package.json', '.gitignore', '.github/workflows/quality.yml', '.github/workflows/weekly-review-secret-check.yml', '.github/workflows/android-preview.yml'].includes(p));
+            const oldPackage = JSON.parse(execFileSync('git', ['show', `${base}:package.json`], { encoding: 'utf8' }));
+            const newPackage = JSON.parse(readFileSync('package.json', 'utf8'));
+            delete oldPackage.scripts['benchmark:weekly'];
+            delete newPackage.scripts['benchmark:weekly'];
+            needed = !onlyBenchmark || JSON.stringify(oldPackage) !== JSON.stringify(newPackage);
+          } catch { /* Unknown scope keeps the application verification gate. */ }
+          appendFileSync(process.env.GITHUB_OUTPUT, `app_changed=${needed}\n`);
+          NODE
   build-apk:
+    needs: scope
+    if: github.event_name == 'workflow_dispatch' || needs.scope.outputs.app_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

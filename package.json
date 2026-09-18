@@ -12,7 +12,8 @@
     "build:android": "expo export --platform android --output-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "benchmark:weekly": "node --experimental-strip-types tools/weekly-review-benchmark/harness.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
