@@ -21,7 +21,7 @@ export function makeRequest(test: TestCase, effort: Effort, maxOutputTokens: num
     text: { format: { type: 'json_schema', name: 'progress_review_v1', strict: true, schema: responseSchema } },
   };
 }
-export type RequestBody = ReturnType<typeof makeRequest>;
+export type RequestBody = Omit<ReturnType<typeof makeRequest>, 'service_tier'> & { service_tier?: string };
 export interface TransportResult { httpStatus: number | null; rawBody: string; transportError: 'timeout' | 'network' | 'sensitive_response_withheld' | null }
 // Developer-only adapter. Never imported by the mobile application. No retries,
 // redirect following, tools, files, previous_response_id, conversations or SDK.

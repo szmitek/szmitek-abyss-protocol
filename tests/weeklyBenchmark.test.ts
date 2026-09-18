@@ -260,3 +260,39 @@ test('missing cache accounting is not treated as zero-price writes; standard tie
   assert.equal(usageCost({input_tokens: 100, output_tokens: 10, input_tokens_details: {cache_write_tokens: 0}}, 4), null);
   assert.equal(makeRequest(cases[0]!, 'medium', 4096).service_tier, 'default');
 });
+
+test('Sol W01 is one offline request with the historical payload and correct Sol costs', async () => {
+  const { solOptions } = await import('../tools/weekly-review-benchmark/sol-w01.ts');
+  const { solPrice, usageCost } = await import('../tools/weekly-review-benchmark/budget.ts');
+  const original = globalThis.fetch, directory = mkdtempSync(join(tmpdir(), 'sol-w01-'));
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error('Forbidden'); };
+  try {
+    const options = { ...solOptions(['--dry-run'], {}), outputRoot: directory };
+    const { summary } = await runBenchmark(options);
+    assert.equal(summary.model, 'gpt-5.6-sol');
+    assert.equal(summary.runs, 1);
+    assert.equal(summary.results[0]!.testcaseId, 'W01');
+    assert.equal(summary.results[0]!.valid, true);
+    assert.ok(Math.abs(summary.plannedMaximumPln - 2.06838) < 1e-9);
+    assert.equal(calls, 0);
+    assert.equal(usageCost({ input_tokens: 21979, input_tokens_details: { cache_write_tokens: 21976, cached_tokens: 0 }, output_tokens: 2174, output_tokens_details: { reasoning_tokens: 86 } }, 4, solPrice)!.pln, 0.613488);
+    for (const change of [{ sessionPln: 5 }, { perRunPln: 5 }, { repeats: 2 }, { effort: 'matrix' as const }, { maxOutputTokens: 8192 }, { fx: 5 }]) await assert.rejects(runBenchmark({ ...options, ...change }));
+    assert.throws(() => solOptions(['--live'], {}));
+    assert.throws(() => solOptions(['--live'], { GITHUB_ACTIONS: 'true', GITHUB_RUN_ATTEMPT: '2' }));
+    assert.throws(() => solOptions(['--dry-run', '--repeats=2'], {}));
+    await assert.rejects(runBenchmark({ ...options, dryRun: false, env: {} }));
+    assert.equal(calls, 0);
+  } finally { globalThis.fetch = original; rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('Sol workflow is manual, default-off, secret-scoped and capped at 2.10 PLN', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/weekly-review-sol-w01.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /default: 'NO'/);
+  assert.match(workflow, /BENCH_MAX_RUN_PLN: '2.10'/);
+  assert.match(workflow, /BENCH_MAX_SESSION_PLN: '2.10'/);
+  assert.match(workflow, /environment: rpgfitness-benchmark/);
+  assert.equal(workflow.split('${{ secrets.OPENAI_API_KEY }}').length - 1, 1);
+  assert.match(workflow, /sol-w01.ts --live/);
+  assert.doesNotMatch(workflow, /schedule:|pull_request_target|harness.ts --live/);
+});

@@ -1,0 +1,77 @@
+name: Weekly Review - Sol W01 only
+
+# Manual only. Creating this workflow is not authorization to spend.
+on:
+  workflow_dispatch:
+    inputs:
+      allow_paid:
+        description: 'Select YES only after separate approval of this paid session (one W01, maximum 2.10 PLN, no retry).'
+        type: choice
+        options: ['NO', 'YES']
+        default: 'NO'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rpgfitness-benchmark
+  cancel-in-progress: false
+
+env:
+  BENCH_MAX_RUN_PLN: '2.10'
+  BENCH_MAX_SESSION_PLN: '2.10'
+  BENCH_PLN_PER_USD: '4'
+  BENCH_MAX_OUTPUT_TOKENS: '4096'
+  NODE_DEBUG: ''
+  NODE_DEBUG_NATIVE: ''
+  NODE_OPTIONS: ''
+
+jobs:
+  dry-run:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate fixed Sol W01 without credentials or HTTP
+        env:
+          OPENAI_API_KEY: ''
+          BENCH_ALLOW_PAID: 'NO'
+        run: node --experimental-strip-types tools/weekly-review-benchmark/sol-w01.ts --dry-run
+
+  paid-pilot:
+    needs: dry-run
+    if: github.ref == 'refs/heads/main' && inputs.allow_paid == 'YES'
+    environment: rpgfitness-benchmark
+    permissions:
+      contents: write # Only needed for the durable budget branch; no extra PAT.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reserve 2.10 PLN, then execute one authorized Sol W01
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          BENCH_ALLOW_PAID: ${{ inputs.allow_paid }}
+        run: node --experimental-strip-types tools/weekly-review-benchmark/sol-w01.ts --live
+      - name: Preserve synthetic benchmark results, including partial failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-review-sol-w01-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .benchmark-results/live-*/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14

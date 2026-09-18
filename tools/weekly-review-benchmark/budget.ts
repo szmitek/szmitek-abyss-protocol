@@ -2,21 +2,22 @@
 // https://developers.openai.com/api/docs/pricing
 // https://developers.openai.com/api/docs/guides/prompt-caching
 export const price = { inputPerMillionUsd: 10, cachedInputPerMillionUsd: 1, cacheWritePerMillionUsd: 12.5, outputPerMillionUsd: 50, checkedOn: '2026-09-18' };
+export const solPrice = { inputPerMillionUsd: 4, cachedInputPerMillionUsd: 0.4, cacheWritePerMillionUsd: 5, outputPerMillionUsd: 20, checkedOn: '2026-09-18' };
 export const pilot = { astraSoftMonthlyPln: 5, projectHardMonthlyPln: 10 };
 export function positive(value: unknown, label: string): number {
   const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() ? Number(value) : NaN;
   if (!Number.isFinite(n) || n <= 0) throw new Error(`Invalid ${label}.`);
   return n;
 }
-export function estimateMaximum(body: unknown, maxOutput: number, plnPerUsd: number) {
+export function estimateMaximum(body: unknown, maxOutput: number, plnPerUsd: number, rates = price) {
   positive(plnPerUsd, 'FX'); positive(maxOutput, 'output limit');
   // Conservative byte ceiling for text-only input, plus 4096 serialization/framing
   // tokens. Not a provider token count or a guarantee of provider accounting.
   const inputCeiling = Buffer.byteLength(JSON.stringify(body), 'utf8') + 4096;
   if (inputCeiling > 272000) throw new Error('Input exceeds benchmark standard-price ceiling.');
-  return { basis: 'UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits', inputTokenCeiling: inputCeiling, outputTokenCeiling: maxOutput, maximumPln: (inputCeiling * price.cacheWritePerMillionUsd + maxOutput * price.outputPerMillionUsd) / 1e6 * plnPerUsd };
+  return { basis: 'UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits', inputTokenCeiling: inputCeiling, outputTokenCeiling: maxOutput, maximumPln: (inputCeiling * rates.cacheWritePerMillionUsd + maxOutput * rates.outputPerMillionUsd) / 1e6 * plnPerUsd };
 }
-export function usageCost(usage: Record<string, unknown> | null, fx: number) {
+export function usageCost(usage: Record<string, unknown> | null, fx: number, rates = price) {
   positive(fx, 'FX');
   if (!usage) return null;
   const count = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
@@ -33,9 +34,9 @@ export function usageCost(usage: Record<string, unknown> | null, fx: number) {
   if (usage.total_tokens !== undefined && (!count(usage.total_tokens) || usage.total_tokens !== input + output)) return null;
   const ordinary = input - cached - written;
   // Reasoning is a subset of output_tokens, never an extra charge.
-  const breakdownUsd = { normalInput: ordinary * price.inputPerMillionUsd / 1e6, cacheWrite: written * price.cacheWritePerMillionUsd / 1e6, cacheRead: cached * price.cachedInputPerMillionUsd / 1e6, output: output * price.outputPerMillionUsd / 1e6 };
-  const usd = (ordinary * 10000 + written * 12500 + cached * 1000 + output * 50000) / 1e9;
-  if (!Number.isSafeInteger(ordinary * 10000 + written * 12500 + cached * 1000 + output * 50000)) return null;
+  const breakdownUsd = { normalInput: ordinary * rates.inputPerMillionUsd / 1e6, cacheWrite: written * rates.cacheWritePerMillionUsd / 1e6, cacheRead: cached * rates.cachedInputPerMillionUsd / 1e6, output: output * rates.outputPerMillionUsd / 1e6 };
+  const usd = (ordinary * Math.round(rates.inputPerMillionUsd * 1000) + written * Math.round(rates.cacheWritePerMillionUsd * 1000) + cached * Math.round(rates.cachedInputPerMillionUsd * 1000) + output * Math.round(rates.outputPerMillionUsd * 1000)) / 1e9;
+  if (!Number.isSafeInteger(ordinary * Math.round(rates.inputPerMillionUsd * 1000) + written * Math.round(rates.cacheWritePerMillionUsd * 1000) + cached * Math.round(rates.cachedInputPerMillionUsd * 1000) + output * Math.round(rates.outputPerMillionUsd * 1000))) return null;
   return { inputTokens: input, ordinaryInputTokens: ordinary, cacheWriteTokens: written, cachedInputTokens: cached, outputTokens: output, reasoningTokens: reasoning, visibleOutputTokens: reasoning === null ? null : output - reasoning, breakdownUsd, usd, pln: usd * fx, basis: 'reported usage × recorded pricing, including cache writes; not an invoice' };
 }
 export function reserveCost(maximum: number, spentSession: number, spentMonth: number, perRun: number, sessionCap: number) {
