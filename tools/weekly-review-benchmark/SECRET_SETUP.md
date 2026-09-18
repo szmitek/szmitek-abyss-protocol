@@ -1,8 +1,10 @@
-# Secret injection — awaiting user setup
+# Secret injection — verified; paid execution awaits separate approval
 
 Decision: use a GitHub **environment secret**, not a repository variable, chat message, Work file or committed `.env`. The tools exposed in this Work session do not offer a user-entered secret store for the scratch terminal. Sites environment variables belong to hosted sites and are not an appropriate store for this developer benchmark. No real key was requested, read or stored in this delivery.
 
-## User action in GitHub
+The environment secret was added by the user. Injection-only workflow [35328482005](https://github.com/szmitek/szmitek-abyss-protocol/actions/runs/35328482005) passed. This does not establish API validity or model access.
+
+## User action in GitHub (setup reference)
 
 1. Open https://github.com/szmitek/szmitek-abyss-protocol/settings/environments (repository Settings → Environments).
 2. Click **New environment**. Name: **rpgfitness-benchmark**. Click **Configure environment**.
@@ -26,7 +28,7 @@ The key is absent from checkout/setup/dependency installation/test steps and reg
 
 The first authorized benchmark is **medium only** (`--effort=medium`, eight cases per repeat). High remains a separately authorized comparison. Keep `BENCH_MAX_RUN_PLN`, `BENCH_MAX_SESSION_PLN`, `BENCH_PLN_PER_USD`, `BENCH_MAX_OUTPUT_TOKENS` and the explicit paid opt-in gate.
 
-The current harness monthly ledger is checkout-local. GitHub hosted runners are ephemeral: never assume its local ledger survives another workflow run, and never silently reset the monthly allowance by starting a new runner. A future paid Actions workflow must durably reconcile prior reservations/spend (including failed runs) or require an explicitly reconciled remaining budget before execution. Environment approval and the user's OpenAI $2 organization/project caps are additional safeguards, not a replacement for this accounting. No paid Actions workflow is enabled in this preparation.
+The manual pilot workflow now defaults to dry-run. Paid execution requires the explicit `allow_paid=YES` input and environment approval (when the configured reviewer rule is enabled). The Actions harness reserves the **entire 5 PLN session allowance durably before contacting OpenAI**. See [ACTIONS_PILOT.md](ACTIONS_PILOT.md). This preparation does not authorize selecting YES. The local per-request ledger remains an additional check; it is not the persistent monthly source of truth in Actions.
 
 The user's prepaid $5, auto-reload OFF, $2/month organization and project caps, and restricted expiring key were reported by the user; the assistant has not inspected or changed billing settings. None of those account settings is an authorization to spend.
 
