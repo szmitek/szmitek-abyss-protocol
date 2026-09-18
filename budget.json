@@ -1,4 +1,10 @@
 {
   "version": 1,
-  "reservations": []
+  "reservations": [
+    {
+      "runId": "35350911495",
+      "month": "2026-09",
+      "microPln": 5000000
+    }
+  ]
 }
