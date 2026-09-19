@@ -34,7 +34,7 @@ Każdą domenę oceniać: ADEQUATE / MISSING_MATERIAL / INCORRECT / NOT_AVAILABL
 
 ## Artefakty i weryfikacja
 
-`completeness-v2.ts` zawiera oddzielny kandydat promptu i builder requestów. Live harness nie importuje go. `prepare-completeness.mjs` tworzy tylko pliki, blokuje fetch i nie ma trybu live; nie pobiera klucza. Requesty: Sol medium, compact, 4096 output, bez zmiany schema i snapshotu. Istniejący mock jest walidowany, ale NIE czyta promptu v2 i NIE sprawdza jakości interpretacji.
+`completeness-v2.ts` zawiera oddzielny kandydat promptu i builder requestów. Pierwotne przygotowanie było offline; osobny, domyślnie wyłączony runner v2 opisano teraz w tools/weekly-review-benchmark/V2_PAIR.md. Historyczne ścieżki v1 zachowano. `prepare-completeness.mjs` tworzy tylko pliki, blokuje fetch i nie ma trybu live; nie pobiera klucza. Requesty: Sol medium, compact, 4096 output, bez zmiany schema i snapshotu. Istniejący mock jest walidowany, ale NIE czyta promptu v2 i NIE sprawdza jakości interpretacji.
 
 ```bash
 node --experimental-strip-types tools/weekly-review-benchmark/prepare-completeness.mjs NEW_OUTPUT_DIRECTORY
