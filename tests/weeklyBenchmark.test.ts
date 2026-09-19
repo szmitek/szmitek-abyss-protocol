@@ -296,3 +296,56 @@ test('Sol workflow is manual, default-off, secret-scoped and capped at 2.10 PLN'
   assert.match(workflow, /sol-w01.ts --live/);
   assert.doesNotMatch(workflow, /schedule:|pull_request_target|harness.ts --live/);
 });
+
+test('offline completeness v2 preserves safety, schema and all input, without changing live v1', async () => {
+  const { completenessRequest, completenessPrompt, completenessPromptVersion } = await import('../tools/weekly-review-benchmark/completeness-v2.ts');
+  const { systemPrompt, promptVersion } = await import('../tools/weekly-review-benchmark/contract.ts');
+  assert.equal(promptVersion, 'weekly-review.benchmark.v1');
+  assert.notEqual(completenessPromptVersion, promptVersion);
+  assert.ok(completenessPrompt.startsWith(systemPrompt));
+  for (const testCase of weeklyCases().slice(0, 3)) {
+    const before = makeRequest(testCase, 'medium', 4096, 'compact');
+    const after = completenessRequest(testCase, 'gpt-5.6-sol');
+    assert.deepEqual(after.input[1], before.input[1]);
+    assert.deepEqual(after.text, before.text);
+    assert.equal(after.model, 'gpt-5.6-sol');
+    assert.deepEqual(after.reasoning, { effort: 'medium' });
+    assert.equal(after.max_output_tokens, 4096);
+  }
+  assert.throws(() => completenessRequest(weeklyCases()[3]!, 'gpt-5.6-sol'));
+  assert.throws(() => completenessRequest(weeklyCases()[0]!, 'gpt-5.6-sol', 'high'));
+});
+
+test('v2 pair uses identical controlled input, single W01 and model-specific limits offline', async () => {
+  const { v2Options } = await import('../tools/weekly-review-benchmark/v2-w01.ts');
+  const { completenessRequest } = await import('../tools/weekly-review-benchmark/completeness-v2.ts');
+  const t = weeklyCases()[0]!;
+  const a = completenessRequest(t, 'gpt-6-astra'), s = completenessRequest(t, 'gpt-5.6-sol');
+  assert.deepEqual({ ...a, model: s.model }, s);
+  const original = globalThis.fetch, directory = mkdtempSync(join(tmpdir(), 'v2-pair-'));
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error('Forbidden'); };
+  try {
+    for (const candidate of ['sol', 'astra']) {
+      const options = { ...v2Options(['--dry-run', `--model=${candidate}`], {}), outputRoot: directory };
+      const { summary } = await runBenchmark(options);
+      assert.equal(summary.runs, 1);
+      assert.equal(summary.results[0]!.testcaseId, 'W01');
+      assert.equal(summary.results[0]!.valid, true);
+      assert.equal(summary.payloadVersion, 'evidence-index.v2');
+      assert.equal(summary.promptVersion, 'weekly-review.completeness.v2-candidate');
+      assert.ok(summary.plannedMaximumPln <= options.sessionPln);
+      for (const changes of [{ repeats: 2 }, { effort: 'matrix' as const }, { sessionPln: 6 }, { perRunPln: 6 }, { fx: 5 }, { solW01: true }]) await assert.rejects(runBenchmark({ ...options, ...changes }));
+      await assert.rejects(runBenchmark({ ...options, dryRun: false, env: {} }));
+    }
+    assert.equal(calls, 0);
+    assert.throws(() => v2Options(['--live', '--model=sol'], {}));
+    assert.throws(() => v2Options(['--live', '--model=astra'], { GITHUB_ACTIONS: 'true', GITHUB_RUN_ATTEMPT: '2' }));
+    assert.throws(() => v2Options(['--dry-run', '--model=luna'], {}));
+    const workflow = readFileSync(new URL('../.github/workflows/weekly-review-v2-w01.yml', import.meta.url), 'utf8');
+    assert.match(workflow, /default: 'NO'/);
+    assert.match(workflow, /environment: rpgfitness-benchmark/);
+    assert.equal(workflow.split('${{ secrets.OPENAI_API_KEY }}').length - 1, 1);
+    assert.doesNotMatch(workflow, /schedule:|pull_request_target|strategy:/);
+  } finally { globalThis.fetch = original; rmSync(directory, { recursive: true, force: true }); }
+});
