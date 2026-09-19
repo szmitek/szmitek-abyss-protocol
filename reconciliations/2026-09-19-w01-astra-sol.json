@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "date": "2026-09-19",
+  "authorization": "User explicitly approved merging PR49 and reconciling previous reservations using verified usage. No authorization to run new model calls.",
+  "basis": "Reported usage times recorded Standard tariff; FX 4 PLN/USD; not provider invoice",
+  "sourceBudgetBlobSha": "0d3a943abfbe746313a84e5864b98935b144c937",
+  "before": {
+    "version": 1,
+    "reservations": [
+      {
+        "runId": "35350911495",
+        "month": "2026-09",
+        "microPln": 5000000
+      },
+      {
+        "runId": "35405822761",
+        "month": "2026-09",
+        "microPln": 2100000
+      }
+    ]
+  },
+  "approvedReplacement": {
+    "version": 1,
+    "reservations": [
+      {
+        "runId": "35350911495",
+        "month": "2026-09",
+        "microPln": 1533720
+      },
+      {
+        "runId": "35405822761",
+        "month": "2026-09",
+        "microPln": 607808
+      }
+    ]
+  },
+  "releasedMicroPln": 4958472,
+  "actualMicroPln": 2141528,
+  "projectHardCapPln": 10,
+  "artifacts": [
+    {
+      "runId": "35350911495",
+      "sha256": "2ed123ba7a810824b5883842cb302db5f9ad732113b437c38ee0e673007b6dfd",
+      "input": 21979,
+      "cacheWrite": 21976,
+      "cacheRead": 0,
+      "outputInclusiveReasoning": 2174,
+      "usd": 0.38343
+    },
+    {
+      "runId": "35405822761",
+      "sha256": "99d3d752fd8de690abdd038bf3ceefd21ec6e8f28313b1c298c754c35eb5aaae",
+      "input": 21979,
+      "cacheWrite": 21976,
+      "cacheRead": 0,
+      "outputInclusiveReasoning": 2103,
+      "usd": 0.151952
+    }
+  ],
+  "note": "This audit records approved replacement. The subsequent budget.json commit, if successful, applies it; original entries and run IDs remain preserved in history and audit. No automatic refunds or cap increase."
+}
