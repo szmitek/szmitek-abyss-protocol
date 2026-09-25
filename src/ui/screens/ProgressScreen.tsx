@@ -1,3 +1,4 @@
+import { ArcProgressReviewScreen } from './ArcProgressReviewScreen.tsx';
 import { BodyMeasurementsScreen } from './BodyMeasurementsScreen.tsx';
 import { WeeklyReviewScreen } from './WeeklyReviewScreen.tsx';
 import { formatRecordedSet } from '../../domain/setPerformance.ts';
@@ -25,6 +26,7 @@ const DECISION_LABELS: Record<TrainingArcDecision, string> = {
 };
 
 export function ProgressScreen({ profile, history }: { profile: UserProfile; history: WorkoutHistoryEntry[] }) {
+  const [arcProgressOpen, setArcProgressOpen] = useState(false);
   const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
   const [bodyOpen, setBodyOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -46,6 +48,7 @@ export function ProgressScreen({ profile, history }: { profile: UserProfile; his
   const reports = [...profile.trainingArcReviews].sort((a, b) => b.cycleNumber - a.cycleNumber);
   const selectedReview = reports.find((review) => review.id === reviewId);
   const selectedExercise = insights.find((insight) => insight.exerciseId === exerciseId);
+  if (arcProgressOpen) return <ArcProgressReviewScreen onBack={() => setArcProgressOpen(false)} />;
   if (weeklyReviewOpen) return <WeeklyReviewScreen onBack={() => setWeeklyReviewOpen(false)} />;
   if (bodyOpen) return <BodyMeasurementsScreen onBack={() => setBodyOpen(false)} />;
   if (evidenceOpen) return <EvidenceScreen profile={profile} history={history} onBack={() => setEvidenceOpen(false)} />;
@@ -63,7 +66,8 @@ export function ProgressScreen({ profile, history }: { profile: UserProfile; his
       </SystemPanel>
       <GlowButton label="COMPARE CHECKS, PHOTOS & WELLBEING" onPress={() => setEvidenceOpen(true)} />
       <GlowButton label="BODY MEASUREMENTS" onPress={() => setBodyOpen(true)} />
-      <GlowButton label="WEEKLY REVIEW · DEVELOPMENT MOCK" onPress={() => setWeeklyReviewOpen(true)} />
+      <GlowButton label="WEEKLY SUMMARY · OFFLINE" onPress={() => setWeeklyReviewOpen(true)} />
+      <GlowButton label="ARC REVIEW · DEVELOPMENT MOCK" onPress={() => setArcProgressOpen(true)} />
       <ActivityPanel weeks={weeks} />
       <SystemPanel eyebrow="PROGRESSION SIGNALS" title={insights.length ? 'Exercise development' : 'Awaiting data'}>
         <Text style={styles.explanation}>Inspect every exercise you have completed. Targets reflect logged prescriptions; a higher target alone does not prove improved technique.</Text>
