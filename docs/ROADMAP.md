@@ -61,3 +61,24 @@ No purchased or third-party sample animations are in the APK/repository. MoveKit
 - Provider choice, API budget/consent and paid benchmark remain separate explicit decisions. No real-provider, Coach or image-analysis work is authorized.
 
 - Weekly Review benchmark preparation after PR45: progress-review.v1 fixtures, Astra medium plus a bounded high subset, developer-only transport and zero-network dry-run. See `../tools/weekly-review-benchmark/README.md`. No live benchmark or production API integration is authorized by this preparation.
+
+## Accepted cadence update — 2026-09-25
+
+User approved: free local Weekly Summary + optional Arc Review before the next
+four-week arc + later help on demand. This supersedes weekly paid cadence and the
+proposed continuation of the old weekly model comparison. The current package is
+entirely local; no new paid calls, images, Coach, keys or production backend.
+
+1. Local weekly facts and coverage (no provider).
+2. Real arc snapshot, goals/current-context labels, evidence and validated mock.
+3. Offline arc benchmark with retained adversarial cases; see
+   `../tools/arc-review-benchmark/README.md` and `LOCAL_ARC_REVIEW.md`.
+4. Separately approved text Arc Review pilot, then separately consented photo pilot.
+5. Production API only after quality/cost/consent decisions; no keys in APK.
+6. Validated, user-approved next-arc proposals; later local equipment replacements
+   and contextual assistance. No automatic changes.
+
+An arc review replaces a coincident paid weekly analysis. Photos are optional and
+never gate training. Ten PLN/month is a target to verify, not a changed billing
+limit or authorization. Animations remain last. Existing deterministic arc
+transitions and historical verdicts stay intact in this local package.

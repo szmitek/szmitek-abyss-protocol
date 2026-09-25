@@ -1,3 +1,4 @@
+import type { ArcReviewContext } from './arcProgressReview.ts';
 import type { BodyMeasurement, bodyMeasurementStats } from './bodyMeasurements.ts';
 import type { DailyReadiness, Exercise, MovementAssessment, SetPerformance } from './types.ts';
 
@@ -23,6 +24,7 @@ export interface ExerciseExposure {
   context: 'training' | 'return' | 'trial' | 'warmup';
 }
 export interface WeeklyReviewInput {
+  arcContext?: ArcReviewContext;
   historyContext?: Omit<WeeklyReviewInput, 'historyContext' | 'requestId'>;
   contractVersion: 'weekly-review.v1'; requestId: string; locale: 'en';
   period: ReviewPeriod;

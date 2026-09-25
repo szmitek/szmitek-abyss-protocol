@@ -33,7 +33,7 @@
     },
     "android": {
       "package": "app.abyssprotocol.mobile",
-      "versionCode": 20,
+      "versionCode": 21,
       "icon": "./assets/branding/app-icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/app-icon.png",

@@ -1,3 +1,16 @@
+# Current checkpoint — local summaries and Arc Review
+
+Resumed 2026-09-25 from main 556fc95b92925ddcf599287f9a0b3fad0ddef6cb (PR49).
+Branch feat/local-arc-review. See LOCAL_ARC_REVIEW.md and tools/arc-review-benchmark/README.md.
+Weekly Summary is provider-free; Arc Review is mock-only and ephemeral, with
+versioned optional arc context and shared production validator/evidence.
+No storage schema change, budget journal change, API calls or image transfer.
+Local checks passed: 254 tests, TypeScript, ESLint, offline Android export; all 10 arc dry-run cases validated, no API calls.
+Target APK21; native artifact/signature and phone checks pending publication.
+Next: separately approved, priced text Arc Review test; vision remains separate.
+
+---
+
 # Current checkpoint — local Weekly Review
 
 User authorized Stage 5 package 2: real local data, deterministic mock, evidence, coverage and response validation. Feature branch `feat/local-weekly-review` starts from the verified PR44 code tree and carries `docs/stage5-foundation-delivery` documentation.

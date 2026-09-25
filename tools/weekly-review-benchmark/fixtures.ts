@@ -30,9 +30,9 @@ export function syntheticSnapshot(): AppSnapshot {
   assertValidSnapshot(s);
   return s;
 }
-export function weeklyCases(): TestCase[] {
+export function weeklyCases(buildInput: (snapshot: AppSnapshot) => WeeklyReviewInput = snapshot => prepareWeeklyReview(snapshot, '2026-09-13', 'Europe/Warsaw')): TestCase[] {
   const make = (id: string, title: string, high: boolean, snapshot = syntheticSnapshot()): TestCase => {
-    const input = prepareWeeklyReview(snapshot, '2026-09-13', 'Europe/Warsaw'); input.requestId = `benchmark:${id}`;
+    const input = buildInput(snapshot); input.requestId = `benchmark:${id}`;
     return { id, title, high, input, mutation: null };
   };
   const base = make('W01', 'Recorded progress with declining wellbeing', true);

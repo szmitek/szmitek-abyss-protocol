@@ -16,6 +16,10 @@ export function latestCompletedReviewWeek(today: string): string {
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
   return shiftReviewDay(today, -(weekday || 7));
 }
+export function prepareWeeklySummary(snapshot: AppSnapshot, weekEnd: string, timeZone: string): WeeklyReviewInput {
+  if (!isMeasurementDay(weekEnd) || new Date(`${weekEnd}T12:00:00Z`).getUTCDay() !== 0) throw new Error('Choose a completed Monday–Sunday week.');
+  return buildWeeklyReview(snapshot, { from: shiftReviewDay(weekEnd, -6), to: weekEnd, timeZone, bounds: 'inclusive-local-dates' }, `summary:${weekEnd}`);
+}
 export function prepareWeeklyReview(snapshot: AppSnapshot, weekEnd: string, timeZone: string): WeeklyReviewInput {
   if (!isMeasurementDay(weekEnd) || new Date(`${weekEnd}T12:00:00Z`).getUTCDay() !== 0) throw new Error('Choose a completed Monday–Sunday week.');
   const period: ReviewPeriod = { from: shiftReviewDay(weekEnd, -6), to: weekEnd, timeZone, bounds: 'inclusive-local-dates' };
