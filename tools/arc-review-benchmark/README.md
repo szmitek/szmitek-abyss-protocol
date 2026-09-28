@@ -17,6 +17,11 @@ Price estimates use the repository's previously recorded tariff and FX=4 PLN/USD
 refresh before any live test. Conservative reserves are not expected usage costs.
 No changes to the budget journal, monthly cap or paid permission are made.
 
+A separate, fixed **A01 pilot runner** is now prepared in `a01.ts`; see
+[A01_PILOT.md](A01_PILOT.md) for the proposed cap, September budget block and
+exact approval/launch steps. `prepare.ts` remains strictly offline. Creation of
+the manual, default-off A01 workflow does not authorize a request.
+
 | Case | Required interpretation / trap |
 |---|---|
 | A01 | Whole arc: recorded execution versus targets, comparable performance, declining wellbeing, body coverage, subjective movement checks; bounded next question/priority |

@@ -1,3 +1,48 @@
+# Prepared next step — single text Arc Review A01
+
+Prepared 2026-09-28 on feat/arc-a01-pilot from the PR50 main tree.
+See tools/arc-review-benchmark/A01_PILOT.md for frozen payload, quality criteria,
+costs, budget audit and exact future launch steps. The new manual workflow defaults
+NO; it has not been dispatched. Only synthetic A01/Astra medium/one request is
+eligible after separate approval. No app/domain/storage/APK change.
+259 local tests and TypeScript passed; ten-case offline preparation and exact A01
+dry-run passed. Lint passed after a regex-format correction.
+No OpenAI request, new cost, journal change, secret access or cap increase.
+September journal reserves 8.341528 PLN, leaving 1.658472 under the unchanged 10 PLN
+cap. Proposed 3.60 PLN A01 session cannot run yet. Reconciliation of the two v2
+reserves requires separate permission and source-usage verification; no silent refund.
+Next: review/merge preparation, resolve budget, obtain explicit paid A01 approval.
+Do not dispatch any old weekly campaign, high, image or other-model test.
+
+---
+
+# Verified delivery — PR #50 / APK21
+
+Verified 2026-09-28. PR #50 merged as d763e13fc22de014307d359fc890c74a76097930.
+Reviewed head a03dcd2e3c10dd28bc893b24d55c951dd61e47b7; tree a0c7db93ea141d7aabf9d9b2f5d52439c716baa8 matches local implementation bfdcc6c.
+PR Quality 36182623919, main Quality 36182752035 and Android Preview 36182752045 succeeded.
+Local validation: 254 tests, TypeScript, lint, Android export and ten arc dry-run cases passed. No new model API calls, image transfers or AI costs.
+
+Artifact 10885726025 belongs to Android run 36182752045 and the exact merged SHA.
+Downloaded ZIP SHA256: b9b52dcf968cb5aa8d0dcbe94318bfa8bbdf1fb02fcf505d0f4ffd2bf5f56789 (matches GitHub artifact digest).
+Extracted APK SHA256: c5a89d3e89c727d86a8a29c49a0e9807a85cbc904f63a53288eabb75ee328941, 80332456 bytes (matches release asset 589149555 digest and size).
+Release target: d763e13fc22de014307d359fc890c74a76097930.
+Binary manifest: versionCode 21, package app.abyssprotocol.mobile.
+APK v2 RSA/SHA256 signature and chunked content digest verified locally.
+Certificate SHA256: fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c, matches the recorded certificate of prior releases.
+Old local APK copies were incomplete after workspace maintenance, so no fresh direct binary comparison against those old copies is claimed.
+This focused signature verification is not a physical-device installation test.
+
+Download: https://github.com/szmitek/szmitek-abyss-protocol/releases/download/v0.1.0-preview.4/Abyss-Protocol-preview.apk
+The URL is reused: identify this delivery by the exact SHA/digest above.
+
+Delivered: provider-free Weekly Summary, local Arc Review with real cycle data and mock/evidence/validation, optional arc-review-context.v1, unchanged v17 storage. No plan changes.
+Reports remain ephemeral. Phone upgrade, large-font navigation and backup walkthrough remain unperformed.
+Next: review/price and separately authorize one text Arc Review pilot; optional photos need separate consent and a vision contract. Do not run old weekly campaigns, high, retries or additional models automatically.
+Carry this delivery checkpoint into the next development branch; do not duplicate PR50.
+
+---
+
 # Current checkpoint — local summaries and Arc Review
 
 Resumed 2026-09-25 from main 556fc95b92925ddcf599287f9a0b3fad0ddef6cb (PR49).
