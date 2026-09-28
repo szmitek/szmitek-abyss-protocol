@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "reconciledOn": "2026-09-28",
+  "approval": "User approved proceeding after the explicit request to reconcile the two prior v2 reservations. No approval for a new paid A01 run is inferred.",
+  "parentCommit": "471fcdf70868756c83e5525aa3a03d24b8f467d1",
+  "basis": "Downloaded exact workflow artifacts; ZIP hashes match GitHub digests. Recalculated from raw reported usage and historical Standard tariff at configured FX4. Not an invoice.",
+  "updates": [
+    {
+      "runId": "35409997843",
+      "artifactId": 10574685600,
+      "artifactSha256": "512f2bc8259a4e5aae871a9035db05cb1fc166077424c538f0cb467a80007d5a",
+      "rawSha256": "ecf6b956ff79a4a47e3b64e718b7e21b532d629e6c59656be38d36ce1f9d55f2",
+      "model": "gpt-5.6-sol",
+      "usage": {
+        "input_tokens": 17613,
+        "input_tokens_details": {
+          "cache_write_tokens": 17610,
+          "cached_tokens": 0
+        },
+        "output_tokens": 2670,
+        "output_tokens_details": {
+          "reasoning_tokens": 1365
+        },
+        "total_tokens": 20283
+      },
+      "requestTimestamp": "2026-09-19T00:38:18.851Z",
+      "price": {
+        "inputPerMillionUsd": 4,
+        "cachedInputPerMillionUsd": 0.4,
+        "cacheWritePerMillionUsd": 5,
+        "outputPerMillionUsd": 20,
+        "checkedOn": "2026-09-18"
+      },
+      "plnPerUsd": 4,
+      "beforeMicroPln": 1800000,
+      "afterMicroPln": 565848,
+      "usd": 0.141462
+    },
+    {
+      "runId": "35410105222",
+      "artifactId": 10574505882,
+      "artifactSha256": "fd3ebc79a55201acf0b829e13a7b4792aa03d23f40f89ec1f79d72b40d6c5307",
+      "rawSha256": "71166731d9c757c6a733672fc3579e9ea32dbafa2f65a8b1bf8a09984a4444f5",
+      "model": "gpt-6-astra",
+      "usage": {
+        "input_tokens": 17613,
+        "input_tokens_details": {
+          "cache_write_tokens": 17610,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1599,
+        "output_tokens_details": {
+          "reasoning_tokens": 178
+        },
+        "total_tokens": 19212
+      },
+      "requestTimestamp": "2026-09-19T00:40:09.238Z",
+      "price": {
+        "inputPerMillionUsd": 10,
+        "cachedInputPerMillionUsd": 1,
+        "cacheWritePerMillionUsd": 12.5,
+        "outputPerMillionUsd": 50,
+        "checkedOn": "2026-09-18"
+      },
+      "plnPerUsd": 4,
+      "beforeMicroPln": 4400000,
+      "afterMicroPln": 1200420,
+      "usd": 0.300105
+    }
+  ],
+  "beforeMicroPln": 8341528,
+  "afterMicroPln": 3907796,
+  "releasedMicroPln": 4433732,
+  "remainingUnderTenPlnMicro": 6092204,
+  "newApiCalls": 0,
+  "limitsChanged": false
+}
