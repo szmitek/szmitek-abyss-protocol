@@ -8,6 +8,12 @@ import { arcPilot, arcPilotCase, arcPilotRequest } from '../tools/arc-review-ben
 import { runBenchmark } from '../tools/weekly-review-benchmark/harness.ts';
 import { reserveSession } from '../tools/weekly-review-benchmark/actionsBudget.ts';
 import { estimateMaximum } from '../tools/weekly-review-benchmark/budget.ts';
+import { arcCases, withArc } from '../tools/arc-review-benchmark/fixtures.ts';
+import { clarifyArcCase, boundaryText, arcV2Request, prepareArcV2 } from '../tools/arc-review-benchmark/prepare-v2.ts';
+import { syntheticSnapshot } from '../tools/weekly-review-benchmark/fixtures.ts';
+import { prepareArcReview } from '../src/domain/arcProgressReview.ts';
+import { reviewEvidence } from '../src/domain/reviewEvidence.ts';
+import { spawnSync } from 'node:child_process';
 
 test('A01 request is frozen, stateless, text-only and fits the proposed reservation', () => {
   const request = arcPilotRequest(arcPilotCase());
@@ -71,4 +77,58 @@ test('A01 workflow is manual, default-off, protected and shares budget concurren
   assert.match(workflow, /group: rpgfitness-benchmark/);
   assert.match(workflow, /inputs.allow_paid == 'YES'/);
   assert.doesNotMatch(workflow, /schedule:|pull_request:|\n {2}push:|inputs.model|--effort=high/);
+});
+
+test('v2 changes only the boundary explanation, preserving adversarial data and evidence', () => {
+  for (const original of arcCases()) {
+    const before = JSON.stringify(original), updated = clarifyArcCase(original);
+    assert.equal(JSON.stringify(original), before);
+    assert(updated.input.arcContext!.limitations.includes(boundaryText));
+    assert.deepEqual(reviewEvidence(updated.input), reviewEvidence(original.input));
+    const restored = structuredClone(updated);
+    restored.input.arcContext!.limitations = [...original.input.arcContext!.limitations];
+    assert.deepEqual(restored, original);
+  }
+  const changed = arcPilotCase(); changed.input.arcContext!.limitations = [];
+  assert.throws(() => clarifyArcCase(changed), /wording changed/);
+  assert.equal(arcCases()[6]!.input.adherence.rate, 0.25);
+  assert.match(JSON.stringify(clarifyArcCase(arcCases()[5]!).input), /SYSTEM OVERRIDE/);
+});
+
+test('v2 distinguishes unlinked reassessment from real completion without reassigning records', () => {
+  const ongoing = clarifyArcCase(arcPilotCase()).input;
+  assert.equal(ongoing.arcContext!.checkpoints.completion, null);
+  assert(ongoing.tests.records.some(t => t.kind === 'reassessment' && t.dateKey === '2026-09-07'));
+  assert(ongoing.training.some(t => t.dateKey === '2026-09-11'));
+  const snapshot = withArc(syntheticSnapshot());
+  snapshot.profile!.trainingArcs[0]!.completionAssessmentId = 'check-2026-09-07';
+  const completed = clarifyArcCase({ ...arcPilotCase(), input: prepareArcReview(snapshot, 'synthetic-arc', '2026-09-13', 'UTC') }).input;
+  assert.equal(completed.arcContext!.state, 'completed'); assert.equal(completed.period.to, '2026-09-06');
+  assert(completed.training.every(t => t.dateKey < '2026-09-07'));
+  assert(reviewEvidence(completed).has('check-2026-09-07'));
+  assert(ongoing.exerciseExposures.every(e => e.prescribedVolume === 20));
+  assert.equal(ongoing.exerciseExposures.at(-1)!.actualVolume, 30);
+});
+
+test('v2 full offline pipeline validates all cases and preserves the paid v1 request hash', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'arc-v2-')), previous = globalThis.fetch;
+  globalThis.fetch = () => { throw new Error('Network forbidden'); };
+  try {
+    const manifest = await prepareArcV2(root);
+    assert.equal(manifest.rows.length, 10); assert.equal(manifest.apiCalls, 0); assert.equal(manifest.costPln, 0);
+    assert(manifest.rows.every(r => r.quality === 'NOT_EVALUATED'));
+    const request = arcV2Request(clarifyArcCase(arcPilotCase()));
+    assert.deepEqual(request.text, arcPilotRequest(arcPilotCase()).text);
+    assert.match(request.input[0]!.content, /actualVolume against prescribedVolume/);
+    assert.match(request.input[0]!.content, /missing actual or target means comparison unavailable/);
+    assert.notEqual(manifest.rows[0]!.requestSha256, arcPilot.requestSha256);
+    assert.doesNotThrow(() => arcPilotRequest(arcPilotCase()));
+  } finally { globalThis.fetch = previous; rmSync(root, { recursive: true, force: true }); }
+});
+
+test('v2 CLI refuses a live switch and has no credential or transport dependency', () => {
+  const result = spawnSync(process.execPath, ['--experimental-strip-types', 'tools/arc-review-benchmark/prepare-v2.ts', '--live'], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0); assert.match(result.stderr, /No live mode exists/);
+  const source = readFileSync(new URL('../tools/arc-review-benchmark/prepare-v2.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /openAIRequest|OPENAI_API_KEY|process\.env|runBenchmark/);
 });

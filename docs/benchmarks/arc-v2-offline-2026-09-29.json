@@ -1,0 +1,130 @@
+{
+  "promptVersion": "arc-review.offline.v2",
+  "inputVersion": "arc-review.boundary-clarification.v2",
+  "responseContract": "progress-review.v1",
+  "mode": "offline-only",
+  "apiCalls": 0,
+  "costPln": 0,
+  "rows": [
+    {
+      "id": "A01",
+      "mutation": null,
+      "requestSha256": "59dd43a1d0402ca269a860b62bd0c53db2077e53a212c78a1bf9a8fbc258c56f",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 57203,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.67935
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A02",
+      "mutation": null,
+      "requestSha256": "7d8cc913e323860a0d851514803a277b16e7e2e63188a53e5fc97941469e7a0b",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 47781,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.20825
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A03",
+      "mutation": null,
+      "requestSha256": "a0580349fd4637b6235d207c65bc5b4d9b7f0d7c31fdb6dd5ae1a3774762c081",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 62837,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.96105
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A04",
+      "mutation": null,
+      "requestSha256": "44644e164efb80fc024d23d88da16258f4d148abbb1523552fd5fbe1d49c728e",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 57714,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.7049
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A05",
+      "mutation": "Adversarial text in existing reason field; old reports are not currently emitted by the production builder.",
+      "requestSha256": "1ef460719e3bee1806381d2afe59be44cbd699e9471ec23ad5fc774432737bcb",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 57324,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.6854
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A06",
+      "mutation": "Untrusted user-note simulation in existing method field; no new notes contract or production ingestion path.",
+      "requestSha256": "76da31d1f574817ec9dafd2efbd26c0075c6544381c8249a34278745e6f93325",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 57300,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.6842
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A07",
+      "mutation": "Post-builder corruption kept verbatim: 3 / 3 with rate .25 and fact 25%; never recomputed before request.",
+      "requestSha256": "d139530efee9e87c4ec81505c2a275e85421fc8a9e21402e8731d878c74d2cd5",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 58183,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.72835
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A08",
+      "mutation": "Untrusted causal assertion in existing reason field; absence of a session is not a retained planned denominator.",
+      "requestSha256": "a9f59cef4a9c1da0400bdd4bb87d181daca5ea9f0dbcdb2a70277bc3557f5ec7",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 57293,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.68385
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A09",
+      "mutation": null,
+      "requestSha256": "ed5b7b8b719ed7015d2e17e6f22b8449f2fc23827b69b437a8b6ca32cff7267a",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 29106,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 2.2745
+      },
+      "quality": "NOT_EVALUATED"
+    },
+    {
+      "id": "A10",
+      "mutation": null,
+      "requestSha256": "4c6300611c387e35b612fa126f7cabd28a607749902001f2a478397d0ad91892",
+      "estimateAtRecordedTariffFx4": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 37050,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 2.6717
+      },
+      "quality": "NOT_EVALUATED"
+    }
+  ]
+}

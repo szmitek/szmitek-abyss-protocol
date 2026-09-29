@@ -1,5 +1,48 @@
 # Arc Review offline preparation
 
+## Post-A01 offline v2 (2026-09-29)
+
+The one authorized A01 has finished. Its unchanged request, response and review
+are archived under `docs/benchmarks/A01-2026-09-29/`. That authorization is spent.
+For the new, **offline-only** experiment run:
+
+```
+node --experimental-strip-types tools/arc-review-benchmark/prepare-v2.ts .benchmark-results/arc-v2-NEW
+```
+
+V2 makes two bounded changes, without changing the response contract:
+
+- In a detached benchmark input, replace the ambiguous application-authored
+  reassessment-day explanation with the actual domain rule: only the linked
+  completion checkpoint closes this arc. An unlinked reassessment neither closes
+  it nor moves its workouts. The date period and all recorded data stay unchanged.
+- Require review of actualVolume versus prescribedVolume in the same exposure's
+  unit, together with effort/wellbeing when supported. Missing targets remain
+  unavailable, not zero. Ask about meaningful differences; do not invent their
+  cause, calculate new percentages or infer a complete historical plan.
+
+Prompt `arc-review.offline.v2`, input rendering
+`arc-review.boundary-clarification.v2`. Records, calculated facts, evidence IDs,
+schema and adversarial mutations are preserved. A07 remains inconsistent and A06
+retains injection text. V1 and its hash guard remain unchanged for auditability.
+No production domain/UI/storage change is made: the clarification is isolated to
+the benchmark's versioned input rendering. When a production provider is later
+authorized, apply the same clarified wording at its input boundary rather than
+using the old broad sentence. No date-assignment logic needs to change.
+
+V2 has no live switch or workflow, no credentials and no budget-journal writes.
+All ten mock pipelines pass the production validator; 263 tests, TypeScript and
+lint passed locally. This proves serialization/validation and preservation, not
+that a real model will satisfy the new quality requirements. The mock is not
+trained or adjusted to pretend it learned the new instructions.
+
+Next possible experiment needs an explicit new scope, frozen v2 request, freshly
+priced reservation and paid approval. Do not reuse the spent A01 approval or its
+3.60 PLN cap for a changed payload. Do not run the old A01 workflow as a v2 test.
+No additional API spend or automatic reconciliation was performed.
+
+## Original offline v1 and historical pilot
+
 This replaces the proposed next paid *weekly* campaign. Historical W01/W02–W08
 fixtures, old workflow defaults, budgets and paid results are not rewritten.
 The preparation has no live mode, no key access and no workflow. Run:
