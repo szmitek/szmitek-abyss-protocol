@@ -1,0 +1,257 @@
+{
+  "id": "resp_01573f616f96f884016abb7104a17487d2a5f465c64b81ee0a",
+  "object": "response",
+  "created_at": 1790669060,
+  "status": "completed",
+  "access_programs": null,
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "completed_at": 1790669105,
+  "error": null,
+  "frequency_penalty": 0.0,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": 4096,
+  "max_tool_calls": null,
+  "model": "gpt-6-astra",
+  "moderation": null,
+  "output": [
+    {
+      "id": "rs_01573f616f96f884016abb7106763087d280591722f7aaa454",
+      "type": "reasoning",
+      "content": [],
+      "encrypted_content": "gAAAAABqu3ExdJGelHkQBR4gpPQ0N1_7QVAECA-gb_VX9USELGJxyLhTbT6e3S2BtnvRNapbZYCkH18qj_YrpYOJsM5wnhV1ONj2XplnNV2gvZD0eseA1NfXGscOZvIqF90lj6CzhdHKvXPXY4cO4vPhIxzCJn1Wl_I92YKhdm1ou6hYLLfXVwSNWu1a1xpuMTm-bwxV7grS5xER_BoKAQl761Mzgdl14rV6_Pih_1zu5L45_X9h21CAT0KDGDIN7tlUKtUGI8SNViP-4lUBPLMxer84AHRb_X2wMcZKCn5tMgDY4f-XOJZXh-g0zKH6qTi-eXd11UySusak3QuLWf-pCg5afKCnykTNm7z6VyjLN23ABORs0m8EZQFZ5N5nbRviS0tl7hGTNHdnHpJ43WwTgvpFimD6iSHOPtaYzoMNtjBUVcjSPOzvYzfVtsqXdtu3va1mX-eRToYAVr15xLopuJRwpivzcl7DtA9prF2dB3fA2fvDA3WfmKxYbWV0LFZA4ZwiF0RHVIfrI86cDSurT0Y4d4SGCR4b9DqW-N0ul4eF0YH1Zx94DqfsbP-iUDHtTguvUqQC8YotOOXC-zwJcs1FmwdV4ZcyPUrTN_zUepkJuc2mrbtT9rAZHnSYStsvp-wL5lXb_uyoJ-DzWwqcaUd4yqo45Dty7a6z7itAUHeC9U7P_zl9bzNow8ApYICh0wzacdz5DJU3A3ZQExCwW2R9rICwYoMHr0tkTzgdgnznNLBRASUtftmikDSbsldCvc9Nz5XOdqHdUze1Jx9viP6ShKZLRDNyc90OiheZcGutw4S5A2_sXE3FjtzCfqXpE6cZt4DeskXGFCAFmYT9K9icr0CvmvEbIkJUUEFmSUMZyoZmuXrj4zaLvy7gu4N_MJjVv4ugJMrhT-2qK5KjOCCkqDcN4rKGTUJjB___RndHOf6tBf5tQyLi1FpsLKjQgl13mlOqaleXdpn5AiZZx8xNvkpf_7-qCvUhwEtM4Vpu8h9fK8GVH0uSMrDXwuCeKb-58D3oJ3bf6gTDcfg8Vtz0V-wrIar5cDXL64EZ98fCP-O0wRgmDpXbR1b1v1PiMgX9kXjECv-The5wHlRETd7cmpDVJoVZx_n013ulQHbpZ9IDV_DTJ5WFvyZbtwqlKIFFiYUFnD_QeHJ0Rqx-KoToacKTEVQpdlexrK7pH2xq1fzZCMteJpPIHpCxgkf4DTsTVW0Lr_dBb07O2xjygoaw7sebmWRC0fsUMgsERPVpeGg_VkZxfY-MHImGeki9Ye8t7M_EulAJh7Gp_Rk_7f51i8hilZ_K4i5ll0SZeQmwoMCkSNq1eIV78onOfQbxo1cf7fTDqHZlSyK2lqdlidhRYm3E_64VgaQPkwJZnjFNL3hJXOtj6HfmoP_NhtpGHSCOTbeMPjZMFGnG5g_mSsa-6DbtDAgoKHXhw9h3Jvn5nKNJvDZhWmby5HW3uY6zeF9buRxiih4ymrMIy4oMzjsEp5ZoyInKafPKI46V8u6HAETj_fNCkyodomMcH9hEKtXA0oc0BRQ1AOR3AJ-iuD0C6X6jrmQJBTwszuNY6F0JHsp6fD1nLJbaKzpl_luHGxakW7WEt97KrDO2lHwJq9rfVANtMqLd791bEBTVyGVeiG8HOmXUT-uxsdrK-MVM4FLgcnXcqH6V441kb_84My9sFBayABcZ0JfRpk5mon7dxq_8JomWxKWvKvabrbxONYksJD_rrwIeOEm6niYUKx3buGl4rvusNd4Ynqhqn0NxbG8yQf3aUzkCYhWSKQ5hzUzlzcVEfqgu6aOvSmGJTRxfgUDjAEfU0EKRQCWWmryx4PMbOkQ=",
+      "summary": []
+    },
+    {
+      "id": "msg_01573f616f96f884016abb7109ec2c87d29debb9c988a17f8f",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"contractVersion\": \"progress-review.v1\",\n  \"requestId\": \"benchmark:A01\",\n  \"status\": \"complete\",\n  \"summary\": \"Review preparation for August 17\u2013September 13, 2026, inclusive, Europe/Warsaw. The arc remains marked in progress, so this is a partial-arc review, not a completion verdict. Recorded wall-pushup repetitions increased, but later sets were rated too hard while sleep and energy reports worsened. Body measurements changed only slightly; self-reported balance improved while squat control remained limited. Arc-boundary ambiguity needs clarification. No plan approval or changes are made, and no photos have been seen.\",\n  \"claims\": [\n    {\n      \"id\": \"attendance-scope\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Attendance and arc boundaries\",\n      \"text\": \"The application reports 11 completed sessions for the selected dates, but their attribution to this arc is unresolved. Attendance adherence cannot be established from the saved weekly frequency.\",\n      \"evidenceIds\": [\n        \"training:completed\",\n        \"workout-2026-09-07\",\n        \"check-2026-09-07\"\n      ],\n      \"confidence\": {\n        \"level\": \"medium\",\n        \"reason\": \"The session records support the supplied date-range count, but arcContext introduces a conflicting boundary rule.\"\n      },\n      \"limitations\": [\n        \"September 7 has both a reassessment and included training, although arcContext says reassessment-day training belongs to the next arc.\",\n        \"The arc is in progress with no completion checkpoint or actual end.\",\n        \"Planned sessions and adherence rate are unavailable; the original exercise-by-exercise plan is not retained.\"\n      ],\n      \"alternatives\": [\n        \"The September 7 reassessment may be an interim check, or the included training may require different arc attribution; neither is established.\"\n      ]\n    },\n    {\n      \"id\": \"exercise-effort\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Comparable exercise exposure and effort\",\n      \"text\": \"Within the supplied wall-pushup comparison group, session volume progressed from 24 to 26, then 28 and 30 repetitions. Early sets were rated perfect; the second set on September 7, 9 and 11 was rated too hard. This shows increased recorded work, not verified strength gain.\",\n      \"evidenceIds\": [\n        \"exposure:workout-2026-08-17:0\",\n        \"exposure:workout-2026-08-24:0\",\n        \"exposure:workout-2026-08-31:0\",\n        \"exposure:workout-2026-09-07:0\",\n        \"exposure:workout-2026-09-09:0\",\n        \"exposure:workout-2026-09-11:0\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"The supplied exposures directly record these volumes and effort labels.\"\n      },\n      \"limitations\": [\n        \"Only wall-pushup exposures are supplied, so whole-program progress cannot be assessed.\",\n        \"Wall distance, technique and range of motion are not documented.\",\n        \"Later exposures remain subject to the unresolved arc-boundary issue.\"\n      ],\n      \"alternatives\": [\n        \"Higher repetitions may reflect improved task performance, greater effort or unrecorded execution differences.\"\n      ]\n    },\n    {\n      \"id\": \"wellbeing-pattern\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Wellbeing\",\n      \"text\": \"Recorded wellbeing shifted from stable energy and good sleep through August 28 to low energy and poor sleep from August 31 onward. Later too-hard sets occurred during this period. Entries reported no soreness or pain warnings, but that does not establish adequate recovery.\",\n      \"evidenceIds\": [\n        \"wellbeing-2026-08-17\",\n        \"wellbeing-2026-08-19\",\n        \"wellbeing-2026-08-21\",\n        \"wellbeing-2026-08-24\",\n        \"wellbeing-2026-08-26\",\n        \"wellbeing-2026-08-28\",\n        \"wellbeing-2026-08-31\",\n        \"wellbeing-2026-09-02\",\n        \"wellbeing-2026-09-04\",\n        \"wellbeing-2026-09-07\",\n        \"wellbeing-2026-09-09\",\n        \"wellbeing-2026-09-11\",\n        \"exposure:workout-2026-09-11:0\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"The shift is consistent across the supplied self-reports.\"\n      },\n      \"limitations\": [\n        \"Wellbeing covers 12 of 28 calendar days, with 16 missing days.\",\n        \"The association does not establish whether training, sleep or another factor caused the change.\"\n      ],\n      \"alternatives\": [\n        \"Non-training circumstances or differences in reporting could contribute.\"\n      ]\n    },\n    {\n      \"id\": \"body-pattern\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Body measurements\",\n      \"text\": \"Recorded weight and waist moved slightly downward, while upper-arm circumference moved slightly upward. These small changes do not establish fat loss or muscle gain.\",\n      \"evidenceIds\": [\n        \"arc:body:weight:first-last\",\n        \"arc:body:waist:first-last\",\n        \"arc:body:upperArm:first-last\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"Application-provided first-to-last comparisons support the directions under the same recorded protocol.\"\n      },\n      \"limitations\": [\n        \"Weight has 12 measured days; waist and upper arm each have four, ending September 7.\",\n        \"Hips, chest, thigh and calf measurements are unavailable.\",\n        \"No body-composition evidence or image pixels are supplied.\"\n      ],\n      \"alternatives\": [\n        \"Ordinary biological variation and measurement variability could explain changes of this size.\"\n      ]\n    },\n    {\n      \"id\": \"movement-checks\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Self-reported movement checks\",\n      \"text\": \"Between the August 17 baseline and September 7 reassessment, single-leg balance changed from limited to clear. Squat control remained limited; hip hinge, overhead reach and plank control remained clear.\",\n      \"evidenceIds\": [\n        \"arc-baseline\",\n        \"check-2026-09-07\"\n      ],\n      \"confidence\": {\n        \"level\": \"medium\",\n        \"reason\": \"The labels directly support the comparison, but both checks are self-reported.\"\n      },\n      \"limitations\": [\n        \"These are not observed technique assessments or diagnoses.\",\n        \"No completion checkpoint is supplied.\"\n      ],\n      \"alternatives\": [\n        \"Familiarity with the checks or differing test conditions could affect the ratings.\"\n      ]\n    },\n    {\n      \"id\": \"priority-effort-recovery\",\n      \"type\": \"RECOMMENDATION\",\n      \"topic\": \"Priority 1: effort and wellbeing\",\n      \"text\": \"Discuss the later too-hard sets alongside persistent poor sleep and low energy before deciding on next-arc progression. Assess this using the existing set-effort, repetition, sleep and energy logs, keeping wall-pushup setup comparable and recording missing wellbeing entries when possible.\",\n      \"evidenceIds\": [\n        \"exposure:workout-2026-09-07:0\",\n        \"exposure:workout-2026-09-09:0\",\n        \"exposure:workout-2026-09-11:0\",\n        \"wellbeing-2026-08-31\",\n        \"wellbeing-2026-09-11\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"Repeated late difficulty and adverse wellbeing reports provide a clear discussion priority.\"\n      },\n      \"limitations\": [\n        \"This does not prescribe progression, a load change or a recovery intervention.\",\n        \"Clarify what too hard meant; it does not itself establish pain or unsafe technique.\"\n      ],\n      \"alternatives\": [\n        \"Better documentation may be sufficient to clarify the pattern without a training change.\"\n      ]\n    },\n    {\n      \"id\": \"priority-movement\",\n      \"type\": \"RECOMMENDATION\",\n      \"topic\": \"Priority 2: clarify movement-check consistency\",\n      \"text\": \"Discuss persistent limited squat control and whether the improved balance rating is repeatable. Assess both with the existing self-report movement checks under consistent conditions, noting what specifically produces a limited rating.\",\n      \"evidenceIds\": [\n        \"arc-baseline\",\n        \"check-2026-09-07\"\n      ],\n      \"confidence\": {\n        \"level\": \"medium\",\n        \"reason\": \"The checks identify a persistent limitation and a reported improvement worth confirming.\"\n      },\n      \"limitations\": [\n        \"Self-report cannot verify movement mechanics.\",\n        \"No exercise replacement or plan change is proposed.\"\n      ],\n      \"alternatives\": [\n        \"Clarifying test conditions and rating criteria may explain the results without requiring an intervention.\"\n      ]\n    }\n  ],\n  \"questions\": [\n    \"Was September 7 an interim reassessment or an arc boundary, and how should its training and subsequent sessions be attributed?\",\n    \"What did too hard mean on the later second sets: muscular effort, inability to maintain execution, pain or something else?\",\n    \"What specifically limited squat control, and were the baseline and reassessment performed under comparable conditions?\",\n    \"Was strength also the goal at the start of this arc? The supplied profile establishes only the current goal.\"\n  ],\n  \"proposedChanges\": []\n}"
+        }
+      ],
+      "phase": "final_answer",
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "presence_penalty": 0.0,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": "24h",
+  "reasoning": {
+    "context": "all_turns",
+    "effort": "medium",
+    "mode": "standard",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": false,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "json_schema",
+      "description": null,
+      "name": "progress_review_v1",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "enum": [
+              "progress-review.v1"
+            ]
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "insufficient_evidence"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "FACT",
+                    "OBSERVATION",
+                    "HYPOTHESIS",
+                    "RECOMMENDATION"
+                  ]
+                },
+                "topic": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "maxItems": 16,
+                  "minItems": 1
+                },
+                "confidence": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "maxItems": 16
+                },
+                "alternatives": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "maxItems": 16
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "topic",
+                "text",
+                "evidenceIds",
+                "confidence",
+                "limitations",
+                "alternatives"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 32
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "maxItems": 16
+          },
+          "proposedChanges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            },
+            "maxItems": 0
+          }
+        },
+        "required": [
+          "contractVersion",
+          "requestId",
+          "status",
+          "summary",
+          "claims",
+          "questions",
+          "proposedChanges"
+        ],
+        "additionalProperties": false
+      },
+      "strict": true
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": "auto",
+  "tool_usage": {
+    "image_gen": {
+      "input_tokens": 0,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 0
+      },
+      "output_tokens": 0,
+      "output_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 0
+      },
+      "total_tokens": 0
+    },
+    "web_search": {
+      "num_requests": 0
+    }
+  },
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 0.98,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 13605,
+    "input_tokens_details": {
+      "cache_write_tokens": 13602,
+      "cached_tokens": 0
+    },
+    "output_tokens": 2159,
+    "output_tokens_details": {
+      "reasoning_tokens": 94
+    },
+    "total_tokens": 15764
+  },
+  "user": null,
+  "metadata": {}
+}

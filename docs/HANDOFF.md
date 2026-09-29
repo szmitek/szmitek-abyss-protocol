@@ -1,4 +1,22 @@
-# Prepared next step — single text Arc Review A01
+# Post-A01 offline v2 — 2026-09-29
+
+PR51 was merged at 7935348e4a8ee1d2010761096a2ffa53bd1cb7c1. One explicitly authorized
+A01 ran as 36540298590, attempt1, Astra medium, cost1.112020 PLN at FX4. No retries.
+See docs/benchmarks/A01-2026-09-29/ for preserved raw evidence and quality review.
+Structural validation passed; completeness gate did not: recorded targets were
+omitted, and our boundary explanation was ambiguous. No critical violation found.
+
+This package prepares offline-only v2: linked-completion boundary semantics and
+explicit comparison against recorded exposure targets. Only benchmark input
+rendering/prompt changes; production app and frozen v1 remain untouched. All10
+dry-run cases and263 tests/TypeScript/lint passed. No APK required.
+See tools/arc-review-benchmark/README.md. New model cost0. No budget reconciliation.
+The previous one-request consent is consumed. No live v2 runner exists; prepare,
+price and obtain a new explicit approval before any further paid experiment.
+
+---
+
+# Prepared next step — single text Arc Review A01 (historical)
 
 Prepared 2026-09-28 on feat/arc-a01-pilot from the PR50 main tree.
 See tools/arc-review-benchmark/A01_PILOT.md for frozen payload, quality criteria,
