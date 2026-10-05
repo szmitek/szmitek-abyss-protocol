@@ -111,3 +111,11 @@ view/setup is acknowledged. No before/after improvement claim without comparable
 images. Next arc checks function, logs and wellbeing rather than a promised shape.
 The existing text schema forbids photo claims: a future vision-specific contract,
 consent and validator must be designed before that pilot, not bypassed here.
+
+## Authorized A01 v2 single request
+
+The separate `arc-review-a01-v2.yml` workflow runs the frozen offline v2 request through the existing shared harness. It selects only A01, Astra medium, one repeat, 4096 output tokens, FX 4 and a 3.70 PLN request/session cap. The previous v1 runner and request remain unchanged. Dry-run needs no key and performs no HTTP. Paid mode requires protected `rpgfitness-benchmark`, explicit YES, main, attempt 1 and durable monthly reservation. No retry or automatic reconciliation.
+
+Local preflight: `node --experimental-strip-types tools/arc-review-benchmark/a01-v2.ts --dry-run`.
+
+Consent: user authorized reconciliation of previous A01 and exactly one A01 v2 up to 3.70 PLN, without retries, on 2026-09-29; continued on 2026-10-05. This consent is consumed by the single paid attempt and does not authorize future dispatches. Current conservative estimate 3.67935 PLN. Standard Astra rates rechecked 2026-10-05 at https://developers.openai.com/api/docs/models/gpt-6-astra: 10/12.5/1/50 USD per million normal input/cache write/cache read/output. No tariff or global cap change.

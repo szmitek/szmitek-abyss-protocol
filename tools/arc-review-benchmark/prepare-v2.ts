@@ -1,4 +1,4 @@
-// Offline experiment only. Never imported by the mobile app or paid runner.
+// Shared frozen v2 request preparation. CLI remains offline-only; never imported by the mobile app.
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
