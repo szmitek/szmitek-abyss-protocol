@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "approvedBy": "User explicitly approved reconciliation and one A01 v2 up to 3.70 PLN without retries",
+  "reconciledOn": "2026-10-05",
+  "runId": "36540298590",
+  "month": "2026-09",
+  "beforeMicroPln": 3600000,
+  "afterMicroPln": 1112020,
+  "releasedMicroPln": 2487980,
+  "usage": {
+    "input_tokens": 13605,
+    "cache_write_tokens": 13602,
+    "cached_tokens": 0,
+    "output_tokens": 2159,
+    "reasoning_tokens": 94
+  },
+  "usd": 0.278005,
+  "plnPerUsd": 4,
+  "rawSha256": "76b9ea8121e48c01a545ed3b7eb51f0350b4caa3071500e6eab33274d8713d14",
+  "archive": "docs/benchmarks/A01-2026-09-29/raw.txt",
+  "note": "Historical cost at recorded pricing. No change to monthly caps. October experiment accounted separately."
+}
