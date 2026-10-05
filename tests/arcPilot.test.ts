@@ -132,3 +132,30 @@ test('v2 CLI refuses a live switch and has no credential or transport dependency
   const source = readFileSync(new URL('../tools/arc-review-benchmark/prepare-v2.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /openAIRequest|OPENAI_API_KEY|process\.env|runBenchmark/);
 });
+
+test('A01 v2 fixed pilot uses approved frozen request, cap and one offline result', async () => {
+  const { arcA01V2Options } = await import('../tools/arc-review-benchmark/a01-v2.ts');
+  const { arcPilotV2, arcPilotV2Case, arcPilotV2Request } = await import('../tools/arc-review-benchmark/pilotConfig.ts');
+  assert.equal(estimateMaximum(arcPilotV2Request(arcPilotV2Case()), 4096, 4).maximumPln, 3.67935);
+  for (const env of [{ BENCH_MAX_RUN_PLN: '4' }, { BENCH_MAX_SESSION_PLN: '4' }, { BENCH_MAX_OUTPUT_TOKENS: '8192' }]) assert.throws(() => arcA01V2Options(['--dry-run'], env));
+  assert.throws(() => arcA01V2Options(['--live'], { GITHUB_ACTIONS: 'true', GITHUB_RUN_ATTEMPT: '2' }));
+  assert.throws(() => arcA01V2Options(['--dry-run', '--repeats=2'], {}));
+  const changed = arcPilotV2Case(); changed.input.requestId = 'changed';
+  assert.throws(() => arcPilotV2Request(changed));
+  const root = mkdtempSync(join(tmpdir(), 'a01-v2-')), previous = globalThis.fetch;
+  globalThis.fetch = () => { throw new Error('HTTP forbidden'); };
+  try {
+    await assert.rejects(runBenchmark(arcA01V2Options(['--live'], { GITHUB_ACTIONS: 'true', GITHUB_RUN_ATTEMPT: '1' })), /not authorized/);
+    await assert.rejects(runBenchmark({ ...arcA01V2Options(['--dry-run'], {}), repeats: 2 }), /fixed/);
+    const { directory, summary } = await runBenchmark({ ...arcA01V2Options(['--dry-run'], {}), outputRoot: root });
+    assert.equal(summary.runs, 1); assert.equal(summary.results[0]!.valid, true); assert.equal(summary.results[0]!.budgetWouldBlock, false);
+    assert.equal(summary.promptVersion, 'arc-review.offline.v2'); assert.equal(summary.actualApiCostPln, 0);
+    const result = JSON.parse(readFileSync(join(directory, 'A01-medium-1.result.json'), 'utf8'));
+    assert.equal(result.requestSha256, arcPilotV2.requestSha256);
+    assert.equal(result.cost.actualApiCostPln, 0);
+  } finally { globalThis.fetch = previous; rmSync(root, { recursive: true, force: true }); }
+  const workflow = readFileSync('.github/workflows/arc-review-a01-v2.yml', 'utf8');
+  assert.match(workflow, /default: 'NO'/); assert.match(workflow, /environment: rpgfitness-benchmark/);
+  assert.match(workflow, /group: rpgfitness-benchmark/); assert.match(workflow, /BENCH_MAX_SESSION_PLN: '3.70'/);
+  assert.match(workflow, /a01-v2.ts --live/); assert.doesNotMatch(workflow, /schedule:|pull_request:/);
+});

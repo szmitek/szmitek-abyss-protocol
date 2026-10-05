@@ -1,3 +1,5 @@
+import { arcPilotV2Case, arcPilotV2Request, assertArcPilotV2Options } from '../arc-review-benchmark/pilotConfig.ts';
+import { arcV2PromptVersion } from '../arc-review-benchmark/prepare-v2.ts';
 import { arcPilotCase, arcPilotRequest, assertArcPilotOptions, arcPilotScore } from '../arc-review-benchmark/pilotConfig.ts';
 import { arcPromptVersion } from '../arc-review-benchmark/prepare.ts';
 import { completenessRequest, completenessPromptVersion } from './completeness-v2.ts';
@@ -17,16 +19,18 @@ import { scoreTemplate } from './scoring.ts';
 const defaultRoot = fileURLToPath(new URL('../../.benchmark-results/', import.meta.url));
 const save = (path: string, data: unknown) => writeFileSync(path, JSON.stringify(data, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
-export interface Options { arcA01?: boolean; v2Model?: 'sol' | 'astra'; solW01?: boolean; cases?: 'all' | 'remaining'; payload?: 'full' | 'compact'; effort?: 'medium' | 'matrix'; dryRun: boolean; repeats: number; outputRoot: string; fx: number; perRunPln: number; sessionPln: number; maxOutputTokens: number; env: Readonly<Record<string, string | undefined>> }
+export interface Options { arcA01V2?: boolean; arcA01?: boolean; v2Model?: 'sol' | 'astra'; solW01?: boolean; cases?: 'all' | 'remaining'; payload?: 'full' | 'compact'; effort?: 'medium' | 'matrix'; dryRun: boolean; repeats: number; outputRoot: string; fx: number; perRunPln: number; sessionPln: number; maxOutputTokens: number; env: Readonly<Record<string, string | undefined>> }
 export async function runBenchmark(options: Options) {
   const { dryRun, repeats, fx, perRunPln, sessionPln, maxOutputTokens, env } = options;
+  if (options.arcA01V2) assertArcPilotV2Options(options);
   if (options.arcA01) assertArcPilotOptions(options);
   const selectedModel = options.v2Model === 'sol' || options.solW01 ? 'gpt-5.6-sol' : model;
   const rates = options.v2Model === 'sol' || options.solW01 ? solPrice : price;
   if (options.solW01 && (repeats !== 1 || options.effort !== 'medium' || fx !== 4 || maxOutputTokens !== 4096 || perRunPln > 2.1 || sessionPln > 2.1)) throw new Error('Sol W01 limits are fixed; no widening permitted.');
-  const activePromptVersion = options.arcA01 ? arcPromptVersion : options.v2Model ? completenessPromptVersion : promptVersion;
+  const activePromptVersion = options.arcA01V2 ? arcV2PromptVersion : options.arcA01 ? arcPromptVersion : options.v2Model ? completenessPromptVersion : promptVersion;
   if (options.v2Model && (!['sol', 'astra'].includes(options.v2Model) || options.solW01 || repeats !== 1 || options.effort !== 'medium' || fx !== 4 || maxOutputTokens !== 4096 || perRunPln > (options.v2Model === 'sol' ? 1.8 : 4.4) || sessionPln > (options.v2Model === 'sol' ? 1.8 : 4.4))) throw new Error('Fixed v2 single-request limits exceeded.');
   const requestFor = (test: ReturnType<typeof weeklyCases>[number], effort: Effort) => {
+    if (options.arcA01V2) return arcPilotV2Request(test);
     if (options.arcA01) return arcPilotRequest(test);
     if (options.v2Model) return completenessRequest(test, selectedModel as 'gpt-5.6-sol' | 'gpt-6-astra', effort);
     const body = makeRequest(test, effort, maxOutputTokens, options.solW01 ? 'full' : options.payload ?? 'full');
@@ -67,7 +71,7 @@ export async function runBenchmark(options: Options) {
     }
     const directory = resolve(options.outputRoot, `${dryRun ? 'dry-run' : 'live'}-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
     mkdirSync(directory, { recursive: true, mode: 0o700 });
-    const selected = options.arcA01 ? [arcPilotCase()] : weeklyCases().filter((c) => options.solW01 || options.v2Model ? c.id === 'W01' : options.cases !== 'remaining' || c.id !== 'W01');
+    const selected = options.arcA01V2 ? [arcPilotV2Case()] : options.arcA01 ? [arcPilotCase()] : weeklyCases().filter((c) => options.solW01 || options.v2Model ? c.id === 'W01' : options.cases !== 'remaining' || c.id !== 'W01');
     const preflight = selected.flatMap((test) => (test.high && options.effort !== 'medium' ? ['medium', 'high'] as Effort[] : ['medium'] as Effort[]).map((effort) => ({ testcaseId: test.id, effort, repeats, estimate: estimateMaximum(requestFor(test, effort), maxOutputTokens, fx, rates) })));
     const plannedMaximumPln = preflight.reduce((sum, row) => sum + row.estimate.maximumPln * repeats, 0);
     save(resolve(directory, 'preflight.json'), { cases: preflight, plannedMaximumPln, sessionPln, fullPlanFitsMaximum: plannedMaximumPln <= sessionPln, note: 'No assumed cache hits. Partial execution may stop at the session limit; dry-run makes no model calls.' });
@@ -105,13 +109,13 @@ export async function runBenchmark(options: Options) {
         const chargedPln = dryRun ? 0 : measured?.pln ?? estimate.maximumPln;
         if (!dryRun) { monthlySpent += chargedPln - estimate.maximumPln; sessionSpent += chargedPln - estimate.maximumPln; writeLedger(); }
         const row = { testcaseId: test.id, effort, repeat, valid: evaluated.valid, dryRun, chargedPln, budgetWouldBlock };
-        results.push(row); assessments.push(options.arcA01 ? arcPilotScore() : scoreTemplate(test.id, effort, repeat));
+        results.push(row); assessments.push(options.arcA01V2 || options.arcA01 ? arcPilotScore() : scoreTemplate(test.id, effort, repeat));
         save(resolve(directory, `${key}.result.json`), { ...row, modelRequested: selectedModel, modelReturned: dryRun ? null : evaluated.returnedModel, promptVersion: activePromptVersion, contractVersion: 'progress-review.v1', requestTimestamp: timestamp, latencyMs, latencyMeaning: dryRun ? 'local pipeline only, not inference latency' : 'request to complete response body', finishStatus: evaluated.status, httpStatus: raw.httpStatus, transportError: raw.transportError, usage: evaluated.usage, cost: { actualApiCostPln: dryRun ? 0 : measured?.pln ?? null, measured, reservedOrAccountedPln: chargedPln, estimate, price: rates, plnPerUsd: fx }, validation: { passed: evaluated.valid, error: evaluated.error }, criticalViolations: { automatedSemanticAssessment: 'not_performed', human: null }, requestSha256: hash(serialized), inputSha256: hash(JSON.stringify(test.input)), rawResponseFile: `${key}.raw.txt`, responseData: evaluated.data, fixtureMutation: test.mutation, label: dryRun ? 'DRY RUN / NOT MODEL OUTPUT / NO HTTP / COST 0' : 'BENCHMARK ONLY / HUMAN REVIEW PENDING' });
         if (!dryRun && (!measured || chargedPln > estimate.maximumPln || raw.transportError || raw.httpStatus !== 200)) { stopped = 'accounting_or_transport_stop_no_retry'; break; }
       }
     }
     save(resolve(directory, 'scores.json'), assessments);
-    const summary = { plannedMaximumPln, fullPlanFitsMaximum: plannedMaximumPln <= sessionPln, payloadVersion: options.arcA01 || options.v2Model || options.payload === 'compact' ? 'evidence-index.v2' : 'full.v1', selectedCases: options.arcA01 ? 'A01-only' : options.solW01 || options.v2Model ? 'W01-only' : options.cases ?? 'all', dryRun, model: selectedModel, promptVersion: activePromptVersion, results, stopped, runs: results.length, actualApiCostPln: dryRun ? 0 : results.some((r) => r.chargedPln > 0) ? 'see per-run measured costs; unknown usage retains reservation' : 0, sessionAccountedPln: sessionSpent, monthlyAccountedPln: dryRun ? null : monthlySpent, actionsMonthlyReservedPln, softBudgetReached: !dryRun && Math.max(monthlySpent, actionsMonthlyReservedPln ?? 0) >= pilot.astraSoftMonthlyPln, hardCapScope: env.GITHUB_ACTIONS === 'true' && !dryRun ? 'durable Actions session reservations plus local per-request accounting; not billing control' : 'local checkout, not OpenAI billing control', qualityVerdict: 'not_evaluated', noAutomaticRetries: true };
+    const summary = { plannedMaximumPln, fullPlanFitsMaximum: plannedMaximumPln <= sessionPln, payloadVersion: options.arcA01V2 || options.arcA01 || options.v2Model || options.payload === 'compact' ? 'evidence-index.v2' : 'full.v1', selectedCases: options.arcA01V2 || options.arcA01 ? 'A01-only' : options.solW01 || options.v2Model ? 'W01-only' : options.cases ?? 'all', dryRun, model: selectedModel, promptVersion: activePromptVersion, results, stopped, runs: results.length, actualApiCostPln: dryRun ? 0 : results.some((r) => r.chargedPln > 0) ? 'see per-run measured costs; unknown usage retains reservation' : 0, sessionAccountedPln: sessionSpent, monthlyAccountedPln: dryRun ? null : monthlySpent, actionsMonthlyReservedPln, softBudgetReached: !dryRun && Math.max(monthlySpent, actionsMonthlyReservedPln ?? 0) >= pilot.astraSoftMonthlyPln, hardCapScope: env.GITHUB_ACTIONS === 'true' && !dryRun ? 'durable Actions session reservations plus local per-request accounting; not billing control' : 'local checkout, not OpenAI billing control', qualityVerdict: 'not_evaluated', noAutomaticRetries: true };
     save(resolve(directory, 'summary.json'), summary);
     return { directory, summary };
   } finally {
