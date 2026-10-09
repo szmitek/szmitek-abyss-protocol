@@ -1,3 +1,24 @@
+# Current checkpoint — A01 v2 reviewed, 2026-10-09
+
+PR53 was merged at `908690e024111a74cabbfdce12b88997c7610760`.
+The authorized single A01 v2 ran on 2026-10-05 as `37290136573`, attempt1,
+Astra medium, measured cost **1.216070 PLN** at FX4. The one-request consent is
+consumed; do not dispatch again. Result recovered and reviewed on 2026-10-09.
+
+Artifact digest and frozen request match; offline production-validator replay
+passed. Assistant semantic review passes the bounded A01 gate: logged targets
+are compared and interim reassessment is correctly distinguished from linked
+completion. One synthetic result does not establish stability or production
+readiness. See `benchmarks/A01-v2-2026-10-05/REVIEW.md` and unchanged raw evidence.
+
+New model cost this session: **0 PLN**. Durable October journal retains3.70 PLN;
+no reconciliation or cap change. App remains APK21/local summaries/mock Arc Review.
+Next: offline text-review delivery contract and failure/consent/budget design;
+no automatic paid campaign, personal upload, photo test or provider activation.
+Historical entries below are superseded where they describe v2 as not run.
+
+---
+
 # Post-A01 offline v2 — 2026-09-29
 
 PR51 was merged at 7935348e4a8ee1d2010761096a2ffa53bd1cb7c1. One explicitly authorized

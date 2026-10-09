@@ -1,0 +1,30 @@
+{
+  "plannedMaximumPln": 3.67935,
+  "fullPlanFitsMaximum": true,
+  "payloadVersion": "evidence-index.v2",
+  "selectedCases": "A01-only",
+  "dryRun": false,
+  "model": "gpt-6-astra",
+  "promptVersion": "arc-review.offline.v2",
+  "results": [
+    {
+      "testcaseId": "A01",
+      "effort": "medium",
+      "repeat": 1,
+      "valid": true,
+      "dryRun": false,
+      "chargedPln": 1.21607,
+      "budgetWouldBlock": false
+    }
+  ],
+  "stopped": null,
+  "runs": 1,
+  "actualApiCostPln": "see per-run measured costs; unknown usage retains reservation",
+  "sessionAccountedPln": 1.2160699999999998,
+  "monthlyAccountedPln": 1.2160699999999998,
+  "actionsMonthlyReservedPln": 3.7,
+  "softBudgetReached": false,
+  "hardCapScope": "durable Actions session reservations plus local per-request accounting; not billing control",
+  "qualityVerdict": "not_evaluated",
+  "noAutomaticRetries": true
+}

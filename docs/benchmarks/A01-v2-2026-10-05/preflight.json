@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {
+      "testcaseId": "A01",
+      "effort": "medium",
+      "repeats": 1,
+      "estimate": {
+        "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+        "inputTokenCeiling": 57203,
+        "outputTokenCeiling": 4096,
+        "maximumPln": 3.67935
+      }
+    }
+  ],
+  "plannedMaximumPln": 3.67935,
+  "sessionPln": 3.7,
+  "fullPlanFitsMaximum": true,
+  "note": "No assumed cache hits. Partial execution may stop at the session limit; dry-run makes no model calls."
+}

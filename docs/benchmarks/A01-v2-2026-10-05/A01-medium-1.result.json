@@ -1,0 +1,274 @@
+{
+  "testcaseId": "A01",
+  "effort": "medium",
+  "repeat": 1,
+  "valid": true,
+  "dryRun": false,
+  "chargedPln": 1.21607,
+  "budgetWouldBlock": false,
+  "modelRequested": "gpt-6-astra",
+  "modelReturned": "gpt-6-astra",
+  "promptVersion": "arc-review.offline.v2",
+  "contractVersion": "progress-review.v1",
+  "requestTimestamp": "2026-10-05T09:28:49.086Z",
+  "latencyMs": 52818.039193,
+  "latencyMeaning": "request to complete response body",
+  "finishStatus": "completed",
+  "httpStatus": 200,
+  "transportError": null,
+  "usage": {
+    "input_tokens": 13894,
+    "input_tokens_details": {
+      "cache_write_tokens": 13891,
+      "cached_tokens": 0
+    },
+    "output_tokens": 2607,
+    "output_tokens_details": {
+      "reasoning_tokens": 124
+    },
+    "total_tokens": 16501
+  },
+  "cost": {
+    "actualApiCostPln": 1.21607,
+    "measured": {
+      "inputTokens": 13894,
+      "ordinaryInputTokens": 3,
+      "cacheWriteTokens": 13891,
+      "cachedInputTokens": 0,
+      "outputTokens": 2607,
+      "reasoningTokens": 124,
+      "visibleOutputTokens": 2483,
+      "breakdownUsd": {
+        "normalInput": 0.00003,
+        "cacheWrite": 0.1736375,
+        "cacheRead": 0,
+        "output": 0.13035
+      },
+      "usd": 0.3040175,
+      "pln": 1.21607,
+      "basis": "reported usage × recorded pricing, including cache writes; not an invoice"
+    },
+    "reservedOrAccountedPln": 1.21607,
+    "estimate": {
+      "basis": "UTF-8 byte ceiling + 4096 framing, all input at cache-write rate, full output cap; no assumed cache hits",
+      "inputTokenCeiling": 57203,
+      "outputTokenCeiling": 4096,
+      "maximumPln": 3.67935
+    },
+    "price": {
+      "inputPerMillionUsd": 10,
+      "cachedInputPerMillionUsd": 1,
+      "cacheWritePerMillionUsd": 12.5,
+      "outputPerMillionUsd": 50,
+      "checkedOn": "2026-09-18"
+    },
+    "plnPerUsd": 4
+  },
+  "validation": {
+    "passed": true,
+    "error": null
+  },
+  "criticalViolations": {
+    "automatedSemanticAssessment": "not_performed",
+    "human": null
+  },
+  "requestSha256": "59dd43a1d0402ca269a860b62bd0c53db2077e53a212c78a1bf9a8fbc258c56f",
+  "inputSha256": "7c428871a96eccde4c2c44410477b2e32833ae7151313fb7cf2458b26b3a6e62",
+  "rawResponseFile": "A01-medium-1.raw.txt",
+  "responseData": {
+    "contractVersion": "progress-review.v1",
+    "requestId": "benchmark:A01",
+    "status": "complete",
+    "summary": "Review of 2026-08-17 through 2026-09-13, inclusive: the full nominal four-week range is supplied, but the arc remains in progress without a linked completion checkpoint. Recorded wall-pushup volume increased and exceeded each exposure's target; later logs show harder effort alongside poor sleep and low energy. Body measurements changed slightly, and self-reported balance improved while squat control remained limited. Discussion priorities are understanding execution and recovery, and clarifying movement-check progress before arc completion. No plan changes are proposed.",
+    "claims": [
+      {
+        "id": "c1",
+        "type": "FACT",
+        "topic": "Completed training sessions",
+        "text": "Completed training sessions: 11 sessions.",
+        "evidenceIds": [
+          "training:completed"
+        ],
+        "confidence": {
+          "level": "high",
+          "reason": "The application count is supported by the supplied completed-session records."
+        },
+        "limitations": [
+          "Historical planned-session coverage and adherence rate are unavailable.",
+          "The saved frequency of 3 workouts per week is not a complete historical attendance schedule."
+        ],
+        "alternatives": [
+          "Report recorded attendance rather than a planned-session adherence verdict."
+        ]
+      },
+      {
+        "id": "c2",
+        "type": "OBSERVATION",
+        "topic": "Wall-pushup execution versus target",
+        "text": "Wall-pushup actual volume was above the recorded 20-rep target on every supplied exposure: 24 reps on 2026-08-17, 2026-08-19 and 2026-08-21; 26 reps on 2026-08-24 and 2026-08-26; 28 reps on 2026-08-31, 2026-09-02 and 2026-09-04; and 30 reps on 2026-09-07, 2026-09-09 and 2026-09-11. Both sets were marked 'perfect' through 2026-09-04; on each later exposure, the first was 'perfect' and the second 'too-hard'.",
+        "evidenceIds": [
+          "exposure:workout-2026-08-17:0",
+          "exposure:workout-2026-08-19:0",
+          "exposure:workout-2026-08-21:0",
+          "exposure:workout-2026-08-24:0",
+          "exposure:workout-2026-08-26:0",
+          "exposure:workout-2026-08-31:0",
+          "exposure:workout-2026-09-02:0",
+          "exposure:workout-2026-09-04:0",
+          "exposure:workout-2026-09-07:0",
+          "exposure:workout-2026-09-09:0",
+          "exposure:workout-2026-09-11:0"
+        ],
+        "confidence": {
+          "level": "high",
+          "reason": "Actual volume, prescribed volume and set effort are explicitly logged within the same comparison group."
+        },
+        "limitations": [
+          "These targets describe the recorded exposures, not the unavailable original exercise-by-exercise plan.",
+          "Effort labels are subjective; technique and wall-pushup setup consistency are not verified.",
+          "Higher recorded repetition volume does not establish physiological strength gain or make exceeding the target inherently better or unsafe."
+        ],
+        "alternatives": [
+          "The extra repetitions may have been intentional or may reflect a mismatch between intended execution and the recorded prescription."
+        ]
+      },
+      {
+        "id": "c3",
+        "type": "OBSERVATION",
+        "topic": "Wellbeing and effort",
+        "text": "Logged wellbeing shifted from stable energy and good sleep through 2026-08-28 to low energy and poor sleep on 2026-08-31, 2026-09-02, 2026-09-04, 2026-09-07, 2026-09-09 and 2026-09-11. The later 'too-hard' sets occurred within this poorer-wellbeing period. Supplied wellbeing entries reported no soreness or pain/warning.",
+        "evidenceIds": [
+          "wellbeing-2026-08-17",
+          "wellbeing-2026-08-19",
+          "wellbeing-2026-08-21",
+          "wellbeing-2026-08-24",
+          "wellbeing-2026-08-26",
+          "wellbeing-2026-08-28",
+          "wellbeing-2026-08-31",
+          "wellbeing-2026-09-02",
+          "wellbeing-2026-09-04",
+          "wellbeing-2026-09-07",
+          "wellbeing-2026-09-09",
+          "wellbeing-2026-09-11",
+          "exposure:workout-2026-09-07:0",
+          "exposure:workout-2026-09-09:0",
+          "exposure:workout-2026-09-11:0"
+        ],
+        "confidence": {
+          "level": "high",
+          "reason": "The dated wellbeing entries and effort labels directly support the observed timing."
+        },
+        "limitations": [
+          "Wellbeing covers 12 days, with 16 days missing; unlogged days cannot be characterized.",
+          "The association does not show that extra repetitions caused poor sleep or low energy.",
+          "Absence of reported pain or soreness does not establish complete recovery."
+        ],
+        "alternatives": [
+          "Sleep circumstances, non-training demands or changing exercise execution could also influence perceived effort."
+        ]
+      },
+      {
+        "id": "c4",
+        "type": "OBSERVATION",
+        "topic": "Body measurements",
+        "text": "Recorded weight moved from 80.2 kg on 2026-08-17 to 79.9 kg on 2026-09-11. Waist moved from 91.8 cm to 91.5 cm, and upper arm from 32.08 cm to 32.2 cm, between 2026-08-17 and 2026-09-07 under the same recorded protocol. These are small measurement shifts, not evidence of muscle gain or a quantified body-composition change.",
+        "evidenceIds": [
+          "measure-2026-08-17",
+          "measure-2026-09-07",
+          "measure-2026-09-11"
+        ],
+        "confidence": {
+          "level": "high",
+          "reason": "The endpoint values and matching protocol are explicitly recorded; the interpretation is limited to measured changes."
+        },
+        "limitations": [
+          "Weight has 12 measured days; waist and upper arm each have 4.",
+          "No hip, chest, thigh or calf measurements are supplied.",
+          "Circumference readings do not extend to the nominal end date.",
+          "No photos have been seen; no image pixels were supplied."
+        ],
+        "alternatives": [
+          "Normal biological fluctuation or measurement variability could contribute to these small shifts."
+        ]
+      },
+      {
+        "id": "c5",
+        "type": "OBSERVATION",
+        "topic": "Self-reported movement checks",
+        "text": "From the 2026-08-17 baseline to the 2026-09-07 reassessment, single-leg balance changed from 'limited' to 'clear'. Squat control remained 'limited'; hip hinge, overhead reach and plank control remained 'clear'.",
+        "evidenceIds": [
+          "arc-baseline",
+          "check-2026-09-07"
+        ],
+        "confidence": {
+          "level": "medium",
+          "reason": "The reported categories are directly comparable, but movement was self-assessed rather than independently observed."
+        },
+        "limitations": [
+          "The reassessment is not linked as the completion checkpoint and does not close this arc.",
+          "There is no linked completion assessment to establish end-of-arc movement status.",
+          "These categories do not diagnose a movement disorder or verify technique."
+        ],
+        "alternatives": [
+          "The balance result may reflect genuine improvement, greater familiarity with the check or self-rating variability."
+        ]
+      },
+      {
+        "id": "c6",
+        "type": "RECOMMENDATION",
+        "topic": "Priority 1: clarify execution and recovery",
+        "text": "Discuss why actual repetitions consistently exceeded recorded targets and what changed around the onset of poor sleep and low energy. Assess this priority using the existing exposure and wellbeing logs: compare actual versus prescribed volume, set-level effort, sleep and energy on matching dates, while confirming comparable wall-pushup setup.",
+        "evidenceIds": [
+          "exposure:workout-2026-08-17:0",
+          "exposure:workout-2026-08-31:0",
+          "exposure:workout-2026-09-11:0",
+          "wellbeing-2026-08-28",
+          "wellbeing-2026-08-31",
+          "wellbeing-2026-09-11"
+        ],
+        "confidence": {
+          "level": "high",
+          "reason": "Repeated above-target execution, later harder effort and poorer wellbeing support clarification before a next-arc decision."
+        },
+        "limitations": [
+          "This is a discussion and monitoring priority, not a load prescription or approval of a plan.",
+          "Current strength goals do not establish the original arc goal.",
+          "The available logs cannot identify the cause of poorer wellbeing."
+        ],
+        "alternatives": [
+          "Clarifying recording or execution intent may be sufficient; the evidence does not require a training change."
+        ]
+      },
+      {
+        "id": "c7",
+        "type": "RECOMMENDATION",
+        "topic": "Priority 2: clarify movement progress and completion evidence",
+        "text": "Discuss the persistent 'limited' squat-control report and whether the clearer balance result is repeatable. Assess this with the same self-reported movement checks under comparable conditions, comparing baseline and interim results with an explicitly linked completion checkpoint when available.",
+        "evidenceIds": [
+          "arc-baseline",
+          "check-2026-09-07"
+        ],
+        "confidence": {
+          "level": "medium",
+          "reason": "The differing movement-check trajectories support further clarification, but evidence remains self-reported and incomplete at arc closure."
+        },
+        "limitations": [
+          "The full nominal date range is present; the missing element is the linked completion checkpoint, not a shorter supplied period.",
+          "Repeated self-reports still cannot independently verify technique.",
+          "No exercise replacement or plan modification is proposed."
+        ],
+        "alternatives": [
+          "Consistent repeat results may support continued monitoring rather than a training intervention."
+        ]
+      }
+    ],
+    "questions": [
+      "Were the above-target wall-pushup repetitions intentional, and did the wall distance, range of motion or other setup details remain consistent?",
+      "What changed around 2026-08-31 in sleep or daily demands, and did low energy or harder effort persist on days without wellbeing entries?",
+      "What did 'limited' squat control mean in practice, and is the arc intentionally still open or awaiting a linked completion checkpoint?"
+    ],
+    "proposedChanges": []
+  },
+  "fixtureMutation": null,
+  "label": "BENCHMARK ONLY / HUMAN REVIEW PENDING"
+}

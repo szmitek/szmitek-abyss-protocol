@@ -1,3 +1,9 @@
+> Current status (2026-10-09): the single A01 v2 request **already ran** on
+> 2026-10-05, run37290136573/attempt1. Its consent is consumed. Measured1.216070 PLN
+> at FX4; bounded A01 quality gate passed on review. See
+> [preserved result and assessment](../../docs/benchmarks/A01-v2-2026-10-05/REVIEW.md).
+> Historical preparation instructions below do not authorize another dispatch.
+
 # Arc Review offline preparation
 
 ## Post-A01 offline v2 (2026-09-29)
