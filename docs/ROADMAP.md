@@ -82,3 +82,13 @@ An arc review replaces a coincident paid weekly analysis. Photos are optional an
 never gate training. Ten PLN/month is a target to verify, not a changed billing
 limit or authorization. Animations remain last. Existing deterministic arc
 transitions and historical verdicts stay intact in this local package.
+
+## Text pilot checkpoint — 2026-10-09
+
+A01 v2 completed2026-10-05 and passed the bounded assistant semantic review on
+2026-10-09. Both v1 gaps were resolved; cost1.216070 PLN at FX4, one request.
+Evidence: `benchmarks/A01-v2-2026-10-05/REVIEW.md`. No further A01 repetition
+is needed to recover this result. Stability and A02–A10 model behavior remain
+untested. Next is offline preparation of the text-review delivery contract,
+consent/data preview, budget/idempotency and failure handling. Deployment, cloud
+activation, personal data upload, vision and new paid experiments are not implied.

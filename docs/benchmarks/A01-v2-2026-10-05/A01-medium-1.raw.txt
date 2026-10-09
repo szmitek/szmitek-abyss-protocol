@@ -1,0 +1,257 @@
+{
+  "id": "resp_069fac5c4680ae58016ac36dd1d1f487d094f6941821313139",
+  "object": "response",
+  "created_at": 1791192529,
+  "status": "completed",
+  "access_programs": null,
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "completed_at": 1791192581,
+  "error": null,
+  "frequency_penalty": 0.0,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": 4096,
+  "max_tool_calls": null,
+  "model": "gpt-6-astra",
+  "moderation": null,
+  "output": [
+    {
+      "id": "rs_069fac5c4680ae58016ac36dd37bd487d08f4d815570ea30a5",
+      "type": "reasoning",
+      "content": [],
+      "encrypted_content": "gAAAAABqw24FyabJzJdgwqawxuXS92YyuVfZiXTavCBxX6A2LTDePJ5mEawqEz-D1Vg-dH65RCMYsQryIsqloweQGnbkDeWpSIQrW470ilblf9zfIgsFMFkz9ssKW7bQ0qA18JSNA8ilRT61nN_fAFYnTtTBPmUz6KZMnMhXflB6YGHG4i-CgYci9_fFGip9GI-HNiqVEMrudyRs8JXy0NqBp2D7xMgYRi-tjsvgvLDwW09hYmLe7412AJEbj1kdjCeKgDxSk_hCJeFaK3KKOUmVCA4bjKKh1QtfO53cPts6Lt0VbJz6o8pKSjLZqPge0mn1TGUw8XNOy4_gzJkLCHqEYneKRt6zPgwEG4K_lS1GIGRlH4iWRdBCDngiMnmT_0oija4uI7kih0lDFmp7df9p3VdAslrH3mA9z3FOuFg18u-vzVQw1e1FmPB2EIlf9IeHZmyKPbET61yDRCSKgDqOQvqUG7c1SjxPYK0Q1tKk3gDnyz0TT5zO_2U9I63RiOIfABwn-uBnDy20mDia1eM4x6U3SXjDG-iK_y6CL1nMobC0eMifKQY3pBi9nGZ07vd96hI3vvtV_tLanaMhPXrQwkHDtHJdUOqBIVOfGPWn5t_sY9305jGfSm4Igy0mzGw9HspEedavdSXzZ5DskLBthyJkbQqOvVSkK_kISDU5mE64WnBY7hVgQ0iqQeQh4wU4hXoFs8tMGWeFPBPoRQ6oJAvgHYE8pbZEAIkWoBhmZ8cwQEwao6gEeuqsCw2C3EdyC_AAflKgKnNflF3Z92DmkOeE2AXjo74R-1K0t6N7MuBJCvMBs-yG7FQY2M4x3dxlg2v2ItTPyQEcf0Twn77-M1uE_rjGlTQMRMASo3C0Rwa0vCfj22CG_93VeRIUyJvKNjoJAwQPb6GKSoajO12ut06hMYUh9P_zz8hGSY2jZUu97N3VeQowuXwfaH1bQ1vfsk1soi8MHiX_uIgpPcuomacLO8QsaNAGKrx9JYDRn6sY7nOalfamlpjGD-XCo233mtV1xEepZS6wlhtHVlibmOHCdjzRiW6JbEIeHkO-v9ez_Hn_lzaMAmttEsAA-TwFdssxCCegm0_MHbVAwnCzOxKGcT8yvewwkQboByQ29FGS59_OvAFJpRveRTCM6S9zf9QHk0yw8Y0a9rGbhcZdzVNx-Fww66rudGcJQNBD7jDybC9NmMbemwycw8OR_Q4KY8PVDS8SUySVyYxwVRCeHOdqfM0FVamJ40kKzevFLPZHJVbprT5Rq7dY6FOTXQt7aTKv2DXYjnozNKsZr8i90KACsSJiNzU4o7U7H2N-gsaXs7FRH7TKegHoCs8oMfyhTisd5z48tyDRl7RtdYkFjWvIKAoGxddi__FZvb61Qzn5TFjZpv8tLNRK9w3dP0EDactaqy-ZlBRvuYJzHbSwUeVvEYomvqz5aHV6Nz40xMLA-yS4rehSZCaf_YLjEwuVreue61Jktf2nFF9MsDPghWizre37d2Mq9ut6agl9qDJ9RvnaxTu2rQkFTcbvprguwZWHjQcjauUpNN86GzuoAEzg-u95Mw8D3iBQLcXnn7AtQZa9mnhg9FRkwDTFOOtC0lnR2pSdqnp6XZI9kJurY5JLixJQ6Qic9u9TXgL9CLEQQybm0N1zHk6llmvdS67lxHnQSz67rMinjFUh0WKH5f9WTlVagaAGZdttlns1XHHw8g8PCD89-A6C9JubjeOlAk4r6g8YrkdAr0Jr9ole1FeH3l5scTQZjP4QmuqECLDGGE9TE5R0ZK7JNZgF4POxk-PRGor-9JQkNP25JVxvFsdI8UCN4L_acbQQqx1gK6dSrpZzY46BKmmhyrIS5WTKJwWiSYkmMsFRHqXHGiLHoaDVcHDJ_7vgHcyivvxSVp6AfXgdTKtnrs9sXFPYYMAelfdulYCLXTHkg9J2XG2v0JQu4pZZZWS20o6fhwUi7cbazCmahLKt2inW0FwQmvP-EU3bs06MVxhlgRqb7BhuH6lag469RxPzZrFiUM_qwPcZZlQwnwGxKL73yUl-QcMB4x5YROPV",
+      "summary": []
+    },
+    {
+      "id": "msg_069fac5c4680ae58016ac36dd7d7d087d0af5852224be37e55",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"contractVersion\": \"progress-review.v1\",\n  \"requestId\": \"benchmark:A01\",\n  \"status\": \"complete\",\n  \"summary\": \"Review of 2026-08-17 through 2026-09-13, inclusive: the full nominal four-week range is supplied, but the arc remains in progress without a linked completion checkpoint. Recorded wall-pushup volume increased and exceeded each exposure's target; later logs show harder effort alongside poor sleep and low energy. Body measurements changed slightly, and self-reported balance improved while squat control remained limited. Discussion priorities are understanding execution and recovery, and clarifying movement-check progress before arc completion. No plan changes are proposed.\",\n  \"claims\": [\n    {\n      \"id\": \"c1\",\n      \"type\": \"FACT\",\n      \"topic\": \"Completed training sessions\",\n      \"text\": \"Completed training sessions: 11 sessions.\",\n      \"evidenceIds\": [\"training:completed\"],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"The application count is supported by the supplied completed-session records.\"\n      },\n      \"limitations\": [\n        \"Historical planned-session coverage and adherence rate are unavailable.\",\n        \"The saved frequency of 3 workouts per week is not a complete historical attendance schedule.\"\n      ],\n      \"alternatives\": [\n        \"Report recorded attendance rather than a planned-session adherence verdict.\"\n      ]\n    },\n    {\n      \"id\": \"c2\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Wall-pushup execution versus target\",\n      \"text\": \"Wall-pushup actual volume was above the recorded 20-rep target on every supplied exposure: 24 reps on 2026-08-17, 2026-08-19 and 2026-08-21; 26 reps on 2026-08-24 and 2026-08-26; 28 reps on 2026-08-31, 2026-09-02 and 2026-09-04; and 30 reps on 2026-09-07, 2026-09-09 and 2026-09-11. Both sets were marked 'perfect' through 2026-09-04; on each later exposure, the first was 'perfect' and the second 'too-hard'.\",\n      \"evidenceIds\": [\n        \"exposure:workout-2026-08-17:0\",\n        \"exposure:workout-2026-08-19:0\",\n        \"exposure:workout-2026-08-21:0\",\n        \"exposure:workout-2026-08-24:0\",\n        \"exposure:workout-2026-08-26:0\",\n        \"exposure:workout-2026-08-31:0\",\n        \"exposure:workout-2026-09-02:0\",\n        \"exposure:workout-2026-09-04:0\",\n        \"exposure:workout-2026-09-07:0\",\n        \"exposure:workout-2026-09-09:0\",\n        \"exposure:workout-2026-09-11:0\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"Actual volume, prescribed volume and set effort are explicitly logged within the same comparison group.\"\n      },\n      \"limitations\": [\n        \"These targets describe the recorded exposures, not the unavailable original exercise-by-exercise plan.\",\n        \"Effort labels are subjective; technique and wall-pushup setup consistency are not verified.\",\n        \"Higher recorded repetition volume does not establish physiological strength gain or make exceeding the target inherently better or unsafe.\"\n      ],\n      \"alternatives\": [\n        \"The extra repetitions may have been intentional or may reflect a mismatch between intended execution and the recorded prescription.\"\n      ]\n    },\n    {\n      \"id\": \"c3\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Wellbeing and effort\",\n      \"text\": \"Logged wellbeing shifted from stable energy and good sleep through 2026-08-28 to low energy and poor sleep on 2026-08-31, 2026-09-02, 2026-09-04, 2026-09-07, 2026-09-09 and 2026-09-11. The later 'too-hard' sets occurred within this poorer-wellbeing period. Supplied wellbeing entries reported no soreness or pain/warning.\",\n      \"evidenceIds\": [\n        \"wellbeing-2026-08-17\",\n        \"wellbeing-2026-08-19\",\n        \"wellbeing-2026-08-21\",\n        \"wellbeing-2026-08-24\",\n        \"wellbeing-2026-08-26\",\n        \"wellbeing-2026-08-28\",\n        \"wellbeing-2026-08-31\",\n        \"wellbeing-2026-09-02\",\n        \"wellbeing-2026-09-04\",\n        \"wellbeing-2026-09-07\",\n        \"wellbeing-2026-09-09\",\n        \"wellbeing-2026-09-11\",\n        \"exposure:workout-2026-09-07:0\",\n        \"exposure:workout-2026-09-09:0\",\n        \"exposure:workout-2026-09-11:0\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"The dated wellbeing entries and effort labels directly support the observed timing.\"\n      },\n      \"limitations\": [\n        \"Wellbeing covers 12 days, with 16 days missing; unlogged days cannot be characterized.\",\n        \"The association does not show that extra repetitions caused poor sleep or low energy.\",\n        \"Absence of reported pain or soreness does not establish complete recovery.\"\n      ],\n      \"alternatives\": [\n        \"Sleep circumstances, non-training demands or changing exercise execution could also influence perceived effort.\"\n      ]\n    },\n    {\n      \"id\": \"c4\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Body measurements\",\n      \"text\": \"Recorded weight moved from 80.2 kg on 2026-08-17 to 79.9 kg on 2026-09-11. Waist moved from 91.8 cm to 91.5 cm, and upper arm from 32.08 cm to 32.2 cm, between 2026-08-17 and 2026-09-07 under the same recorded protocol. These are small measurement shifts, not evidence of muscle gain or a quantified body-composition change.\",\n      \"evidenceIds\": [\n        \"measure-2026-08-17\",\n        \"measure-2026-09-07\",\n        \"measure-2026-09-11\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"The endpoint values and matching protocol are explicitly recorded; the interpretation is limited to measured changes.\"\n      },\n      \"limitations\": [\n        \"Weight has 12 measured days; waist and upper arm each have 4.\",\n        \"No hip, chest, thigh or calf measurements are supplied.\",\n        \"Circumference readings do not extend to the nominal end date.\",\n        \"No photos have been seen; no image pixels were supplied.\"\n      ],\n      \"alternatives\": [\n        \"Normal biological fluctuation or measurement variability could contribute to these small shifts.\"\n      ]\n    },\n    {\n      \"id\": \"c5\",\n      \"type\": \"OBSERVATION\",\n      \"topic\": \"Self-reported movement checks\",\n      \"text\": \"From the 2026-08-17 baseline to the 2026-09-07 reassessment, single-leg balance changed from 'limited' to 'clear'. Squat control remained 'limited'; hip hinge, overhead reach and plank control remained 'clear'.\",\n      \"evidenceIds\": [\"arc-baseline\", \"check-2026-09-07\"],\n      \"confidence\": {\n        \"level\": \"medium\",\n        \"reason\": \"The reported categories are directly comparable, but movement was self-assessed rather than independently observed.\"\n      },\n      \"limitations\": [\n        \"The reassessment is not linked as the completion checkpoint and does not close this arc.\",\n        \"There is no linked completion assessment to establish end-of-arc movement status.\",\n        \"These categories do not diagnose a movement disorder or verify technique.\"\n      ],\n      \"alternatives\": [\n        \"The balance result may reflect genuine improvement, greater familiarity with the check or self-rating variability.\"\n      ]\n    },\n    {\n      \"id\": \"c6\",\n      \"type\": \"RECOMMENDATION\",\n      \"topic\": \"Priority 1: clarify execution and recovery\",\n      \"text\": \"Discuss why actual repetitions consistently exceeded recorded targets and what changed around the onset of poor sleep and low energy. Assess this priority using the existing exposure and wellbeing logs: compare actual versus prescribed volume, set-level effort, sleep and energy on matching dates, while confirming comparable wall-pushup setup.\",\n      \"evidenceIds\": [\n        \"exposure:workout-2026-08-17:0\",\n        \"exposure:workout-2026-08-31:0\",\n        \"exposure:workout-2026-09-11:0\",\n        \"wellbeing-2026-08-28\",\n        \"wellbeing-2026-08-31\",\n        \"wellbeing-2026-09-11\"\n      ],\n      \"confidence\": {\n        \"level\": \"high\",\n        \"reason\": \"Repeated above-target execution, later harder effort and poorer wellbeing support clarification before a next-arc decision.\"\n      },\n      \"limitations\": [\n        \"This is a discussion and monitoring priority, not a load prescription or approval of a plan.\",\n        \"Current strength goals do not establish the original arc goal.\",\n        \"The available logs cannot identify the cause of poorer wellbeing.\"\n      ],\n      \"alternatives\": [\n        \"Clarifying recording or execution intent may be sufficient; the evidence does not require a training change.\"\n      ]\n    },\n    {\n      \"id\": \"c7\",\n      \"type\": \"RECOMMENDATION\",\n      \"topic\": \"Priority 2: clarify movement progress and completion evidence\",\n      \"text\": \"Discuss the persistent 'limited' squat-control report and whether the clearer balance result is repeatable. Assess this with the same self-reported movement checks under comparable conditions, comparing baseline and interim results with an explicitly linked completion checkpoint when available.\",\n      \"evidenceIds\": [\"arc-baseline\", \"check-2026-09-07\"],\n      \"confidence\": {\n        \"level\": \"medium\",\n        \"reason\": \"The differing movement-check trajectories support further clarification, but evidence remains self-reported and incomplete at arc closure.\"\n      },\n      \"limitations\": [\n        \"The full nominal date range is present; the missing element is the linked completion checkpoint, not a shorter supplied period.\",\n        \"Repeated self-reports still cannot independently verify technique.\",\n        \"No exercise replacement or plan modification is proposed.\"\n      ],\n      \"alternatives\": [\n        \"Consistent repeat results may support continued monitoring rather than a training intervention.\"\n      ]\n    }\n  ],\n  \"questions\": [\n    \"Were the above-target wall-pushup repetitions intentional, and did the wall distance, range of motion or other setup details remain consistent?\",\n    \"What changed around 2026-08-31 in sleep or daily demands, and did low energy or harder effort persist on days without wellbeing entries?\",\n    \"What did 'limited' squat control mean in practice, and is the arc intentionally still open or awaiting a linked completion checkpoint?\"\n  ],\n  \"proposedChanges\": []\n}"
+        }
+      ],
+      "phase": "final_answer",
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "presence_penalty": 0.0,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": "24h",
+  "reasoning": {
+    "context": "all_turns",
+    "effort": "medium",
+    "mode": "standard",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": false,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "json_schema",
+      "description": null,
+      "name": "progress_review_v1",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "enum": [
+              "progress-review.v1"
+            ]
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "insufficient_evidence"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "FACT",
+                    "OBSERVATION",
+                    "HYPOTHESIS",
+                    "RECOMMENDATION"
+                  ]
+                },
+                "topic": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "maxItems": 16,
+                  "minItems": 1
+                },
+                "confidence": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "maxItems": 16
+                },
+                "alternatives": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "maxItems": 16
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "topic",
+                "text",
+                "evidenceIds",
+                "confidence",
+                "limitations",
+                "alternatives"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 32
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "maxItems": 16
+          },
+          "proposedChanges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            },
+            "maxItems": 0
+          }
+        },
+        "required": [
+          "contractVersion",
+          "requestId",
+          "status",
+          "summary",
+          "claims",
+          "questions",
+          "proposedChanges"
+        ],
+        "additionalProperties": false
+      },
+      "strict": true
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": "auto",
+  "tool_usage": {
+    "image_gen": {
+      "input_tokens": 0,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 0
+      },
+      "output_tokens": 0,
+      "output_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 0
+      },
+      "total_tokens": 0
+    },
+    "web_search": {
+      "num_requests": 0
+    }
+  },
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 0.98,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 13894,
+    "input_tokens_details": {
+      "cache_write_tokens": 13891,
+      "cached_tokens": 0
+    },
+    "output_tokens": 2607,
+    "output_tokens_details": {
+      "reasoning_tokens": 124
+    },
+    "total_tokens": 16501
+  },
+  "user": null,
+  "metadata": {}
+}

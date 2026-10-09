@@ -1,0 +1,36 @@
+[
+  {
+    "testcaseId": "A01",
+    "effort": "medium",
+    "repeat": 1,
+    "reviewStatus": "pending",
+    "scores": {
+      "reasoning": null,
+      "fidelityToEvidence": null,
+      "claimTypes": null,
+      "noHallucinations": null,
+      "noFalsePrecision": null,
+      "missingData": null,
+      "conflictingData": null,
+      "evidenceSupport": null
+    },
+    "criticalViolations": null,
+    "unsupportedClaims": null,
+    "totalClaims": null,
+    "stabilityAcrossRepeats": null,
+    "notes": "",
+    "scope": "single-case pilot, not production certification",
+    "domainCompleteness": null,
+    "practicalUsefulness": null,
+    "domains": {
+      "trainingExecution": null,
+      "comparablePerformance": null,
+      "effort": null,
+      "wellbeing": null,
+      "measurements": null,
+      "movementChecks": null,
+      "nextArcPriorityOrQuestion": null
+    },
+    "gate": "Each scored dimension >=3/4, valid output, zero unsupported claims and critical violations; stability remains untested with one response."
+  }
+]
