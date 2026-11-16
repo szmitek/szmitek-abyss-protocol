@@ -1,3 +1,26 @@
+# Current checkpoint — offline mobile AI data preview, Android v22
+
+PR #57 merged on 2026-11-16 at `7e9a438b08bb0a2e7832d1cce9e76c7da0b0ac5a`.
+The existing Arc Review now opens an offline-only text AI data preview showing
+its period, included categories, excluded photo manifest, canonical candidate
+JSON and UTF-8 byte size. The preview does not collect consent, contact AI,
+choose a provider, archive a report, modify a plan or create a paid charge.
+
+`src/domain/textArcPreview.ts` is React Native-safe and shared with the
+Node-only SHA-256 preflight adapter. It rejects obvious media/file URI leaks,
+unknown root/photo fields, unsupported values and payloads over 256 KiB.
+This is not full backend input validation. Local tests were added. PR #57
+Quality passed including Android export; main Quality and native APK verification
+must be checked separately. APK22 increments Android versionCode for the new UI.
+
+Next: verify the exact main native APK, signing and upgrade over APK21; perform
+physical-phone walkthrough including preview privacy and Data Vault persistence.
+A production backend, authentication, retention policy, explicit paid consent,
+quote, durable operation recovery, full content validation and provider routing
+remain intentionally absent. No new paid AI calls are authorized.
+
+---
+
 # Current checkpoint — offline text delivery lifecycle
 
 PR54 is merged at `f918fd7a165369bbe9cd1094f817876a824a92dd`.
