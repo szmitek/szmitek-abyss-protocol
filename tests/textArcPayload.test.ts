@@ -18,7 +18,7 @@ function fixture(): WeeklyReviewInput {
       state: 'completed', checkpoints: { baseline: null, completion: null },
       nominalEnd: '2026-10-28', actualEnd: '2026-10-31', plannedFrequency: null,
       profileContext: { scope: 'current-settings-not-historical-plan', goal: 'general-fitness', experienceLevel: 'beginner',
-        workoutDuration: 20, availableEquipment: ['none'] }, limitations: [] } as WeeklyReviewInput['arcContext'],
+        workoutDuration: 20, availableEquipment: ['none'] }, limitations: [] } as NonNullable<WeeklyReviewInput['arcContext']>,
   };
 }
 test('detached text payload strips photo manifest and keeps local input unchanged', () => {
@@ -44,7 +44,7 @@ test('changed source data changes the digest', () => {
 test('weekly-only, history contexts and unsafe constraints cannot enter arc transport', () => {
   const a = fixture(); delete a.arcContext;
   assert.throws(() => prepareTextArcPayload(a));
-  const b = fixture(); b.historyContext = {} as WeeklyReviewInput['historyContext'];
+  const b = fixture(); b.historyContext = {} as NonNullable<WeeklyReviewInput['historyContext']>;
   assert.throws(() => prepareTextArcPayload(b));
   const c = fixture(); (c.constraints as { mayDiagnose: boolean }).mayDiagnose = true;
   assert.throws(() => prepareTextArcPayload(c));
