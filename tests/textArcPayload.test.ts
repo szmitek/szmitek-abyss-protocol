@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareTextArcPayload } from '../tools/arc-review-benchmark/textPayload.ts';
+import { prepareTextArcPreview } from '../src/domain/textArcPreview.ts';
 import type { WeeklyReviewInput } from '../src/domain/aiContracts.ts';
 
 function fixture(): WeeklyReviewInput {
@@ -61,4 +62,31 @@ test('unknown fields and excess text are rejected before any network call', () =
   assert.throws(() => prepareTextArcPayload(a));
   const b = fixture(); b.adherence.reason = 'x'.repeat(270000);
   assert.throws(() => prepareTextArcPayload(b));
+});
+
+test('mobile offline preview is byte-identical to developer digest input', () => {
+  const input = fixture();
+  input.adherence.reason = 'Postęp: zażółć gęślą jaźń 💪';
+  const mobile = prepareTextArcPreview(input);
+  const developer = prepareTextArcPayload(input);
+  assert.equal(mobile.canonicalJson, developer.canonicalJson);
+  assert.equal(mobile.byteLength, Buffer.byteLength(developer.canonicalJson, 'utf8'));
+  assert.equal(mobile.input.photos.manifest.length, 0);
+  assert.equal(mobile.canonicalJson.includes('private-photo'), false);
+});
+test('mobile preview rejects extra photo fields even when original manifest would be stripped', () => {
+  const input = fixture();
+  (input.photos as typeof input.photos & { imageUri?: string }).imageUri = 'file:///private.jpg';
+  assert.throws(() => prepareTextArcPreview(input));
+});
+test('nested image fields cannot enter the displayed canonical request', () => {
+  const input = fixture();
+  (input.body as typeof input.body & { pixels?: string }).pixels = 'some raw image bytes';
+  assert.throws(() => prepareTextArcPreview(input));
+});
+test('editing existing source observations produces a different offline request', () => {
+  const before = fixture();
+  const after = fixture();
+  after.adherence.reason = 'One additional local note';
+  assert.notEqual(prepareTextArcPreview(before).canonicalJson, prepareTextArcPreview(after).canonicalJson);
 });
