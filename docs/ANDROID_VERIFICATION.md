@@ -55,3 +55,16 @@ These are device checks, not claims of completed testing. Automated migration/ba
 - [ ] Run Development Mock. Confirm visible mock labels, qualitative confidence and limitations; drill from a FACT through source IDs to the exact measurement/workout.
 - [ ] Move weeks, leave/return and background/foreground; previous output must not appear as current for another period or changed source data. Leaving the screen clears the ephemeral review.
 - [ ] Check evidence navigation, more-facts/source pagination and large text. No photo display/upload or plan-change control should appear.
+
+
+## APK22 text-only Arc Review preview — physical checks pending
+
+- [ ] Install APK22 over APK21 without uninstalling; verify previous workouts, Arc reports, body measurements, private photos and Data Vault survive.
+- [ ] Progress → Arc Review → INSPECT TEXT AI DATA · OFFLINE opens the preview for the selected arc. Check the date range, time zone, scope counts, font scaling and Back navigation.
+- [ ] Expand complete JSON. Inspect that private photo URIs, photo IDs and image data are absent, while expected training/wellbeing/measurements are included; the rest of the local archive is unchanged.
+- [ ] Select a different arc, reopen preview, confirm the displayed text corresponds to the new arc, not a stale one. Repeat after new data/backup restore.
+- [ ] Try an arc with little or no history, an active partial arc, and multiple completed arcs. Confirm unavailable data and error messages are clear.
+- [ ] Airplane mode: preview and development mock still work; no consent/quote/submit request or paid AI action appears.
+- [ ] Switch app background/foreground, rotate if supported, and use a larger system font; long JSON remains inspectable and navigation usable.
+
+Source/build checks do not replace this physical-device walkthrough. No network AI integration or photo processing is delivered in APK22.
