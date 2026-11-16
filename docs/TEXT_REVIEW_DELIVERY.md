@@ -142,3 +142,31 @@ review body. It cannot survive process loss, verify output semantics, display
 consent UI, persist a pending operation, issue a real quote or recover a result
 after restart. No cloud provider is enabled. Next implementation must add those
 adapters and their integration tests; keep the existing mock-only gate until then.
+
+
+## Offline mobile preview (next bounded package)
+
+The existing Arc Review screen now provides **INSPECT TEXT AI DATA · OFFLINE**.
+A separate screen shows the selected arc/time zone, actual data categories,
+coverage counts, exclusions, byte size and expandable exact canonical JSON.
+It explicitly labels the provider, price and retention policy as unconfigured;
+there is **no consent, quote, submit control or network transport**.
+
+The mobile-safe pure module `src/domain/textArcPreview.ts` prepares
+the detached `text-arc-payload.v1` candidate, strips the entire photo
+manifest, fails closed on unknown top-level/photo fields, media URIs, unsupported
+JSON and a 256 KiB UTF-8 limit. Existing source records are not mutated. The
+developer-only SHA-256 adapter reuses the same canonical preview bytes; Node
+crypto never enters the Expo runtime.
+
+This is a preflight/inspection UI, **not a server-validated request contract**.
+It does not solve user authentication, durable operation identity, consent
+binding, semantic output validation, retention/deletion, cost reconciliation
+or external provider idempotency. A future backend must independently validate
+all nested fields, digest and auth scope. No photos or personal records are sent.
+
+Before a real provider is enabled: design and implement secure backend storage
+and owner isolation, consent and quotation UX, a per-operation persistence
+migration, status recovery and measured cost handling. The local review and
+offline training always remain available. Follow the physical-device checklist;
+CI alone does not prove full phone usability.
