@@ -1,3 +1,19 @@
+# Current checkpoint — offline text delivery lifecycle
+
+PR54 is merged at `f918fd7a165369bbe9cd1094f817876a824a92dd`.
+The next source package adds a developer-only in-memory delivery lifecycle in
+`tools/arc-review-benchmark/textDelivery.ts`, with ten tests for consent binding,
+one submission, budgets, expiry, uncertainty and stale result identity. Full
+local suite274 passes. See TEXT_REVIEW_DELIVERY.md for scope and limitations.
+
+This package performs no model requests and changes no application runtime,
+storage, credentials, budget journal or provider activation. The ledger is not
+durable and caller identity/input validation are assumed; never use it as a
+production backend. Client UI, storage migration and real transport remain future
+work. A01 v2 authorization remains consumed. APK21 is still the current app.
+
+---
+
 # Current checkpoint — A01 v2 reviewed, 2026-10-09
 
 PR53 was merged at `908690e024111a74cabbfdce12b88997c7610760`.

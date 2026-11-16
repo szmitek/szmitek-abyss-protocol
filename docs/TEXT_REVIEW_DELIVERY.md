@@ -119,3 +119,26 @@ and fake durable ledger with deterministic tests, at zero provider cost. Before
 real integration: select authentication/hosting, specify retention and migration,
 verify current provider/pricing capabilities and agree the personal-data scope.
 Additional real A02–A10 or photo evaluations require their own bounded budget.
+
+## Offline prototype implemented
+
+`tools/arc-review-benchmark/textDelivery.ts` now models metadata-bound confirmation,
+registered quotes, global/per-owner reservation caps, a single submission claim,
+pre-send cancellation, unknown outcomes and late completion. All accounting uses
+integer micro-PLN. Known paid completion retains its conservative reserve until a
+separate reconciliation design exists; above-cap measured usage is recorded rather
+than hidden. Quote expiry and month boundaries are checked again before submission.
+
+Ten tests in `tests/textReviewDelivery.test.ts` cover changed binding fields, invalid
+prices/times, twelve concurrent duplicate commands, uncertainty without retry,
+pre-send cancellation, late expiry, rejected paid output, budget limits, detached
+copies/owner scoping and wrong-request/stale results. The fake transport is a counter,
+not a model provider. Full suite:274 tests pass.
+
+This is deliberately a developer-only in-memory prototype, not a production
+service or client integration. It assumes trusted caller identity and validated
+input digests; its metadata SHA256 does not authenticate a user or validate the
+review body. It cannot survive process loss, verify output semantics, display
+consent UI, persist a pending operation, issue a real quote or recover a result
+after restart. No cloud provider is enabled. Next implementation must add those
+adapters and their integration tests; keep the existing mock-only gate until then.
