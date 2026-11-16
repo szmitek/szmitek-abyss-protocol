@@ -1,4 +1,5 @@
 import { prepareArcReview } from '../../domain/arcProgressReview.ts';
+import { TextArcPreviewScreen } from './TextArcPreviewScreen.tsx';
 import { Coverage, EvidenceDetail } from '../components/ReviewEvidencePanels.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -28,6 +29,7 @@ export function ArcProgressReviewScreen({ onBack }: { onBack: () => void }) {
   const [busyRevision, setBusyRevision] = useState<string | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<string | null>(null);
   const [factLimit, setFactLimit] = useState(12);
+  const [textPreviewOpen, setTextPreviewOpen] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => { controller.current?.abort(); }, [revision]);
   const generate = async () => {
@@ -43,6 +45,7 @@ export function ArcProgressReviewScreen({ onBack }: { onBack: () => void }) {
   const busy = busyRevision === revision && controller.current?.signal.aborted === false;
   const selected = selectedEvidence ? bundle?.evidence.get(selectedEvidence) : undefined;
   const facts = bundle?.input.facts ?? [];
+  if (textPreviewOpen && bundle) return <TextArcPreviewScreen input={bundle.input} onBack={() => setTextPreviewOpen(false)} />;
   if (selected && bundle) return <Screen eyebrow="LOCAL SOURCE EVIDENCE" title="Review evidence" subtitle={MOCK_REVIEW_LABEL}>
     <EvidenceDetail key={selected.id} evidence={selected} registry={bundle.evidence} onSelect={setSelectedEvidence} onClose={() => setSelectedEvidence(null)} />
   </Screen>;
@@ -67,6 +70,7 @@ export function ArcProgressReviewScreen({ onBack }: { onBack: () => void }) {
         {[bundle.input.arcContext!.checkpoints.baseline, bundle.input.arcContext!.checkpoints.completion].map((check, index) => check ? <GlowButton key={`${index}:${check.id}`} label={`${index === 0 ? 'BASELINE' : 'COMPLETION'} · ${check.dateKey}`} variant="secondary" onPress={() => setSelectedEvidence(check.id)} /> : <Text key={index} style={styles.text}>{index === 0 ? 'Baseline' : 'Completion'} check unavailable. No change in movement can be inferred from a missing check.</Text>)}
         <Text style={styles.text}>These boundary checks may be outside the training window. They remain subjective self-reports.</Text>
       </SystemPanel>
+      <GlowButton label="INSPECT TEXT AI DATA · OFFLINE" variant="secondary" onPress={() => setTextPreviewOpen(true)} />
       <GlowButton label={busy ? 'PREPARING LOCAL REVIEW' : 'RUN DEVELOPMENT MOCK'} disabled={busy} onPress={() => { void generate(); }} />
       {busy ? <GlowButton label="CANCEL REVIEW" variant="secondary" onPress={() => { controller.current?.abort(); setBusyRevision(null); }} /> : null}
       {result && result.revision !== revision ? <Text style={styles.notice}>Data or period changed. The previous result is no longer current. Run the mock again.</Text> : null}
