@@ -136,7 +136,7 @@ test('unrecognized nested fields fail closed before canonical payload display', 
   (b.training[0] as typeof b.training[0] & { diagnostic?: string }).diagnostic = 'secret';
   assert.throws(() => prepareTextArcPreview(b));
   const c = fixture();
-  (c.arcContext!.profileContext as typeof c.arcContext!.profileContext & { email?: string })
+  (c.arcContext!.profileContext as NonNullable<WeeklyReviewInput['arcContext']>['profileContext'] & { email?: string })
     .email = 'not-for-sharing@example.com';
   assert.throws(() => prepareTextArcPreview(c));
 });
