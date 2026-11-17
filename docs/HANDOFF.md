@@ -1,3 +1,11 @@
+# Current checkpoint — strict text Arc Review schema, APK23 source
+
+This package adds the mobile-safe `arcTextSchema.ts` validator, invoked before generating the proposed Arc Review text payload. Unknown nested keys and incomplete fields in records, tests, measurements, statistics, set logs and arc context are rejected rather than silently included in the preview. Synthetic tests cover populated records and negative cases. Android versionCode is advanced to 23 for this client validation change.
+
+No AI provider, hosting, authentication, consent, spending, image upload, plan mutation or persistent operation was added. The validator is a client preflight only: a future authenticated backend must independently validate ownership, input, quotas, the exact canonical bytes and output semantics. Exact CI and APK delivery verification are recorded by GitHub; physical-device verification remains outstanding.
+
+---
+
 # Current checkpoint — offline mobile AI data preview, Android v22
 
 PR #57 merged on 2026-11-16 at `7e9a438b08bb0a2e7832d1cce9e76c7da0b0ac5a`.

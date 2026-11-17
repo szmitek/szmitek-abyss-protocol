@@ -3,6 +3,7 @@ import test from 'node:test';
 import { prepareTextArcPayload } from '../tools/arc-review-benchmark/textPayload.ts';
 import { prepareTextArcPreview } from '../src/domain/textArcPreview.ts';
 import type { WeeklyReviewInput } from '../src/domain/aiContracts.ts';
+import { bodyMeasurementStats, createBodyMeasurement } from '../src/domain/bodyMeasurements.ts';
 
 function fixture(): WeeklyReviewInput {
   return {
@@ -11,7 +12,7 @@ function fixture(): WeeklyReviewInput {
     facts: [], training: [], exerciseExposures: [],
     adherence: { completedTrainingSessions: 0, activeDays: 0, plannedSessions: null, rate: null, reason: 'No history' },
     archivedAdherence: [], wellbeing: [], tests: { method: 'self-report', records: [] },
-    body: { records: [], statistics: { measuredDays: 0, metrics: {} } as WeeklyReviewInput['body']['statistics'] },
+    body: { records: [], statistics: bodyMeasurementStats([]) },
     dataCoverage: { calendarDays: 31, wellbeingDays: 0, missingWellbeingDays: 31, measurementDays: 0, missingActualSets: 0 },
     photos: { status: 'no_pixels_attached', localAnalysis: 'not_run', manifest: [{ id: 'private-photo', recordedOn: '2026-10-01', protocol: null, views: ['front'] }] },
     constraints: { mayModifyPlan: false, mayDiagnose: false, mayEstimateBodyComposition: false },
@@ -89,4 +90,65 @@ test('editing existing source observations produces a different offline request'
   const after = fixture();
   after.adherence.reason = 'One additional local note';
   assert.notEqual(prepareTextArcPreview(before).canonicalJson, prepareTextArcPreview(after).canonicalJson);
+});
+
+test('strict text schema accepts genuine metric statistics, movement checks and logged work sets', () => {
+  const input = fixture();
+  const measurement = createBodyMeasurement('m1', '2026-10-06', { weight: 72, thigh: 52 },
+    new Date('2026-10-06T08:00:00.000Z'));
+  input.body.records = [measurement];
+  input.body.statistics = bodyMeasurementStats(input.body.records, input.period);
+  const movement = {
+    id: 'movement-1', kind: 'baseline' as const, date: '2026-10-01T08:00:00Z',
+    dateKey: '2026-10-01',
+    results: { 'squat-control': 'limited' as const, 'overhead-reach': 'clear' as const,
+      'hip-hinge': 'clear' as const, 'single-leg-balance': 'limited' as const,
+      'plank-control': 'clear' as const },
+  };
+  input.tests.records = [movement];
+  input.arcContext!.checkpoints.baseline = movement;
+  input.exerciseExposures = [{
+    id: 'exposure:1:0', workoutId: 'workout-1', dateKey: '2026-10-08', exerciseId: 'goblet-squat',
+    unit: 'reps', loading: 'total', comparisonKey: 'squat:total',
+    recordedSets: [{ actual: 8, loadKg: 8, effort: 'perfect',
+      loadDecision: { previousKg: 6, incrementKg: 2, evidenceDateKeys: ['2026-10-01', '2026-10-04'] },
+      machineSetup: { id: 'setup1', exerciseId: 'goblet-squat', location: 'gym', label: 'main rack' } }],
+    warmupSets: [{ actual: 10, loadKg: null, effort: null }],
+    actualVolume: 8, externalLoadVolume: 64, prescribedVolume: 8,
+    missingActualSets: 0, context: 'training',
+  }];
+  const preview = prepareTextArcPreview(input);
+  assert.equal(preview.input.body.records.length, 1);
+  assert.equal(preview.input.exerciseExposures.length, 1);
+  assert.equal(preview.input.tests.records.length, 1);
+  assert.equal(preview.canonicalJson, prepareTextArcPayload(input).canonicalJson);
+});
+
+test('unrecognized nested fields fail closed before canonical payload display', () => {
+  const a = fixture();
+  (a.body.statistics.metrics.weight as typeof a.body.statistics.metrics.weight & { privateNotes?: string })
+    .privateNotes = 'DO NOT SEND';
+  assert.throws(() => prepareTextArcPreview(a));
+  const b = fixture();
+  b.training = [{
+    id: 'w1', dateKey: '2026-10-03', completed: true, durationSeconds: 900, context: 'training',
+  }];
+  (b.training[0] as typeof b.training[0] & { diagnostic?: string }).diagnostic = 'secret';
+  assert.throws(() => prepareTextArcPreview(b));
+  const c = fixture();
+  (c.arcContext!.profileContext as NonNullable<WeeklyReviewInput['arcContext']>['profileContext'] & { email?: string })
+    .email = 'not-for-sharing@example.com';
+  assert.throws(() => prepareTextArcPreview(c));
+});
+
+test('missing required nested fields, invalid counts and incompatible measurement structures are refused', () => {
+  const a = fixture();
+  delete (a.dataCoverage as Partial<typeof a.dataCoverage>).calendarDays;
+  assert.throws(() => prepareTextArcPreview(a));
+  const b = fixture();
+  b.dataCoverage.missingActualSets = -1;
+  assert.throws(() => prepareTextArcPreview(b));
+  const c = fixture();
+  (c.body.statistics.metrics as Record<string, unknown>).extraMeasurement = { value: 12 };
+  assert.throws(() => prepareTextArcPreview(c));
 });
