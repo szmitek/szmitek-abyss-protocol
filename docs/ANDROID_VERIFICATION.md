@@ -68,3 +68,14 @@ These are device checks, not claims of completed testing. Automated migration/ba
 - [ ] Switch app background/foreground, rotate if supported, and use a larger system font; long JSON remains inspectable and navigation usable.
 
 Source/build checks do not replace this physical-device walkthrough. No network AI integration or photo processing is delivered in APK22.
+
+
+## APK23 strict nested text schema — physical checks pending
+
+- [ ] Update over APK22 without uninstalling or clearing data. Existing profile, photos, training history and the local Vault must survive.
+- [ ] Verify Arc Review text preview still opens for an empty arc, a partial arc and an arc with logged training, actual sets, readiness, body measurements and movement checks.
+- [ ] Verify the existing development mock, normal workouts and offline weekly summaries are unchanged.
+- [ ] Confirm the preview never uploads data and continues to explain that provider/consent/pricing are unavailable.
+- [ ] On a deliberately malformed test fixture, unsupported nested fields must produce an unavailable-preview notice without crashing or changing local records.
+
+Automated schema checks are not evidence of release APK behavior on a physical phone.
