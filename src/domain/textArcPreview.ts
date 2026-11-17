@@ -1,6 +1,7 @@
 // Offline-only, React Native-compatible snapshot preflight.
 // The preview is NOT consent, a quote, an authenticated request, or a network transport.
 import type { WeeklyReviewInput } from './aiContracts.ts';
+import { assertTextArcSchema } from './arcTextSchema.ts';
 
 export const TEXT_ARC_PREVIEW_MAX_BYTES = 256 * 1024;
 export interface TextArcPreview {
@@ -73,6 +74,8 @@ export function prepareTextArcPreview(input: WeeklyReviewInput): TextArcPreview 
     || Object.keys(input).some(key => !allowedRoot.has(key))) {
     throw new Error('Invalid scope for offline text-only Arc Review preview.');
   }
+  // Reject even unexpected nested fields; client code must never silently include them.
+  assertTextArcSchema(input);
   // Photos are local references. Neither images nor their identifiers belong in a text request.
   const { historyContext, ...fields } = input;
   void historyContext;
