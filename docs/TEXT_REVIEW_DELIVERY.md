@@ -170,3 +170,19 @@ and owner isolation, consent and quotation UX, a per-operation persistence
 migration, status recovery and measured cost handling. The local review and
 offline training always remain available. Follow the physical-device checklist;
 CI alone does not prove full phone usability.
+
+
+## Strict nested client preflight (APK23)
+
+The mobile preview now checks a closed nested field schema for facts, exposures,
+recorded and warm-up sets, machine configuration, wellbeing, movement results,
+measurements and summary statistics, arc boundaries and current profile context.
+Unknown fields fail closed instead of being copied into the candidate text request.
+Date format, finite numbers and nonnegative integer counts are checked. A populated
+fixture is covered in addition to privacy and malformed-payload cases.
+
+This is **not** a production backend request validator. Client data, numeric
+relationships, authentic provenance, authorization and model-generated claims
+still need independent server validation. The preflight is deliberately strict:
+future schema fields require an explicit allowlist update and regression test.
+No data transfer, real provider or charge is enabled by this package.
